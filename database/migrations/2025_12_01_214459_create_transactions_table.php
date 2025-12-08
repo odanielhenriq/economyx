@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignId('category_id')->references('id')->on('categories')->onDelete('cascade');
             $table->foreignId('type_id')->references('id')->on('types')->onDelete('cascade');
             $table->foreignId('payment_method_id')->references('id')->on('payment_methods')->onDelete('cascade');
+            $table->foreignId('credit_card_id')->nullable()->constrained('credit_cards');
             $table->softDeletes();
             $table->timestamps();
         });

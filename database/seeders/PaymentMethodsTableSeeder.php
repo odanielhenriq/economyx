@@ -17,33 +17,21 @@ class PaymentMethodsTableSeeder extends Seeder
         FacadesDB::table("payment_methods")->insert([
             [
                 'name' => 'Credit Card',
-                'closing_day' => 28,
-                'due_day' => 30,
             ],
             [
                 'name' => 'Debit Card',
-                'closing_day' => null,
-                'due_day' => null,
             ],
             [
                 'name' => 'Pix',
-                'closing_day' => null,
-                'due_day' => null,
             ],
             [
                 'name' => 'PayPal',
-                'closing_day' => null,
-                'due_day' => null,
             ],
             [
                 'name' => 'Bank Transfer',
-                'closing_day' => null,
-                'due_day' => null,
             ],
             [
                 'name' => 'Cash',
-                'closing_day' => null,
-                'due_day' => null,
             ],
         ]);
     }

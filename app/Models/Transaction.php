@@ -15,6 +15,7 @@ class Transaction extends Model
         'category_id',
         'type_id',
         'payment_method_id',
+         'credit_card_id',
         'installment_number',
         'installment_total'
     ];
@@ -42,5 +43,10 @@ class Transaction extends Model
     public function paymentMethod()
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function creditCard()
+    {
+        return $this->belongsTo(CreditCard::class);
     }
 }

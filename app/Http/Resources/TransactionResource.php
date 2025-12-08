@@ -22,7 +22,7 @@ class TransactionResource extends JsonResource
         $isInstallment  = $hasNumberAndTotal;
         $remaining      = $isInstallment ? max($this->installment_total - $this->installment_number, 0) : null;
         $installmentLabel = $isInstallment ? "{$this->installment_number}/{$this->installment_total}" : null;
-        $isExpense = $this->type?->slug === 'dp';
+        $isExpense = $this->type?->slug === 'dc';
 
         return [
             'id' => $this->id,
@@ -50,6 +50,11 @@ class TransactionResource extends JsonResource
             'payment_method' => [
                 'name' => $this->paymentMethod?->name,
             ],
+
+            'credit_card' => $this->creditCard ? [
+                'id'   => $this->creditCard->id,
+                'name' => $this->creditCard->name,
+            ] : null,
 
             'users' => $this->users->map(fn($u) =>
             [
