@@ -23,6 +23,7 @@ class CategoriesTableSeeder extends Seeder
             ['name' => 'Educação'],
             ['name' => 'Saúde'],
             ['name' => 'Contas'],
+            ['name' => 'Empréstimos'],
         ]);
     }
 }
