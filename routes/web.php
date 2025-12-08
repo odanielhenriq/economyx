@@ -18,7 +18,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/transactions', [TransactionWebController::class, 'index'])
-    ->name('transactions.index');
+Route::get('/transactions', [TransactionWebController::class, 'index'])->name('transactions.index');
+Route::get('/transactions/{transaction}/edit', [TransactionWebController::class, 'edit'])->name('transactions.edit');
+Route::get('/transactions/create', [TransactionWebController::class, 'create'])->name('transactions.create');
+Route::post('/transactions', [TransactionWebController::class, 'store'])->name('transactions.store');
+Route::put('/transactions/{transaction}', [TransactionWebController::class, 'update'])->name('transactions.update');
+Route::delete('/transactions', [TransactionWebController::class, 'destroy'])->name('transactions.destroy');
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
