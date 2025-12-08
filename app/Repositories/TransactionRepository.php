@@ -47,23 +47,34 @@ class TransactionRepository implements TransactionRepositoryInterface
         ])->find($id);
     }
 
-    public function updateTransaction(int $id, array $data): Transaction
+    public function updateTransaction(int $id, array $data, ?array $userIds = null): Transaction
     {
         $transaction = Transaction::findOrFail($id);
+
         $transaction->update($data);
 
-        return $transaction->load(['category', 'type', 'paymentMethod', 'users']);
+        if ($userIds !== null) {
+            $transaction->users()->sync($userIds);
+        }
+
+        return $transaction->load([
+            'category',
+            'type',
+            'paymentMethod',
+            'creditCard',
+            'users',
+        ]);
     }
 
     public function deleteTransaction(int $id): bool
     {
-        $transaction = Transaction::find($id); // respeita soft delete (não pega já deletada)
+        $transaction = Transaction::find($id);
 
         if (! $transaction) {
             return false;
         }
 
-        $transaction->delete(); // Soft delete por causa do trait
+        $transaction->delete(); // Soft delete
 
         return true;
     }

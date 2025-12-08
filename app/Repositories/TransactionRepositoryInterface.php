@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Repositories;
 
 use App\Models\Transaction;
@@ -15,8 +16,7 @@ interface TransactionRepositoryInterface
 
     public function findTransactionById(int $id): ?Transaction;
 
-    public function updateTransaction(int $id, array $data): Transaction;
+    public function updateTransaction(int $id, array $data, ?array $userIds = null): Transaction;
 
     public function deleteTransaction(int $id): bool;
-
 }

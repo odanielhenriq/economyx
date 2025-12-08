@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Type;
 use App\Models\PaymentMethod;
 use App\Models\CreditCard;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Repositories\TransactionRepositoryInterface;
 
@@ -61,6 +62,64 @@ class TransactionWebController extends Controller
             return back()
                 ->withInput()
                 ->withErrors(['error' => 'Erro ao salvar transação: ' . $e->getMessage()]);
+        }
+    }
+
+    public function edit(Transaction $transaction)
+    {
+        $transaction->load(['users']);
+
+        $categories     = Category::orderBy('name')->get();
+        $types          = Type::orderBy('name')->get();
+        $paymentMethods = PaymentMethod::orderBy('name')->get();
+        $creditCards    = CreditCard::orderBy('name')->get();
+        $users          = User::orderBy('name')->get();
+
+        return view('transactions.edit', compact(
+            'transaction',
+            'categories',
+            'types',
+            'paymentMethods',
+            'creditCards',
+            'users'
+        ));
+    }
+
+    public function update(StoreTransactionRequest $request, Transaction $transaction)
+    {
+        try {
+            $data = $request->validated();
+
+            $userIds = $data['user_ids'] ?? null;
+            unset($data['user_ids']);
+
+            $this->transactions->updateTransaction(
+                $transaction->id,
+                $data,
+                $userIds
+            );
+
+            return redirect()
+                ->route('transactions.index')
+                ->with('success', 'Transação atualizada com sucesso!');
+        } catch (\Throwable $th) {
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Erro ao atualizar transação: ' . $th->getMessage()]);
+        }
+    }
+
+    public function destroy(Transaction $transaction)
+    {
+        try {
+            $this->transactions->deleteTransaction($transaction->id);
+
+            return redirect()
+                ->route('transactions.index')
+                ->with('success', 'Transação removida com sucesso!');
+        } catch (\Throwable $th) {
+            return back()
+                ->withErrors(['error' => 'Erro ao remover transação: ' . $th->getMessage()]);
         }
     }
 }

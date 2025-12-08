@@ -93,10 +93,11 @@ class TransactionController extends Controller
         try {
 
             $data = $request->validated();
-            $userIds = $data['user_ids'];
+
+            $userIds = $data['user_ids'] ?? null;
             unset($data['user_ids']);
 
-            $transaction = $this->transactions->updateTransaction($id, $data);
+            $transaction = $this->transactions->updateTransaction($id, $data, $userIds);
 
             if (!$transaction) {
                 return response()->json([
