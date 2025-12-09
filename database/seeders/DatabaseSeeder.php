@@ -30,7 +30,11 @@ class DatabaseSeeder extends Seeder
             CreditCardsTableSeeder::class,
             UserRelationsTableSeeder::class,
             CreditCardUserTableSeeder::class,
-            TransactionsTableSeeder::class,
+            // faker
+            // TransactionsTableSeeder::class,
+
+            // seus dados reais:
+            RealTransactionsSeeder::class,
         ]);
     }
 }
