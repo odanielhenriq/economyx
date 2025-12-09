@@ -25,7 +25,16 @@ class TransactionController extends Controller
         try {
             $perPage = min($request->integer('per_page', default: 15), 100);
 
-            $transactions = $this->transactions->getPaginatedTransactions($perPage);
+            $filters = [
+                'month'             => $request->query('month'),
+                'year'              => $request->query('year'),
+                'user_id'           => $request->query('user_id'),
+                'category_id'       => $request->query('category_id'),
+                'type_id'           => $request->query('type_id'),
+                'payment_method_id' => $request->query('payment_method_id'),
+            ];
+
+            $transactions = $this->transactions->getPaginatedTransactions($perPage, $filters);
             return TransactionResource::collection($transactions);
         } catch (\Throwable $th) {
             return response()->json([

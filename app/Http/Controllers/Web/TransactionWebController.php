@@ -24,7 +24,17 @@ class TransactionWebController extends Controller
     {
         // Por enquanto, só carrega a view.
         // Quem vai buscar as transações é o JS via fetch().
-        return view('transactions.index');
+        $users          = User::orderBy('name')->get();
+        $categories     = Category::orderBy('name')->get();
+        $types          = Type::orderBy('name')->get();
+        $paymentMethods = PaymentMethod::orderBy('name')->get();
+
+        return view('transactions.index', compact(
+            'users',
+            'categories',
+            'types',
+            'paymentMethods'
+        ));
     }
 
     public function create()
