@@ -14,7 +14,6 @@ class TransactionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-
         $usersCount = $this->users->count();
         $share = $usersCount > 0 ? round($this->amount / $usersCount, 2) : null;
 
@@ -25,26 +24,28 @@ class TransactionResource extends JsonResource
         $isExpense = $this->type?->slug === 'dc';
 
         return [
-            'id' => $this->id,
-            'description' => $this->description,
-            'total_amount' => $this->total_amount,
-            'amount' => $this->amount,
+            'id'            => $this->id,
+            'description'   => $this->description,
+            'total_amount'  => $this->total_amount,
+            'amount'        => $this->amount,
             'signed_amount' => $isExpense ? -1 * $this->amount : $this->amount,
-            'date' => $this->transaction_date->format('Y-m-d'),
+            'date'          => $this->transaction_date->format('Y-m-d'),
 
             'installments' => [
-                'number' => $this->installment_number,
-                'total' => $this->installment_total,
+                'number'        => $this->installment_number,
+                'total'         => $this->installment_total,
                 'is_installment' => $isInstallment,
-                'label'          => $installmentLabel,
-                'remaining'      => $remaining,
+                'label'         => $installmentLabel,
+                'remaining'     => $remaining,
             ],
+
             'category' => [
-                'name' => $this->category?->name,
+                'name'  => $this->category?->name,
                 'color' => $this->category?->color,
             ],
+
             'type' => [
-                'name' => $this->type?->name,
+                'name'  => $this->type?->name,
                 'color' => $this->type?->color,
             ],
 
@@ -53,22 +54,21 @@ class TransactionResource extends JsonResource
             ],
 
             'credit_card' => $this->creditCard ? [
-                'id'   => $this->creditCard->id,
-                'name' => $this->creditCard->name,
+                'id'          => $this->creditCard->id,
+                'name'        => $this->creditCard->name,
                 'owner_label' => $this->creditCard->owner ? $this->creditCard->owner->name : null,
             ] : null,
 
-            'users' => $this->users->map(fn($u) =>
-            [
-                'id' => $u->id,
-                'name' => $u->name,
+            'users' => $this->users->map(fn($u) => [
+                'id'           => $u->id,
+                'name'         => $u->name,
                 'share_amount' => $share,
             ]),
-            'totals' => [
-                'total_amount' => $this->amount,
-                'per_user_share' => $share,
-            ]
 
+            'totals' => [
+                'total_amount'   => $this->total_amount,
+                'per_user_share' => $share,
+            ],
         ];
     }
 }
