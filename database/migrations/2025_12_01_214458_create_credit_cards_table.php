@@ -18,6 +18,20 @@ return new class extends Migration
             $table->integer('closing_day')->nullable(); // dia de fechamento (ex: 10)
             $table->integer('due_day')->nullable();     // dia de vencimento (ex: 17)
             $table->decimal('limit', 10, 2)->nullable(); // opcional
+            $table->foreignId('owner_user_id')
+                ->nullable()
+                ->after('id')
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->string('owner_name')
+                ->nullable()
+                ->after('name');
+
+            $table->boolean('is_shared')
+                ->default(true)
+                ->after('owner_user_id');
+
             $table->timestamps();
         });
     }

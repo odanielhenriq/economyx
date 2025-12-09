@@ -28,6 +28,8 @@ class DatabaseSeeder extends Seeder
             TypesTableSeeder::class,
             PaymentMethodsTableSeeder::class,
             CreditCardsTableSeeder::class,
+            UserRelationsTableSeeder::class,
+            CreditCardUserTableSeeder::class,
             TransactionsTableSeeder::class,
         ]);
     }

@@ -12,6 +12,9 @@ use App\Models\CreditCard;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Repositories\TransactionRepositoryInterface;
+use Illuminate\Support\Facades\Auth;
+
+
 
 class TransactionWebController extends Controller
 {
@@ -39,12 +42,21 @@ class TransactionWebController extends Controller
 
     public function create()
     {
+        /** @var \App\Models\User $viewer */
+        $viewer = Auth::user();
+
         $categories     = Category::orderBy('name')->get();
         $types          = Type::orderBy('name')->get();
         $paymentMethods = PaymentMethod::orderBy('name')->get();
-        $creditCards    = CreditCard::orderBy('name')->get();
-        $users          = User::orderBy('name')->get();
 
+        // pessoas pra dividir a conta: sua "rede"
+        $users          = $viewer->networkUsers();
+
+        // cartões que ESTE usuário pode usar (dele ou emprestados)
+        $creditCards    = $viewer->creditCards()
+            ->with('owner') // pra exibir (Daniel, Joyce, Neusa, etc)
+            ->orderBy('name')
+            ->get();
 
         return view('transactions.create', compact(
             'categories',
@@ -77,13 +89,20 @@ class TransactionWebController extends Controller
 
     public function edit(Transaction $transaction)
     {
-        $transaction->load(['users']);
+        /** @var \App\Models\User $viewer */
+        $viewer = Auth::user();
+
+        $transaction->load(['users', 'creditCard']);
 
         $categories     = Category::orderBy('name')->get();
         $types          = Type::orderBy('name')->get();
         $paymentMethods = PaymentMethod::orderBy('name')->get();
-        $creditCards    = CreditCard::orderBy('name')->get();
-        $users          = User::orderBy('name')->get();
+
+        $users          = $viewer->networkUsers();
+        $creditCards    = $viewer->creditCards()
+            ->with('owner')
+            ->orderBy('name')
+            ->get();
 
         return view('transactions.edit', compact(
             'transaction',
@@ -131,5 +150,22 @@ class TransactionWebController extends Controller
             return back()
                 ->withErrors(['error' => 'Erro ao remover transação: ' . $th->getMessage()]);
         }
+    }
+
+    private function getAvailableCreditCards(User $viewer)
+    {
+        // IDs da minha rede (eu + relacionados)
+        $networkIds = $viewer->networkUsers()->pluck('id');
+
+        return CreditCard::query()
+            ->whereIn('owner_user_id', $networkIds)
+            ->where(function ($q) use ($viewer) {
+                // sempre posso ver meus cartões
+                $q->where('owner_user_id', $viewer->id)
+                    // cartões de terceiros só se forem compartilhados
+                    ->orWhere('is_shared', true);
+            })
+            ->orderBy('name')
+            ->get();
     }
 }

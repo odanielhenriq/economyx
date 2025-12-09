@@ -50,4 +50,45 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Transaction::class);
     }
+
+    public function creditCards()
+    {
+        return $this->belongsToMany(
+            CreditCard::class,
+            'credit_card_user',
+            'user_id',
+            'credit_card_id'
+        );
+    }
+
+
+    public function relatedUsers()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_relations',
+            'user_id',
+            'related_user_id'
+        );
+    }
+
+    public function relatedToMe()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_relations',
+            'related_user_id',
+            'user_id'
+        );
+    }
+
+    // Conjunto: eu + todos que têm vínculo comigo (bidirecional)
+    public function networkUsers()
+    {
+        return $this->relatedUsers
+            ->merge($this->relatedToMe)
+            ->push($this)
+            ->unique('id')
+            ->values();
+    }
 }
