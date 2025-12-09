@@ -18,6 +18,9 @@ return new class extends Migration
             $table->string('relation_type');
             $table->unique(['user_id', 'related_user_id']);
             $table->timestamps();
+
+            $table->unique(['transaction_id', 'user_id']);
+
         });
     }
 

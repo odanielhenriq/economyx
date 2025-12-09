@@ -24,6 +24,12 @@ class CategoriesTableSeeder extends Seeder
             ['name' => 'Saúde'],
             ['name' => 'Contas'],
             ['name' => 'Empréstimos'],
+            ['name' => 'Casamento'],
+            ['name' => 'Ferramentas'],
+            ['name' => 'Salário'],
+            ['name' => 'Freelas'],
+            ['name' => 'Investimentos'],
+            ['name' => 'Outros'],
         ]);
     }
 }
