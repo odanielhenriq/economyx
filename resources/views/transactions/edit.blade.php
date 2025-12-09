@@ -89,54 +89,61 @@
                 </div>
 
                 {{-- CARD 2 — PAGAMENTO --}}
-                <div class="p-6 bg-white rounded shadow-sm border space-y-4">
-                    <h3 class="font-semibold text-gray-700 mb-2">Pagamento</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="text-sm text-gray-600">Valor da parcela (R$)</label>
+                        <input type="number" step="0.01" min="0" name="amount" value="{{ old('amount') }}"
+                            class="mt-1 w-full rounded border-gray-300 text-sm">
+                        <p class="mt-1 text-xs text-gray-500">
+                            Valor da parcela individual (se houver parcelamento).
+                        </p>
+                    </div>
 
-                        <div>
-                            <label class="text-sm text-gray-600">Valor (R$)</label>
-                            <input type="number" step="0.01" min="0" name="amount"
-                                value="{{ old('amount', $transaction->amount) }}"
-                                class="mt-1 w-full rounded border-gray-300 text-sm">
-                        </div>
+                    <div>
+                        <label class="text-sm text-gray-600">Forma de pagamento</label>
+                        <select name="payment_method_id" id="payment_method_id"
+                            class="mt-1 w-full rounded border-gray-300 text-sm">
+                            <option value="">...</option>
+                            @foreach ($paymentMethods as $pm)
+                                <option value="{{ $pm->id }}"
+                                    {{ old('payment_method_id') == $pm->id ? 'selected' : '' }}>
+                                    {{ $pm->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        <div>
-                            <label class="text-sm text-gray-600">Forma de pagamento</label>
-                            <select name="payment_method_id" id="payment_method_id"
-                                class="mt-1 w-full rounded border-gray-300 text-sm">
-                                <option value="">...</option>
-                                @foreach ($paymentMethods as $pm)
-                                    <option value="{{ $pm->id }}"
-                                        {{ old('payment_method_id', $transaction->payment_method_id) == $pm->id ? 'selected' : '' }}>
-                                        {{ $pm->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div id="credit-card-wrapper">
+                        <label class="text-sm text-gray-600">Cartão</label>
+                        <select name="card_id" class="mt-1 w-full rounded border-gray-300 text-sm">
+                            <option value="">Nenhum</option>
+                            @foreach ($creditCards as $card)
+                                @php $ownerLabel = $card->owner?->name ?? $card->owner_name; @endphp
+                                <option value="{{ $card->id }}"
+                                    {{ old('card_id') == $card->id ? 'selected' : '' }}>
+                                    {{ $card->name }} @if ($ownerLabel)
+                                        ({{ $ownerLabel }})
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        <div id="credit-card-wrapper">
-                            <label class="text-sm text-gray-600">Cartão</label>
-                            <select name="card_id" class="mt-1 w-full rounded border-gray-300 text-sm">
-                                <option value="">Nenhum</option>
-                                @foreach ($creditCards as $card)
-                                    @php
-                                        $ownerLabel = $card->owner?->name ?? $card->owner_name;
-                                    @endphp
-                                    <option value="{{ $card->id }}"
-                                        {{ old('card_id', $transaction->card_id) == $card->id ? 'selected' : '' }}>
-                                        {{ $card->name }}
-                                        @if ($ownerLabel)
-                                            ({{ $ownerLabel }})
-                                        @endif
-                                    </option>
-                                @endforeach
-                            </select>
+                </div>
 
-                        </div>
-
+                {{-- linha extra com valor total --}}
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="text-sm text-gray-600">Valor total da compra (R$)</label>
+                        <input type="number" step="0.01" min="0" name="total_amount"
+                            value="{{ old('total_amount') }}" class="mt-1 w-full rounded border-gray-300 text-sm">
+                        <p class="mt-1 text-xs text-gray-500">
+                            Somatório de todas as parcelas (ex: 10 x 200 = 2.000).
+                        </p>
                     </div>
                 </div>
+
 
                 {{-- CARD 3 — PARCELAMENTO --}}
                 <div class="p-6 bg-white rounded shadow-sm border space-y-4">

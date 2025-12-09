@@ -10,12 +10,13 @@ class Transaction extends Model
     use SoftDeletes;
     protected $fillable = [
         'description',
+        'total_amount',
         'amount',
         'transaction_date',
         'category_id',
         'type_id',
         'payment_method_id',
-         'credit_card_id',
+        'credit_card_id',
         'installment_number',
         'installment_total'
     ];

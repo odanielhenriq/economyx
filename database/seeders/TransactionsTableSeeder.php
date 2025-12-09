@@ -46,6 +46,7 @@ class TransactionsTableSeeder extends Seeder
 
             $transaction = Transaction::create([
                 'description'       => fake()->sentence(2),
+                'total_amount'            => fake()->randomFloat(2, 10, 500),
                 'amount'            => fake()->randomFloat(2, 10, 500),
                 'transaction_date'  => fake()->dateTimeBetween('-1 year', 'now'),
                 'category_id'       => fake()->numberBetween(1, 5),

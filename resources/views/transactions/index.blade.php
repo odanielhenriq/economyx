@@ -279,6 +279,14 @@
                         currency: 'BRL',
                     });
 
+                    const totalAmount = tx.total_amount ?? null;
+                    const totalFormatted = totalAmount !== null ?
+                        Number(totalAmount).toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                        }) :
+                        null;
+
                     const perUserFormatted =
                         tx.totals &&
                         tx.totals.per_user_share !== null &&
@@ -292,15 +300,15 @@
                     const ownerLabel = tx.credit_card?.owner_label || tx.credit_card?.owner_name || '';
 
                     const infoBadges =
-                    `
+                        `
                         <span class="inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700">
                             ${tx.category?.name ?? '-'}
                         </span>
                         ${
                             tx.payment_method?.name === 'Credit Card' && tx.credit_card?.name
                                 ? `<span class="inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-700">
-                                            ${tx.credit_card.name}${ownerLabel ? ' (' + ownerLabel + ')' : ''}
-                                    </span>`
+                                                    ${tx.credit_card.name}${ownerLabel ? ' (' + ownerLabel + ')' : ''}
+                                            </span>`
                                 : ''
                         }
                     `;
@@ -333,10 +341,17 @@
                         <td class="px-3 py-2 text-gray-700 align-top">
                             <div class="font-medium">${tx.description ?? '(sem descrição)'}</div>
                         </td>
-                        <td class="px-3 py-2 text-right align-top">
+                       <td class="px-3 py-2 text-right align-top">
                             <span class="${isNegative ? 'text-red-600' : 'text-emerald-600'} font-semibold">
                                 ${amountFormatted}
                             </span>
+                            ${
+                                totalFormatted && tx.installments?.is_installment
+                                    ? `<div class="text-xs text-gray-500">
+                                            Total: ${totalFormatted}
+                                        </div>`
+                                    : ''
+                            }
                         </td>
                         <td class="px-3 py-2 text-right text-gray-700 align-top">
                             ${perUserFormatted}

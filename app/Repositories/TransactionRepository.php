@@ -70,6 +70,11 @@ class TransactionRepository implements TransactionRepositoryInterface
             $data['card_id'] = null;
         }
 
+         // Se vier total_amount vazio, usa amount como total
+        if (empty($data['total_amount'])) {
+            $data['total_amount'] = $data['amount'] ?? null;
+        }
+
         $transaction = Transaction::create($data);
 
         $transaction->users()->sync($userIds);
@@ -94,6 +99,11 @@ class TransactionRepository implements TransactionRepositoryInterface
         if ((int) ($data['payment_method_id'] ?? 0) !== 1) {
             $data['card_id'] = null;
         }
+
+        if (empty($data['total_amount'])) {
+            $data['total_amount'] = $data['amount'] ?? null;
+        }
+
 
         $transaction->update($data);
 

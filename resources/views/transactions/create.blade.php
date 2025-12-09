@@ -101,9 +101,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
                         <div>
-                            <label class="text-sm text-gray-600">Valor (R$)</label>
+                            <label class="text-sm text-gray-600">Valor da parcela (R$)</label>
                             <input type="number" step="0.01" min="0" name="amount"
                                 value="{{ old('amount') }}" class="mt-1 w-full rounded border-gray-300 text-sm">
+                            <p class="mt-1 text-xs text-gray-500">
+                                Valor da parcela individual (se houver parcelamento).
+                            </p>
                         </div>
 
                         <div>
@@ -125,22 +128,31 @@
                             <select name="card_id" class="mt-1 w-full rounded border-gray-300 text-sm">
                                 <option value="">Nenhum</option>
                                 @foreach ($creditCards as $card)
-                                    @php
-                                        $ownerLabel = $card->owner?->name ?? $card->owner_name;
-                                    @endphp
+                                    @php $ownerLabel = $card->owner?->name ?? $card->owner_name; @endphp
                                     <option value="{{ $card->id }}"
                                         {{ old('card_id') == $card->id ? 'selected' : '' }}>
-                                        {{ $card->name }}
-                                        @if ($ownerLabel)
+                                        {{ $card->name }} @if ($ownerLabel)
                                             ({{ $ownerLabel }})
                                         @endif
                                     </option>
                                 @endforeach
                             </select>
-
                         </div>
 
                     </div>
+
+                    {{-- linha extra com valor total --}}
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="text-sm text-gray-600">Valor total da compra (R$)</label>
+                            <input type="number" step="0.01" min="0" name="total_amount"
+                                value="{{ old('total_amount') }}" class="mt-1 w-full rounded border-gray-300 text-sm">
+                            <p class="mt-1 text-xs text-gray-500">
+                                Somatório de todas as parcelas (ex: 10 x 200 = 2.000).
+                            </p>
+                        </div>
+                    </div>
+
 
                 </div>
 

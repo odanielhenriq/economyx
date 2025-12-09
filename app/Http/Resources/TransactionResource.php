@@ -27,6 +27,7 @@ class TransactionResource extends JsonResource
         return [
             'id' => $this->id,
             'description' => $this->description,
+            'total_amount' => $this->total_amount,
             'amount' => $this->amount,
             'signed_amount' => $isExpense ? -1 * $this->amount : $this->amount,
             'date' => $this->transaction_date->format('Y-m-d'),

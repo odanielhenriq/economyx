@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->text('description')->nullable();
+            $table->decimal('total_amount', 15, 2);
             $table->decimal('amount', 15, 2);
             $table->date('transaction_date');
             $table->unsignedInteger('installment_number')->nullable();

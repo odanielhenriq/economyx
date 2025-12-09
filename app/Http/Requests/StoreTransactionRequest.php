@@ -25,6 +25,7 @@ class StoreTransactionRequest extends FormRequest
         return [
             'description'           => 'nullable|string',
             'amount'                => 'required|numeric',
+            'total_amount'                => 'required|numeric',
             'transaction_date'      => 'required|date',
             'category_id'           => 'required|exists:categories,id',
             'type_id'               => 'required|exists:types,id',
@@ -43,6 +44,9 @@ class StoreTransactionRequest extends FormRequest
 
             'amount.required' => 'O valor é obrigatório.',
             'amount.numeric'  => 'O valor deve ser numérico.',
+
+            'total_amount.required' => 'O valor é obrigatório.',
+            'total_amount.numeric'  => 'O valor deve ser numérico.',
 
             'transaction_date.required' => 'A data da transação é obrigatória.',
             'transaction_date.date'     => 'A data da transação deve estar em um formato válido.',
