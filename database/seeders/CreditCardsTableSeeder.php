@@ -70,7 +70,7 @@ class CreditCardsTableSeeder extends Seeder
                 'is_shared'     => true,
             ],
             [
-                'name'          => 'Magalu Neusa',
+                'name'          => 'Magalu',
                 'alias'         => null,
                 'closing_day'   => 28,
                 'due_day'       => 30,

@@ -54,6 +54,7 @@ class TransactionResource extends JsonResource
             'credit_card' => $this->creditCard ? [
                 'id'   => $this->creditCard->id,
                 'name' => $this->creditCard->name,
+                'owner_label' => $this->creditCard->owner ? $this->creditCard->owner->name : null,
             ] : null,
 
             'users' => $this->users->map(fn($u) =>

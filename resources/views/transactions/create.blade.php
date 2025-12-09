@@ -125,12 +125,19 @@
                             <select name="card_id" class="mt-1 w-full rounded border-gray-300 text-sm">
                                 <option value="">Nenhum</option>
                                 @foreach ($creditCards as $card)
+                                    @php
+                                        $ownerLabel = $card->owner?->name ?? $card->owner_name;
+                                    @endphp
                                     <option value="{{ $card->id }}"
                                         {{ old('card_id') == $card->id ? 'selected' : '' }}>
                                         {{ $card->name }}
+                                        @if ($ownerLabel)
+                                            ({{ $ownerLabel }})
+                                        @endif
                                     </option>
                                 @endforeach
                             </select>
+
                         </div>
 
                     </div>

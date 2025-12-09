@@ -7,7 +7,7 @@
             </h2>
 
             <a href="{{ route('transactions.create') }}"
-               class="px-3 py-1 text-sm text-white bg-indigo-600 rounded hover:bg-indigo-700">
+                class="px-3 py-1 text-sm text-white bg-indigo-600 rounded hover:bg-indigo-700">
                 + Nova transação
             </a>
         </div>
@@ -43,20 +43,14 @@
                         {{-- Filtro por mês (competência) --}}
                         <div>
                             <label for="filter-month" class="text-sm text-gray-600">Mês</label>
-                            <input
-                                type="month"
-                                id="filter-month"
-                                class="block w-full mt-1 text-sm border-gray-300 rounded"
-                            >
+                            <input type="month" id="filter-month"
+                                class="block w-full mt-1 text-sm border-gray-300 rounded">
                         </div>
 
                         {{-- Filtro por pessoa --}}
                         <div>
                             <label for="filter-user" class="text-sm text-gray-600">Pessoa</label>
-                            <select
-                                id="filter-user"
-                                class="block w-full mt-1 text-sm border-gray-300 rounded"
-                            >
+                            <select id="filter-user" class="block w-full mt-1 text-sm border-gray-300 rounded">
                                 <option value="">Todas</option>
                                 @foreach ($users as $user)
                                     <option value="{{ $user->id }}">{{ $user->name }}</option>
@@ -67,10 +61,7 @@
                         {{-- Filtro por categoria --}}
                         <div>
                             <label for="filter-category" class="text-sm text-gray-600">Categoria</label>
-                            <select
-                                id="filter-category"
-                                class="block w-full mt-1 text-sm border-gray-300 rounded"
-                            >
+                            <select id="filter-category" class="block w-full mt-1 text-sm border-gray-300 rounded">
                                 <option value="">Todas</option>
                                 @foreach ($categories as $category)
                                     <option value="{{ $category->id }}">{{ $category->name }}</option>
@@ -81,10 +72,7 @@
                         {{-- Filtro por tipo --}}
                         <div>
                             <label for="filter-type" class="text-sm text-gray-600">Tipo</label>
-                            <select
-                                id="filter-type"
-                                class="block w-full mt-1 text-sm border-gray-300 rounded"
-                            >
+                            <select id="filter-type" class="block w-full mt-1 text-sm border-gray-300 rounded">
                                 <option value="">Todos</option>
                                 @foreach ($types as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
@@ -95,10 +83,8 @@
                         {{-- Filtro por forma de pagamento --}}
                         <div>
                             <label for="filter-payment-method" class="text-sm text-gray-600">Forma de pagamento</label>
-                            <select
-                                id="filter-payment-method"
-                                class="block w-full mt-1 text-sm border-gray-300 rounded"
-                            >
+                            <select id="filter-payment-method"
+                                class="block w-full mt-1 text-sm border-gray-300 rounded">
                                 <option value="">Todas</option>
                                 @foreach ($paymentMethods as $pm)
                                     <option value="{{ $pm->id }}">{{ $pm->name }}</option>
@@ -108,17 +94,13 @@
 
                         {{-- Botões de ação dos filtros --}}
                         <div class="flex gap-2 mt-2">
-                            <button
-                                id="filter-apply"
-                                class="px-4 py-2 text-sm text-white bg-indigo-600 rounded hover:bg-indigo-700"
-                            >
+                            <button id="filter-apply"
+                                class="px-4 py-2 text-sm text-white bg-indigo-600 rounded hover:bg-indigo-700">
                                 Filtrar
                             </button>
 
-                            <button
-                                id="filter-clear"
-                                class="px-4 py-2 text-sm text-gray-700 bg-gray-100 border rounded hover:bg-gray-200"
-                            >
+                            <button id="filter-clear"
+                                class="px-4 py-2 text-sm text-gray-700 bg-gray-100 border rounded hover:bg-gray-200">
                                 Limpar
                             </button>
                         </div>
@@ -179,23 +161,23 @@
 
     {{-- Script da página --}}
     <script type="module">
-        const stateEl          = document.getElementById('transactions-state');
-        const bodyEl           = document.getElementById('transactions-body');
-        const prevBtn          = document.getElementById('prev-page');
-        const nextBtn          = document.getElementById('next-page');
+        const stateEl = document.getElementById('transactions-state');
+        const bodyEl = document.getElementById('transactions-body');
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
         const paginationInfoEl = document.getElementById('pagination-info');
-        const summaryEl        = document.getElementById('transactions-summary');
+        const summaryEl = document.getElementById('transactions-summary');
 
-        const filterMonthEl          = document.getElementById('filter-month');
-        const filterUserEl           = document.getElementById('filter-user');
-        const filterCategoryEl       = document.getElementById('filter-category');
-        const filterTypeEl           = document.getElementById('filter-type');
-        const filterPaymentMethodEl  = document.getElementById('filter-payment-method');
-        const filterApplyBtn         = document.getElementById('filter-apply');
-        const filterClearBtn         = document.getElementById('filter-clear');
+        const filterMonthEl = document.getElementById('filter-month');
+        const filterUserEl = document.getElementById('filter-user');
+        const filterCategoryEl = document.getElementById('filter-category');
+        const filterTypeEl = document.getElementById('filter-type');
+        const filterPaymentMethodEl = document.getElementById('filter-payment-method');
+        const filterApplyBtn = document.getElementById('filter-apply');
+        const filterClearBtn = document.getElementById('filter-clear');
 
-        let currentPage    = 1;
-        const perPage      = 10;
+        let currentPage = 1;
+        const perPage = 10;
         let currentFilters = {
             month: '',
             user_id: '',
@@ -236,9 +218,9 @@
 
                 if (!response.ok) throw new Error('Erro ao carregar transações');
 
-                const json  = await response.json();
+                const json = await response.json();
                 const items = json.data ?? [];
-                const meta  = json.meta ?? null;
+                const meta = json.meta ?? null;
                 const links = json.links ?? null;
 
                 bodyEl.innerHTML = '';
@@ -255,7 +237,7 @@
                 stateEl.textContent = '';
 
                 // ===== RESUMO DA PÁGINA =====
-                let totalIncome  = 0;
+                let totalIncome = 0;
                 let totalExpense = 0;
 
                 items.forEach(tx => {
@@ -300,22 +282,25 @@
                     const perUserFormatted =
                         tx.totals &&
                         tx.totals.per_user_share !== null &&
-                        tx.totals.per_user_share !== undefined
-                            ? Number(tx.totals.per_user_share).toLocaleString('pt-BR', {
-                                  style: 'currency',
-                                  currency: 'BRL',
-                              })
-                            : '-';
+                        tx.totals.per_user_share !== undefined ?
+                        Number(tx.totals.per_user_share).toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                        }) :
+                        '-';
 
-                    const infoBadges = `
+                    const ownerLabel = tx.credit_card?.owner_label || tx.credit_card?.owner_name || '';
+
+                    const infoBadges =
+                    `
                         <span class="inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700">
                             ${tx.category?.name ?? '-'}
                         </span>
                         ${
                             tx.payment_method?.name === 'Credit Card' && tx.credit_card?.name
                                 ? `<span class="inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-700">
-                                        ${tx.credit_card.name}
-                                   </span>`
+                                            ${tx.credit_card.name}${ownerLabel ? ' (' + ownerLabel + ')' : ''}
+                                    </span>`
                                 : ''
                         }
                     `;
@@ -336,9 +321,9 @@
                         })
                         .join('');
 
-                    const installmentLabel = tx.installments?.is_installment
-                        ? `${tx.installments.label} · faltam ${tx.installments.remaining}`
-                        : '-';
+                    const installmentLabel = tx.installments?.is_installment ?
+                        `${tx.installments.label} · faltam ${tx.installments.remaining}` :
+                        '-';
 
                     tr.innerHTML = `
                         <td class="px-3 py-2 text-gray-700 align-top">
@@ -425,11 +410,11 @@
 
         // BOTÃO LIMPAR
         filterClearBtn.addEventListener('click', () => {
-            filterMonthEl.value          = '';
-            filterUserEl.value           = '';
-            filterCategoryEl.value       = '';
-            filterTypeEl.value           = '';
-            filterPaymentMethodEl.value  = '';
+            filterMonthEl.value = '';
+            filterUserEl.value = '';
+            filterCategoryEl.value = '';
+            filterTypeEl.value = '';
+            filterPaymentMethodEl.value = '';
 
             currentFilters = {
                 month: '',
@@ -443,10 +428,10 @@
         });
 
         // ======= DELETE (modal + toast) =======
-        const deleteModal       = document.getElementById("delete-modal");
-        const cancelDeleteBtn   = document.getElementById("cancel-delete");
-        const confirmDeleteBtn  = document.getElementById("confirm-delete");
-        let idToDelete          = null;
+        const deleteModal = document.getElementById("delete-modal");
+        const cancelDeleteBtn = document.getElementById("cancel-delete");
+        const confirmDeleteBtn = document.getElementById("confirm-delete");
+        let idToDelete = null;
 
         document.addEventListener("click", (e) => {
             const btn = e.target.closest(".delete-btn");
@@ -510,11 +495,11 @@
                 "px-4 py-2 rounded shadow text-sm font-medium flex items-center gap-2 transition-opacity duration-300";
 
             const typeClasses =
-                type === "success"
-                    ? "bg-green-600 text-white"
-                    : type === "error"
-                    ? "bg-red-600 text-white"
-                    : "bg-gray-700 text-white";
+                type === "success" ?
+                "bg-green-600 text-white" :
+                type === "error" ?
+                "bg-red-600 text-white" :
+                "bg-gray-700 text-white";
 
             toast.className = `${baseClasses} ${typeClasses}`;
             toast.innerHTML = `<span>${message}</span>`;

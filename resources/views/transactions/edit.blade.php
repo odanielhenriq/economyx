@@ -120,12 +120,19 @@
                             <select name="card_id" class="mt-1 w-full rounded border-gray-300 text-sm">
                                 <option value="">Nenhum</option>
                                 @foreach ($creditCards as $card)
+                                    @php
+                                        $ownerLabel = $card->owner?->name ?? $card->owner_name;
+                                    @endphp
                                     <option value="{{ $card->id }}"
                                         {{ old('card_id', $transaction->card_id) == $card->id ? 'selected' : '' }}>
                                         {{ $card->name }}
+                                        @if ($ownerLabel)
+                                            ({{ $ownerLabel }})
+                                        @endif
                                     </option>
                                 @endforeach
                             </select>
+
                         </div>
 
                     </div>
@@ -189,15 +196,15 @@
                 </div>
 
             </form>
-             <form method="POST" action="{{ route('transactions.destroy', $transaction) }}"
-                        onsubmit="return confirm('Tem certeza que deseja remover esta transação?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit"
-                            class="px-4 py-2 text-sm border border-red-500 text-red-600 rounded hover:bg-red-50">
-                            Excluir
-                        </button>
-                    </form>
+            <form method="POST" action="{{ route('transactions.destroy', $transaction) }}"
+                onsubmit="return confirm('Tem certeza que deseja remover esta transação?');">
+                @csrf
+                @method('DELETE')
+                <button type="submit"
+                    class="px-4 py-2 text-sm border border-red-500 text-red-600 rounded hover:bg-red-50">
+                    Excluir
+                </button>
+            </form>
 
         </div>
     </div>
