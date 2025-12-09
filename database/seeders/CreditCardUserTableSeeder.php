@@ -34,7 +34,7 @@ class CreditCardUserTableSeeder extends Seeder
             ->where('owner_name', 'Joyce')
             ->firstOrFail();
 
-        $magaluNeusa = CreditCard::where('name', 'Magalu Neusa')
+        $magaluNeusa = CreditCard::where('name', 'Magalu')
             ->where('owner_name', 'Neusa')
             ->firstOrFail();
 
