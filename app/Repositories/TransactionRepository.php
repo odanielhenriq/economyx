@@ -3,6 +3,8 @@
 namespace App\Repositories;
 
 use App\Models\Transaction;
+use App\Models\CreditCard;
+use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -70,7 +72,7 @@ class TransactionRepository implements TransactionRepositoryInterface
             $data['card_id'] = null;
         }
 
-         // Se vier total_amount vazio, usa amount como total
+        // Se vier total_amount vazio, usa amount como total
         if (empty($data['total_amount'])) {
             $data['total_amount'] = $data['amount'] ?? null;
         }
@@ -131,5 +133,65 @@ class TransactionRepository implements TransactionRepositoryInterface
         $transaction->delete(); // Soft delete
 
         return true;
+    }
+
+    public function getCardBill(int $cardId, int $year, int $month): array
+    {
+        // 1) Buscar o cartão com o dono
+        $card = CreditCard::with('owner')->findOrFail($cardId);
+
+        // 2) Calcular o período de faturamento usando o método do model
+        [$periodStart, $periodEnd] = $card->getBillingPeriodFor($year, $month);
+
+        // 3) Buscar transações desse cartão dentro do período
+        $transactions = Transaction::with([
+            'category',
+            'type',
+            'paymentMethod',
+            'creditCard',
+            'users',
+        ])
+            ->where('credit_card_id', $card->id)
+            ->whereBetween('transaction_date', [
+                $periodStart->toDateString(),
+                $periodEnd->toDateString(),
+            ])
+            ->orderBy('transaction_date')
+            ->get();
+
+        // 4) Resumo da fatura
+        $income  = 0.0;
+        $expense = 0.0;
+
+        foreach ($transactions as $tx) {
+            // slug: 'rc' = Receita, 'dc' = Despesa
+            $slug = $tx->type?->slug;
+
+            $amount = (float) $tx->amount;
+
+            $signed = $slug === 'rc'
+                ? $amount          // receita
+                : -1 * $amount;    // despesa
+
+            if ($signed > 0) {
+                $income += $signed;
+            } else {
+                $expense += $signed;
+            }
+        }
+
+        return [
+            'card' => $card,
+            'period' => [
+                'start' => $periodStart,
+                'end'   => $periodEnd,
+            ],
+            'summary' => [
+                'income'  => round($income, 2),
+                'expense' => round($expense, 2),
+                'net'     => round($income + $expense, 2),
+            ],
+            'transactions' => $transactions,
+        ];
     }
 }

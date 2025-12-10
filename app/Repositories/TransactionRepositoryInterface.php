@@ -19,4 +19,6 @@ interface TransactionRepositoryInterface
     public function updateTransaction(int $id, array $data, ?array $userIds = null): Transaction;
 
     public function deleteTransaction(int $id): bool;
+
+    public function getCardBill(int $cardId, int $year, int $month):array;
 }

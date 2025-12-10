@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CardStatementController;
 use App\Http\Controllers\TransactionController;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -23,3 +24,5 @@ Route::post('/transactions', [TransactionController::class, 'store']);
 Route::get('/transactions/{id}', [TransactionController::class, 'show']);
 Route::put('/transactions/{id}', [TransactionController::class, 'update']);
 Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
+
+Route::get('/cards/{card}/statement', [CardStatementController::class, 'show']);

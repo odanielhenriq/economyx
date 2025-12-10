@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class CreditCard extends Model
 {
-   protected $fillable = [
+    protected $fillable = [
         'name',
         'alias',
         'closing_day',
@@ -35,5 +36,24 @@ class CreditCard extends Model
             'credit_card_id',
             'user_id'
         );
+    }
+
+    public function getBillingPeriodFor(int $year, int $month): array
+    {
+        $closingDay = (int) $this->closing_day;
+
+        // Data de fechamento do mês (ex.: 2025-12-05 23:59:59)
+        $closingDate = Carbon::create($year, $month, $closingDay)->endOfDay();
+
+        // Data de fechamento anterior (ex.: 2025-11-05 23:59:59)
+        $previousClosingDate = $closingDate->copy()->subMonth();
+
+        // Período:
+        //  - início: dia seguinte ao fechamento anterior (ex.: 06/11)
+        //  - fim: dia do fechamento atual (ex.: 05/12)
+        $start = $previousClosingDate->copy()->addDay()->startOfDay();
+        $end   = $closingDate->copy();
+
+        return [$start, $end];
     }
 }
