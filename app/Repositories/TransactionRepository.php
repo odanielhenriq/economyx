@@ -73,9 +73,9 @@ class TransactionRepository implements TransactionRepositoryInterface
         }
 
         // Se vier total_amount vazio, usa amount como total
-        if (empty($data['total_amount'])) {
-            $data['total_amount'] = $data['amount'] ?? null;
-        }
+        // if (empty($data['total_amount'])) {
+        //     $data['total_amount'] = $data['amount'] ?? null;
+        // }
 
         $transaction = Transaction::create($data);
 

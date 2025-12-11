@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\GenerateInstallmentsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -49,5 +50,14 @@ class Transaction extends Model
     public function creditCard()
     {
         return $this->belongsTo(CreditCard::class);
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($transaction) {
+            if ($transaction->credit_card_id) {
+                app(GenerateInstallmentsService::class)->generate($transaction);
+            }
+        });
     }
 }

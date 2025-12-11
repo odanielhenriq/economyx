@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Resources\TransactionResource;
 use App\Models\Transaction;
 use App\Repositories\TransactionRepositoryInterface;
+use App\Services\GenerateInstallmentsService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Exists;
 
@@ -47,6 +48,7 @@ class TransactionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+
     public function store(StoreTransactionRequest $request)
     {
         try {
@@ -57,6 +59,9 @@ class TransactionController extends Controller
 
             $transaction = $this->transactions->createTransaction($data, $userIds);
 
+            if ($transaction->credit_card_id) {
+                $service->generate($transaction);
+            }
             return (new TransactionResource($transaction))
                 ->response()
                 ->setStatusCode(201);

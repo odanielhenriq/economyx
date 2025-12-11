@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\TransactionResource;
+use App\Models\CreditCardStatement;
 use App\Repositories\TransactionRepositoryInterface;
 use Illuminate\Http\Request;
 
@@ -33,6 +34,34 @@ class CardStatementController extends Controller
             ],
             'summary' => $result['summary'],
             'transactions' => TransactionResource::collection($result['transactions']),
+        ]);
+    }
+
+    public function statement($cardId, Request $request)
+    {
+        $year = $request->year;
+        $month = $request->month;
+
+        $statement = CreditCardStatement::with('installments.transaction.category')
+            ->forMonth($cardId, $year, $month);
+
+        if (!$statement) {
+            return response()->json(['transactions' => []]);
+        }
+
+        $transactions = $statement->installments->map(function ($inst) {
+            return [
+                'description' => $inst->transaction->description,
+                'amount' => $inst->amount,
+                'date' => $inst->transaction->transaction_date,
+                'installment' => "{$inst->installment_number}/{$inst->installment_total}",
+                'category' => $inst->transaction->category->name ?? null,
+            ];
+        });
+
+        return response()->json([
+            'statement' => $statement,
+            'transactions' => $transactions,
         ]);
     }
 }
