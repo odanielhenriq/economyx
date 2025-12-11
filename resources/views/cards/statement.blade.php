@@ -12,7 +12,7 @@
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6 space-y-6">
 
-                    {{-- Filtros --}}
+                    {{-- Filtros do extrato de cartão: cartão + mês da fatura --}}
                     <div class="flex flex-col gap-3 mb-4 md:flex-row md:items-end">
                         <div class="flex-1">
                             <label class="text-sm text-gray-600">Cartão</label>
@@ -43,20 +43,20 @@
                         </div>
                     </div>
 
-                    {{-- Estado --}}
+                    {{-- Mensagem de estado (inicial, vazio, erro) --}}
                     <div id="card-state" class="text-sm text-gray-500">Escolha um cartão e um mês.</div>
 
-                    {{-- Resumo da fatura --}}
+                    {{-- Resumo da fatura (cards com total, receitas, líquido) --}}
                     <div id="card-summary" class="grid grid-cols-1 gap-4 mt-4 md:grid-cols-3 text-sm">
                         {{-- preenchido via JS --}}
                     </div>
 
-                    {{-- Período --}}
+                    {{-- Texto com período real de cobrança da fatura (period_start -> period_end) --}}
                     <div id="card-period" class="mt-2 text-xs text-gray-500">
                         {{-- preenchido via JS --}}
                     </div>
 
-                    {{-- Tabela --}}
+                    {{-- Tabela das transações daquela fatura de cartão --}}
                     <div class="mt-4 overflow-x-auto">
                         <table class="min-w-full text-sm text-left">
                             <thead class="border-b text-gray-600">
@@ -68,7 +68,7 @@
                                 </tr>
                             </thead>
                             <tbody id="card-body" class="divide-y">
-                                {{-- linhas via JS --}}
+                                {{-- linhas via JS (dados da CardStatementController@statement) --}}
                             </tbody>
                         </table>
                     </div>
@@ -78,6 +78,7 @@
         </div>
     </div>
 
+    {{-- Script que consome /api/cards/{card}/statement e renderiza tudo --}}
     <script type="module">
         const cardSelect = document.getElementById('filter-card');
         const monthInput = document.getElementById('filter-month');
@@ -88,6 +89,10 @@
         const periodEl = document.getElementById('card-period');
         const bodyEl = document.getElementById('card-body');
 
+        /**
+         * Busca o extrato da API e renderiza resumo + tabela.
+         * A API é CardStatementController@statement.
+         */
         async function loadStatement(cardId, year, month) {
             try {
                 const url = `/api/cards/${cardId}/statement?year=${year}&month=${month}`;
@@ -113,51 +118,52 @@
                 periodEl.textContent = '';
                 bodyEl.innerHTML = '';
 
-                // resumo
+                // Monta os 3 cards de resumo usando os campos summary.income/expense/net
                 summaryEl.innerHTML = `
-            <div class="p-3 border rounded">
-                <div class="text-xs text-gray-500">Total da fatura</div>
-                <div class="text-lg font-semibold text-red-600">
-                    R$ ${Math.abs(data.summary.expense).toFixed(2)}
-                </div>
-            </div>
-            <div class="p-3 border rounded">
-                <div class="text-xs text-gray-500">Receitas no cartão</div>
-                <div class="text-lg font-semibold text-green-600">
-                    R$ ${data.summary.income.toFixed(2)}
-                </div>
-            </div>
-            <div class="p-3 border rounded">
-                <div class="text-xs text-gray-500">Líquido</div>
-                <div class="text-lg font-semibold ${data.summary.net < 0 ? 'text-red-600' : 'text-green-600'}">
-                    R$ ${data.summary.net.toFixed(2)}
-                </div>
-            </div>
-        `;
+                    <div class="p-3 border rounded">
+                        <div class="text-xs text-gray-500">Total da fatura</div>
+                        <div class="text-lg font-semibold text-red-600">
+                            R$ ${Math.abs(data.summary.expense).toFixed(2)}
+                        </div>
+                    </div>
+                    <div class="p-3 border rounded">
+                        <div class="text-xs text-gray-500">Receitas no cartão</div>
+                        <div class="text-lg font-semibold text-green-600">
+                            R$ ${data.summary.income.toFixed(2)}
+                        </div>
+                    </div>
+                    <div class="p-3 border rounded">
+                        <div class="text-xs text-gray-500">Líquido</div>
+                        <div class="text-lg font-semibold ${data.summary.net < 0 ? 'text-red-600' : 'text-green-600'}">
+                            R$ ${data.summary.net.toFixed(2)}
+                        </div>
+                    </div>
+                `;
 
-                // período
+                // Texto explicando o intervalo exato da fatura
                 periodEl.textContent = `Período da fatura: ${data.period.start} até ${data.period.end}`;
 
-                // linhas da tabela
+                // Monta cada linha da tabela para cada transação/parcelas
                 data.transactions.forEach(tx => {
                     const tr = document.createElement('tr');
 
                     tr.innerHTML = `
-                <td class="px-3 py-2 text-xs text-gray-500">${tx.date}</td>
-                <td class="px-3 py-2">
-                    <div class="font-medium">${tx.description}</div>
-                    ${tx.installments.is_installment && tx.installments.label
-                        ? `<div class="text-xs text-gray-500">${tx.installments.label}</div>`
-                        : ''
-                    }
-                </td>
-                <td class="px-3 py-2 text-xs text-gray-600">
-                    ${tx.category?.name ?? '-'}
-                </td>
-                <td class="px-3 py-2 text-right">
-                    R$ ${Number(tx.amount).toFixed(2)}
-                </td>
-            `;
+                        <td class="px-3 py-2 text-xs text-gray-500">${tx.date}</td>
+                        <td class="px-3 py-2">
+                            <div class="font-medium">${tx.description}</div>
+                            ${
+                                tx.installments.is_installment && tx.installments.label
+                                    ? `<div class="text-xs text-gray-500">${tx.installments.label}</div>`
+                                    : ''
+                            }
+                        </td>
+                        <td class="px-3 py-2 text-xs text-gray-600">
+                            ${tx.category?.name ?? '-'}
+                        </td>
+                        <td class="px-3 py-2 text-right">
+                            R$ ${Number(tx.amount).toFixed(2)}
+                        </td>
+                    `;
 
                     bodyEl.appendChild(tr);
                 });
@@ -172,6 +178,7 @@
             }
         }
 
+        // Lê valores dos filtros, valida e chama loadStatement
         function handleLoadClick() {
             const cardId = cardSelect.value;
 
@@ -195,6 +202,7 @@
             loadStatement(cardId, year, month);
         }
 
+        // Clique no botão dispara carregamento da fatura
         loadBtn.addEventListener('click', handleLoadClick);
 
     </script>

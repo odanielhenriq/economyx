@@ -6,26 +6,28 @@ use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Resources\TransactionResource;
 use App\Models\Transaction;
 use App\Repositories\TransactionRepositoryInterface;
-use App\Services\GenerateInstallmentsService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rules\Exists;
 
 class TransactionController extends Controller
 {
 
     public function __construct(
+        // Repository de transações (injeção de dependência)
         private TransactionRepositoryInterface $transactions
     ) {}
 
     /**
-     * Display a listing of the resource.
+     * Lista paginada de transações (API JSON).
+     * Aceita filtros por mês, ano, usuário, categoria, tipo, método de pagamento.
      */
     public function index(Request $request)
     {
 
         try {
+            // Limita o per_page a no máximo 100
             $perPage = min($request->integer('per_page', default: 15), 100);
 
+            // Monta array de filtros a partir da query string
             $filters = [
                 'month'             => $request->query('month'),
                 'year'              => $request->query('year'),
@@ -35,7 +37,10 @@ class TransactionController extends Controller
                 'payment_method_id' => $request->query('payment_method_id'),
             ];
 
+            // Pede pro repository fazer a query filtrada e paginada
             $transactions = $this->transactions->getPaginatedTransactions($perPage, $filters);
+
+            // Retorna coleção de TransactionResource (formato padronizado da API)
             return TransactionResource::collection($transactions);
         } catch (\Throwable $th) {
             return response()->json([
@@ -46,18 +51,23 @@ class TransactionController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Cria uma nova transação via API.
      */
-
     public function store(StoreTransactionRequest $request)
     {
         try {
-
+            // Valida dados conforme StoreTransactionRequest
             $data = $request->validated();
+
+            // Separa os usuários que vão dividir a transação
             $userIds = $data['user_ids'];
             unset($data['user_ids']);
 
+            // Cria a transação via repository
             $transaction = $this->transactions->createTransaction($data, $userIds);
+
+            // IMPORTANTE: as parcelas são geradas no `booted()` do model Transaction
+            // quando a transação é criada (para cartão/empréstimo)
 
             return (new TransactionResource($transaction))
                 ->response()
@@ -71,12 +81,11 @@ class TransactionController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Mostra detalhes de uma transação específica.
      */
     public function show(string $id)
     {
         try {
-
             $transaction = $this->transactions->findTransactionById($id);
 
             if (!$transaction) {
@@ -97,12 +106,12 @@ class TransactionController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Atualiza uma transação via API.
+     * (Por enquanto, você NÃO está recalculando parcelas ao editar)
      */
     public function update(StoreTransactionRequest $request, string $id)
     {
         try {
-
             $data = $request->validated();
 
             $userIds = $data['user_ids'] ?? null;
@@ -128,7 +137,7 @@ class TransactionController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove (soft delete) uma transação.
      */
     public function destroy(string $id)
     {
@@ -141,6 +150,7 @@ class TransactionController extends Controller
                 ], 404);
             }
 
+            // HTTP 204 = no content
             return response()->json(null, 204);
         } catch (\Throwable $th) {
             return response()->json([

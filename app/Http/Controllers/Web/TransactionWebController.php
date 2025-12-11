@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTransactionRequest;
-use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Type;
 use App\Models\PaymentMethod;
@@ -14,19 +13,19 @@ use App\Models\User;
 use App\Repositories\TransactionRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 
-
-
 class TransactionWebController extends Controller
 {
 
     public function __construct(
+        // Mesmo repository, mas aqui a saída é view / redirect, não JSON
         private TransactionRepositoryInterface $transactions
     ) {}
 
     public function index()
     {
-        // Por enquanto, só carrega a view.
-        // Quem vai buscar as transações é o JS via fetch().
+        // Controller web bem fino:
+        // só carrega os dados necessários para a tela de listagem.
+        // As transações em si serão carregadas via JS (API).
         $users          = User::orderBy('name')->get();
         $categories     = Category::orderBy('name')->get();
         $types          = Type::orderBy('name')->get();
@@ -45,16 +44,19 @@ class TransactionWebController extends Controller
         /** @var \App\Models\User $viewer */
         $viewer = Auth::user();
 
+        // Dados de apoio do formulário
         $categories     = Category::orderBy('name')->get();
         $types          = Type::orderBy('name')->get();
         $paymentMethods = PaymentMethod::orderBy('name')->get();
 
-        // pessoas pra dividir a conta: sua "rede"
+        // "Rede" de pessoas com quem você divide contas
         $users          = $viewer->networkUsers();
 
-        // cartões que ESTE usuário pode usar (dele ou emprestados)
+        // Cartões que ESTE usuário pode usar:
+        //  - cartões dele
+        //  - cartões compartilhados por outras pessoas
         $creditCards    = $viewer->creditCards()
-            ->with('owner') // pra exibir (Daniel, Joyce, Neusa, etc)
+            ->with('owner') // pra exibir nome do dono (Daniel, Joyce, etc)
             ->orderBy('name')
             ->get();
 
@@ -69,14 +71,18 @@ class TransactionWebController extends Controller
 
     public function store(StoreTransactionRequest $request)
     {
-
         try {
             $data = $request->validated();
 
+            // usuários relacionados (pra divisão de gastos)
             $usersIds = $data['user_ids'];
             unset($data['user_ids']);
 
+            // Cria usando o repository (reaproveita a regra da API)
             $transaction = $this->transactions->createTransaction($data, $usersIds);
+
+            // Depois de criado, Transaction::booted() cuida das parcelas
+
             return redirect()
                 ->route('transactions.index')
                 ->with('success', 'Transação criada com sucesso!');
@@ -92,6 +98,7 @@ class TransactionWebController extends Controller
         /** @var \App\Models\User $viewer */
         $viewer = Auth::user();
 
+        // Já carrega usuários relacionados e cartão da transação
         $transaction->load(['users', 'creditCard']);
 
         $categories     = Category::orderBy('name')->get();
@@ -122,11 +129,14 @@ class TransactionWebController extends Controller
             $userIds = $data['user_ids'] ?? null;
             unset($data['user_ids']);
 
+            // Atualiza via repository
             $this->transactions->updateTransaction(
                 $transaction->id,
                 $data,
                 $userIds
             );
+
+            // OBS: aqui você ainda não lida com recalcular parcelas ao editar
 
             return redirect()
                 ->route('transactions.index')
@@ -152,6 +162,11 @@ class TransactionWebController extends Controller
         }
     }
 
+    /**
+     * NÃO está sendo usada neste controller,
+     * porque você optou por usar $viewer->creditCards().
+     * Mas é uma alternativa mais "raw" que busca pelo owner_user_id e is_shared.
+     */
     private function getAvailableCreditCards(User $viewer)
     {
         // IDs da minha rede (eu + relacionados)

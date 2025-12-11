@@ -8,19 +8,23 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class TransactionResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * Define como uma Transaction vira JSON na API.
      */
     public function toArray(Request $request): array
     {
+        // Quantas pessoas estão associadas à transação
         $usersCount = $this->users->count();
+
+        // Quanto cada um paga (divisão igualitária)
         $share = $usersCount > 0 ? round($this->amount / $usersCount, 2) : null;
 
+        // Regras pra entender se é parcela (tem número E total)
         $hasNumberAndTotal = !is_null($this->installment_number) && !is_null($this->installment_total);
         $isInstallment  = $hasNumberAndTotal;
         $remaining      = $isInstallment ? max($this->installment_total - $this->installment_number, 0) : null;
         $installmentLabel = $isInstallment ? "{$this->installment_number}/{$this->installment_total}" : null;
+
+        // Considera despesa se o slug do type for "dc"
         $isExpense = $this->type?->slug === 'dc';
 
         return [
@@ -28,7 +32,11 @@ class TransactionResource extends JsonResource
             'description'   => $this->description,
             'total_amount'  => $this->total_amount,
             'amount'        => $this->amount,
+
+            // signed_amount já traz sinal (+/-) baseado no tipo
             'signed_amount' => $isExpense ? -1 * $this->amount : $this->amount,
+
+            // Data padronizada em Y-m-d
             'date'          => $this->transaction_date->format('Y-m-d'),
 
             'installments' => [
@@ -53,12 +61,14 @@ class TransactionResource extends JsonResource
                 'name' => $this->paymentMethod?->name,
             ],
 
+            // Informações do cartão, se houver
             'credit_card' => $this->creditCard ? [
                 'id'          => $this->creditCard->id,
                 'name'        => $this->creditCard->name,
                 'owner_label' => $this->creditCard->owner ? $this->creditCard->owner->name : null,
             ] : null,
 
+            // Lista de usuários com o quanto cada um paga
             'users' => $this->users->map(fn($u) => [
                 'id'           => $u->id,
                 'name'         => $u->name,

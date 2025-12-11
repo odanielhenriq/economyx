@@ -25,6 +25,7 @@ return new class extends Migration
 
             $table->integer('year');
             $table->integer('month'); // mês da fatura dessa parcela
+              $table->date('due_date')->nullable();
             $table->timestamps();
         });
     }

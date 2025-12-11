@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Transaction extends Model
 {
     use SoftDeletes;
+
+    // Campos permitidos em mass assignment (create/update)
     protected $fillable = [
         'description',
         'total_amount',
@@ -23,10 +25,11 @@ class Transaction extends Model
     ];
 
     protected $casts = [
-        'transaction_date' => 'date',
-        'amount' => 'decimal:2',
+        'transaction_date' => 'date',      // vira Carbon
+        'amount'           => 'decimal:2', // formata como decimal com 2 casas
     ];
 
+    // Relação N:N com usuários (quem está pagando essa transação)
     public function users()
     {
         return $this->belongsToMany(User::class);
@@ -52,9 +55,25 @@ class Transaction extends Model
         return $this->belongsTo(CreditCard::class);
     }
 
+    /**
+     * Eventos de modelo
+     */
     protected static function booted()
     {
         static::created(function ($transaction) {
+            // ⚠️ Observação importante:
+            // Aqui você só chama o GenerateInstallmentsService
+            // se TIVER credit_card_id.
+            //
+            // Isso significa que empréstimos/financiamentos (sem cartão)
+            // não vão gerar TransactionInstallment automaticamente.
+            //
+            // Se você quiser que empréstimos também gerem parcelas,
+            // deveria chamar SEM o if:
+            //
+            // app(GenerateInstallmentsService::class)->generate($transaction);
+            //
+            // E deixar o service decidir se é cartão ou empréstimo.
             if ($transaction->credit_card_id) {
                 app(GenerateInstallmentsService::class)->generate($transaction);
             }

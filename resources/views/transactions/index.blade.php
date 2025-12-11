@@ -1,11 +1,13 @@
 {{-- resources/views/transactions/index.blade.php --}}
 <x-app-layout>
+    {{-- SLOT DO CABEÇALHO DA LAYOUT --}}
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold leading-tight text-gray-800">
                 {{ __('Transações') }}
             </h2>
 
+            {{-- Botão para ir para a tela de criação de transação --}}
             <a href="{{ route('transactions.create') }}"
                 class="px-3 py-1 text-sm text-white bg-indigo-600 rounded hover:bg-indigo-700">
                 + Nova transação
@@ -18,7 +20,7 @@
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200 space-y-6">
 
-                    {{-- ALERTAS DE SESSÃO (flash messages do web) --}}
+                    {{-- ALERTAS DE SESSÃO (mensagens flash, sucesso ou erro de rota web) --}}
                     @if (session('success'))
                         <div class="px-4 py-2 text-sm text-green-800 bg-green-100 border border-green-200 rounded">
                             {{ session('success') }}
@@ -36,18 +38,18 @@
                     @endif
 
                     {{-- ============================
-                         FILTROS
+                         FILTROS DA LISTAGEM
                        ============================ --}}
                     <div class="flex flex-col gap-3 mb-4 md:flex-row md:flex-wrap md:items-end">
 
-                        {{-- Filtro por mês (competência) --}}
+                        {{-- Filtro por mês (competência: ano-mês) --}}
                         <div>
                             <label for="filter-month" class="text-sm text-gray-600">Mês</label>
                             <input type="month" id="filter-month"
                                 class="block w-full mt-1 text-sm border-gray-300 rounded">
                         </div>
 
-                        {{-- Filtro por pessoa --}}
+                        {{-- Filtro por pessoa (user ligado à transação) --}}
                         <div>
                             <label for="filter-user" class="text-sm text-gray-600">Pessoa</label>
                             <select id="filter-user" class="block w-full mt-1 text-sm border-gray-300 rounded">
@@ -69,7 +71,7 @@
                             </select>
                         </div>
 
-                        {{-- Filtro por tipo --}}
+                        {{-- Filtro por tipo (receita / despesa etc.) --}}
                         <div>
                             <label for="filter-type" class="text-sm text-gray-600">Tipo</label>
                             <select id="filter-type" class="block w-full mt-1 text-sm border-gray-300 rounded">
@@ -92,7 +94,7 @@
                             </select>
                         </div>
 
-                        {{-- Botões de ação dos filtros --}}
+                        {{-- Botões para aplicar/limpar filtros (só mexem em JS, não recarregam a página) --}}
                         <div class="flex gap-2 mt-2">
                             <button id="filter-apply"
                                 class="px-4 py-2 text-sm text-white bg-indigo-600 rounded hover:bg-indigo-700">
@@ -107,17 +109,17 @@
 
                     </div>
 
-                    {{-- ESTADO --}}
+                    {{-- Texto de estado (carregando, erro, vazio etc.) --}}
                     <div id="transactions-state" class="mb-4 text-sm text-gray-500">
                         Carregando transações...
                     </div>
 
-                    {{-- RESUMO --}}
+                    {{-- Cards de resumo da página atual (receitas, despesas, saldo) --}}
                     <div id="transactions-summary" class="grid grid-cols-1 gap-4 mb-6 text-sm md:grid-cols-3">
                         {{-- preenchido via JS --}}
                     </div>
 
-                    {{-- TABELA --}}
+                    {{-- TABELA PRINCIPAL --}}
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm text-left">
                             <thead class="border-b text-gray-600">
@@ -133,12 +135,12 @@
                                 </tr>
                             </thead>
                             <tbody id="transactions-body" class="divide-y">
-                                {{-- Linhas via JS --}}
+                                {{-- Linhas inseridas dinamicamente via JS a partir da API /api/transactions --}}
                             </tbody>
                         </table>
                     </div>
 
-                    {{-- PAGINAÇÃO --}}
+                    {{-- Controles de PAGINAÇÃO da API (página anterior / próxima) --}}
                     <div class="flex items-center justify-between mt-4 text-sm text-gray-500">
                         <button id="prev-page" class="px-3 py-1 border rounded disabled:opacity-50" disabled>
                             Anterior
@@ -156,11 +158,12 @@
         </div>
     </div>
 
-    {{-- Container de toasts --}}
+    {{-- Container de toasts (notificações de feedback visual no canto) --}}
     <div id="toast-container" class="fixed z-50 flex flex-col gap-2 bottom-4 right-4"></div>
 
-    {{-- Script da página --}}
+    {{-- Script da página: responsável por buscar API, montar tabela, filtros, paginação, delete, toasts --}}
     <script type="module">
+        // Referências dos elementos de DOM
         const stateEl = document.getElementById('transactions-state');
         const bodyEl = document.getElementById('transactions-body');
         const prevBtn = document.getElementById('prev-page');
@@ -176,6 +179,7 @@
         const filterApplyBtn = document.getElementById('filter-apply');
         const filterClearBtn = document.getElementById('filter-clear');
 
+        // Estado da paginação/filtros em memória no JS
         let currentPage = 1;
         const perPage = 10;
         let currentFilters = {
@@ -186,6 +190,13 @@
             payment_method_id: '',
         };
 
+        /**
+         * Função principal de carregamento da listagem.
+         * Ela:
+         *  - monta query string com filtros e paginação
+         *  - chama /api/transactions
+         *  - monta resumo, tabela e controles de paginação
+         */
         async function loadTransactions(page = 1, filters = {}) {
             stateEl.textContent = 'Carregando transações...';
 
@@ -194,8 +205,10 @@
                 params.set('per_page', perPage);
                 params.set('page', page);
 
+                // Aplica filtros na query se existirem
                 if (filters.month) {
-                    params.set('month', filters.month); // ex: 2025-12
+                    // espera "YYYY-MM"
+                    params.set('month', filters.month);
                 }
 
                 if (filters.user_id) {
@@ -214,10 +227,13 @@
                     params.set('payment_method_id', filters.payment_method_id);
                 }
 
+                // Chamada à API (TransactionController@index)
                 const response = await fetch(`/api/transactions?${params.toString()}`);
 
                 if (!response.ok) throw new Error('Erro ao carregar transações');
 
+                // Padrão de resposta de Resource Collection do Laravel:
+                // { data: [...], meta: {...}, links: {...} }
                 const json = await response.json();
                 const items = json.data ?? [];
                 const meta = json.meta ?? null;
@@ -227,6 +243,7 @@
                 summaryEl.innerHTML = '';
 
                 if (items.length === 0) {
+                    // Nenhum registro para esses filtros
                     stateEl.textContent = 'Nenhuma transação encontrada.';
                     paginationInfoEl.textContent = '';
                     prevBtn.disabled = true;
@@ -236,11 +253,12 @@
 
                 stateEl.textContent = '';
 
-                // ===== RESUMO DA PÁGINA =====
+                // ===== RESUMO DA PÁGINA (somente da página atual) =====
                 let totalIncome = 0;
                 let totalExpense = 0;
 
                 items.forEach(tx => {
+                    // signed_amount vem pronto da API (positivo/negativo baseado no tipo)
                     const signed = Number(tx.signed_amount);
                     if (signed > 0) totalIncome += signed;
                     if (signed < 0) totalExpense += signed;
@@ -248,6 +266,7 @@
 
                 const balance = totalIncome + totalExpense;
 
+                // Monta HTML dos cards de resumo rapidão
                 summaryEl.innerHTML = `
                     <div class="px-4 py-3 border rounded-lg bg-green-50">
                         <div class="text-xs text-gray-500">Receitas (página)</div>
@@ -297,8 +316,10 @@
                         }) :
                         '-';
 
+                    // label do dono do cartão (Daniel / Joyce / etc.)
                     const ownerLabel = tx.credit_card?.owner_label || tx.credit_card?.owner_name || '';
 
+                    // Badges de info (categoria, cartão de crédito)
                     const infoBadges =
                         `
                         <span class="inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700">
@@ -313,6 +334,7 @@
                         }
                     `;
 
+                    // Bloco com cada usuário + valor da cota
                     const usersDetailHtml = (tx.users ?? [])
                         .map(u => {
                             const share = Number(u.share_amount ?? 0).toLocaleString('pt-BR', {
@@ -329,6 +351,7 @@
                         })
                         .join('');
 
+                    // Texto de parcelas (ex: "3/10 · faltam 7")
                     const installmentLabel = tx.installments?.is_installment ?
                         `${tx.installments.label} · faltam ${tx.installments.remaining}` :
                         '-';
@@ -341,7 +364,7 @@
                         <td class="px-3 py-2 text-gray-700 align-top">
                             <div class="font-medium">${tx.description ?? '(sem descrição)'}</div>
                         </td>
-                       <td class="px-3 py-2 text-right align-top">
+                        <td class="px-3 py-2 text-right align-top">
                             <span class="${isNegative ? 'text-red-600' : 'text-emerald-600'} font-semibold">
                                 ${amountFormatted}
                             </span>
@@ -378,13 +401,15 @@
                     bodyEl.appendChild(tr);
                 });
 
-                // PAGINAÇÃO
+                // ===== PAGINAÇÃO =====
                 if (meta) {
                     currentPage = meta.current_page;
                     paginationInfoEl.textContent = `Página ${meta.current_page} de ${meta.last_page}`;
+                    // Habilita/desabilita botões baseado se existe link prev/next
                     prevBtn.disabled = !(links && links.prev);
                     nextBtn.disabled = !(links && links.next);
                 } else {
+                    // Caso não venha meta/links (pouco provável com paginate)
                     paginationInfoEl.textContent = '';
                     prevBtn.disabled = true;
                     nextBtn.disabled = true;
@@ -401,16 +426,17 @@
             }
         }
 
-        // PAGINAÇÃO COM FILTROS
+        // Navegação de página anterior mantendo filtros
         prevBtn.addEventListener('click', () => {
             if (currentPage > 1) loadTransactions(currentPage - 1, currentFilters);
         });
 
+        // Próxima página
         nextBtn.addEventListener('click', () => {
             loadTransactions(currentPage + 1, currentFilters);
         });
 
-        // BOTÃO FILTRAR
+        // BOTÃO "Filtrar": atualiza currentFilters e recarrega página 1
         filterApplyBtn.addEventListener('click', () => {
             currentFilters = {
                 month: filterMonthEl.value || '',
@@ -423,7 +449,7 @@
             loadTransactions(1, currentFilters);
         });
 
-        // BOTÃO LIMPAR
+        // BOTÃO "Limpar": reseta filtros e recarrega página 1
         filterClearBtn.addEventListener('click', () => {
             filterMonthEl.value = '';
             filterUserEl.value = '';
@@ -446,8 +472,10 @@
         const deleteModal = document.getElementById("delete-modal");
         const cancelDeleteBtn = document.getElementById("cancel-delete");
         const confirmDeleteBtn = document.getElementById("confirm-delete");
+        // estado local para guardar qual id está em "espera" pra excluir
         let idToDelete = null;
 
+        // Delegação de evento: qualquer clique num botão com .delete-btn
         document.addEventListener("click", (e) => {
             const btn = e.target.closest(".delete-btn");
             if (!btn) return;
@@ -456,11 +484,13 @@
             deleteModal.classList.remove("hidden");
         });
 
+        // Cancelar exclusão (fecha modal e limpa id)
         cancelDeleteBtn.addEventListener("click", () => {
             deleteModal.classList.add("hidden");
             idToDelete = null;
         });
 
+        // Clique fora do conteúdo do modal também fecha
         deleteModal.addEventListener("click", (e) => {
             if (e.target === deleteModal) {
                 deleteModal.classList.add("hidden");
@@ -468,6 +498,7 @@
             }
         });
 
+        // Confirmar exclusão → faz DELETE na API, recarrega listagem, mostra toast
         confirmDeleteBtn.addEventListener("click", async () => {
             if (!idToDelete) return;
 
@@ -501,6 +532,7 @@
             }
         });
 
+        // Função genérica de toast (usada para feedback de sucesso/erro)
         function showToast(message, type = "success") {
             const container = document.getElementById("toast-container");
 
@@ -521,18 +553,21 @@
 
             container.appendChild(toast);
 
+            // animação de fade-in
             setTimeout(() => (toast.style.opacity = "1"), 10);
 
+            // depois de 3s, some com fade-out e remove do DOM
             setTimeout(() => {
                 toast.style.opacity = "0";
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
-        // PRIMEIRA CARGA
+        // PRIMEIRA CARGA AO ABRIR A PÁGINA (sem filtros)
         loadTransactions(1, currentFilters);
     </script>
 
+    {{-- include do modal de delete (markup HTML separado) --}}
     @include('transactions.modals.delete')
 
 </x-app-layout>
