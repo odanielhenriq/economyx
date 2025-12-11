@@ -59,9 +59,6 @@ class TransactionController extends Controller
 
             $transaction = $this->transactions->createTransaction($data, $userIds);
 
-            if ($transaction->credit_card_id) {
-                $service->generate($transaction);
-            }
             return (new TransactionResource($transaction))
                 ->response()
                 ->setStatusCode(201);
