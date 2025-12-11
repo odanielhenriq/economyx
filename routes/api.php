@@ -25,4 +25,5 @@ Route::get('/transactions/{id}', [TransactionController::class, 'show']);
 Route::put('/transactions/{id}', [TransactionController::class, 'update']);
 Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
 
-Route::get('/cards/{card}/statement', [CardStatementController::class, 'show']);
+Route::get('cards/{card}/statement', [CardStatementController::class, 'show']);
+

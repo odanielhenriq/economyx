@@ -17,6 +17,11 @@ class CreditCardStatement extends Model
         'status',
     ];
 
+    protected $casts = [
+        'period_start' => 'date',
+        'period_end'   => 'date',
+    ];
+
     public function card()
     {
         return $this->belongsTo(CreditCard::class, 'credit_card_id');
