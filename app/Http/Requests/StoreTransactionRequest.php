@@ -30,14 +30,14 @@ class StoreTransactionRequest extends FormRequest
             'category_id'           => 'required|exists:categories,id',
             'type_id'               => 'required|exists:types,id',
             'payment_method_id'     => 'required|exists:payment_methods,id',
-            'credit_card_id'        => 'required|exists:credit_cards,id',
+            'credit_card_id'        => 'nullable|exists:credit_cards,id|required_if:payment_method_id,1',
             'installment_number'    => 'nullable|integer|min:1',
             'installment_total'     => 'nullable|integer|min:1',
             'user_ids'              => 'required|array|min:1',
             'user_ids.*'            => 'exists:users,id',
-            'is_recurring' => 'sometimes|boolean',
-            'frequency'    => 'sometimes|required_if:is_recurring,1|in:monthly,yearly',
-            'day_of_month' => 'sometimes|nullable|integer|min:1|max:31',
+            'is_recurring'          => 'sometimes|boolean',
+            'frequency'             => 'sometimes|required_if:is_recurring,1|in:monthly,yearly',
+            'day_of_month'          => 'sometimes|nullable|integer|min:1|max:31',
         ];
     }
 

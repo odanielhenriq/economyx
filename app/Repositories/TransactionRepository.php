@@ -76,11 +76,9 @@ class TransactionRepository implements TransactionRepositoryInterface
      */
     public function createTransaction(array $data, array $userIds): Transaction
     {
-        // ⚠️ POSSÍVEL BUG:
-        // Aqui você está usando 'card_id', mas a coluna na tabela e no model é 'credit_card_id'.
-        // Ou seja, isso não está limpando o campo certo.
+
         if ((int) ($data['payment_method_id'] ?? 0) !== 1) {
-            $data['card_id'] = null; // provavelmente deveria ser 'credit_card_id'
+            $data['credit_card_id'] = null; // provavelmente deveria ser 'credit_card_id'
         }
 
         // Se quiser garantir total_amount, pode reativar essa regra:
