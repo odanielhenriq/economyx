@@ -35,6 +35,9 @@ class StoreTransactionRequest extends FormRequest
             'installment_total'     => 'nullable|integer|min:1',
             'user_ids'              => 'required|array|min:1',
             'user_ids.*'            => 'exists:users,id',
+            'is_recurring' => 'sometimes|boolean',
+            'frequency'    => 'sometimes|required_if:is_recurring,1|in:monthly,yearly',
+            'day_of_month' => 'sometimes|nullable|integer|min:1|max:31',
         ];
     }
 

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Resources\TransactionResource;
+use App\Models\RecurringTransaction;
 use App\Models\Transaction;
 use App\Repositories\TransactionRepositoryInterface;
+use App\Services\RecurringTemplateService;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
@@ -53,7 +55,7 @@ class TransactionController extends Controller
     /**
      * Cria uma nova transação via API.
      */
-    public function store(StoreTransactionRequest $request)
+    public function store(StoreTransactionRequest $request, RecurringTemplateService $recurringTemplateService)
     {
         try {
             // Valida dados conforme StoreTransactionRequest
@@ -65,6 +67,17 @@ class TransactionController extends Controller
 
             // Cria a transação via repository
             $transaction = $this->transactions->createTransaction($data, $userIds);
+
+            // se marcar como recorrente, cria o template
+            if ($request->boolean('is_recurring')) {
+                $recurringTemplateService->createFromTransactionData(
+                    $data,
+                    $userIds,
+                    $request->input('day_of_month'),
+                    $request->input('frequency')
+                );
+            }
+
 
             // IMPORTANTE: as parcelas são geradas no `booted()` do model Transaction
             // quando a transação é criada (para cartão/empréstimo)
