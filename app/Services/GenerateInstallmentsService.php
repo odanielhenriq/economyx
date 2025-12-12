@@ -108,18 +108,19 @@ class GenerateInstallmentsService
     private function generateForLoan($transaction): void
     {
         $installments = $transaction->installment_total ?: 1;
-
-        // Aqui você decidiu que `amount` já é o valor da parcela.
         $amountPerInstallment = $transaction->amount;
 
-        for ($i = 1; $i <= $installments; $i++) {
+        // base real do vencimento
+        $base = $transaction->first_due_date
+            ? Carbon::parse($transaction->first_due_date)
+            : Carbon::parse($transaction->transaction_date)->addMonthNoOverflow(); // sugiro +1 mês
 
-            // Cada mês é uma parcela a vencer
-            $dueDate = Carbon::parse($transaction->transaction_date)->addMonths($i - 1);
+        for ($i = 1; $i <= $installments; $i++) {
+            $dueDate = $base->copy()->addMonthsNoOverflow($i - 1);
 
             TransactionInstallment::create([
                 'transaction_id'           => $transaction->id,
-                'credit_card_statement_id' => null, // não está ligado a cartão
+                'credit_card_statement_id' => null,
                 'installment_number'       => $i,
                 'installment_total'        => $installments,
                 'amount'                   => $amountPerInstallment,
@@ -129,6 +130,7 @@ class GenerateInstallmentsService
             ]);
         }
     }
+
 
 
     /**

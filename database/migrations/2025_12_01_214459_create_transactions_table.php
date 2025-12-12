@@ -17,6 +17,7 @@ return new class extends Migration
             $table->decimal('total_amount', 15, 2);
             $table->decimal('amount', 15, 2);
             $table->date('transaction_date');
+            $table->date('first_due_date')->nullable();
             $table->unsignedInteger('installment_number')->nullable();
             $table->unsignedInteger('installment_total')->nullable();
             $table->foreignId('category_id')->references('id')->on('categories')->onDelete('cascade');

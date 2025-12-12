@@ -61,22 +61,10 @@ class Transaction extends Model
     protected static function booted()
     {
         static::created(function ($transaction) {
-            // ⚠️ Observação importante:
-            // Aqui você só chama o GenerateInstallmentsService
-            // se TIVER credit_card_id.
-            //
-            // Isso significa que empréstimos/financiamentos (sem cartão)
-            // não vão gerar TransactionInstallment automaticamente.
-            //
-            // Se você quiser que empréstimos também gerem parcelas,
-            // deveria chamar SEM o if:
-            //
-            // app(GenerateInstallmentsService::class)->generate($transaction);
-            //
-            // E deixar o service decidir se é cartão ou empréstimo.
-            if ($transaction->credit_card_id) {
-                app(GenerateInstallmentsService::class)->generate($transaction);
-            }
+
+            // Se a transação for parcelada, gerar as parcelas
+            app(GenerateInstallmentsService::class)->generate($transaction);
+
         });
     }
 }
