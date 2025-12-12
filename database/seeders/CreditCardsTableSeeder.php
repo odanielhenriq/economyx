@@ -32,8 +32,8 @@ class CreditCardsTableSeeder extends Seeder
             [
                 'name'          => 'Santander',
                 'alias'         => null,
-                'closing_day'   => 28,
-                'due_day'       => 30,
+                'closing_day'   => 31,
+                'due_day'       => 8,
                 'limit'         => null,
                 'owner_user_id' => $joyce->id,
                 'owner_name'    => 'Joyce',

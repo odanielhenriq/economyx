@@ -49,14 +49,27 @@ class GenerateInstallmentsService
         // `total_amount` representa o total da compra.
         $amountPerInstallment = $transaction->amount;
 
+        $purchaseDate = Carbon::parse($transaction->transaction_date);
+
+        // começa testando o mês seguinte ao da compra como vencimento provável
+        $cursor = $purchaseDate->copy()->addMonthNoOverflow()->startOfMonth();
+
+        // acha a primeira fatura cujo fechamento (period_end) ainda não passou da compra
+        while ($purchaseDate->gt($this->calcPeriodEnd($card, $cursor->year, $cursor->month))) {
+            $cursor->addMonthNoOverflow();
+        }
+
+        $baseYear  = $cursor->year;
+        $baseMonth = $cursor->month;
+
+
         // Loop de 1 até o número total de parcelas
         for ($i = 1; $i <= $installments; $i++) {
             // Calcula em qual mês essa parcela cai
             // Ex.: compra em agosto, i=1 → ago, i=2 → set, etc
-            $date = Carbon::parse($transaction->transaction_date)->addMonths($i - 1);
-
-            $year  = $date->year;
-            $month = $date->month;
+            $statementMonth = Carbon::create($baseYear, $baseMonth, 1)->addMonthsNoOverflow($i - 1);
+            $year  = $statementMonth->year;
+            $month = $statementMonth->month;
 
             // Busca ou cria a fatura (CreditCardStatement) daquele mês
             $statement = CreditCardStatement::firstOrCreate(
@@ -82,7 +95,7 @@ class GenerateInstallmentsService
                 'amount'                   => $amountPerInstallment,
                 'year'                     => $year,
                 'month'                    => $month,
-                'due_date'                 => $statement->period_end, // vence no fechamento
+                'due_date' => $this->calcDueDate($card, $year, $month),
             ]);
         }
     }
@@ -132,14 +145,24 @@ class GenerateInstallmentsService
 
 
     // Calcula o início do período da fatura (dia depois do fechamento anterior)
-    private function calcPeriodStart($card, $y, $m)
+    private function calcDueDate($card, $y, $m)
     {
-        return Carbon::create($y, $m, $card->closing_day)->subMonth()->addDay();
+        $d = Carbon::create($y, $m, 1);
+        return $d->copy()->day(min($card->due_day, $d->daysInMonth));
     }
 
-    // Calcula o fim do período (dia do fechamento)
     private function calcPeriodEnd($card, $y, $m)
     {
-        return Carbon::create($y, $m, $card->closing_day);
+        // fechamento é no mês anterior ao vencimento
+        $closingMonth = Carbon::create($y, $m, 1)->subMonthNoOverflow();
+        return $closingMonth->copy()->day(min($card->closing_day, $closingMonth->daysInMonth));
+    }
+
+    private function calcPeriodStart($card, $y, $m)
+    {
+        // period_start = (period_end do ciclo anterior) + 1 dia
+        $prevDueMonth = Carbon::create($y, $m, 1)->subMonthNoOverflow();
+        $prevEnd = $this->calcPeriodEnd($card, $prevDueMonth->year, $prevDueMonth->month);
+        return $prevEnd->copy()->addDay();
     }
 }
