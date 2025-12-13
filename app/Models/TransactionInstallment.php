@@ -14,6 +14,11 @@ class TransactionInstallment extends Model
         'amount',
         'year',
         'month',
+        'due_date',
+    ];
+
+    protected $casts = [
+        'due_date' => 'date',
     ];
 
     public function transaction()

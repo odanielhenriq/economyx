@@ -78,13 +78,8 @@ class TransactionRepository implements TransactionRepositoryInterface
     {
 
         if ((int) ($data['payment_method_id'] ?? 0) !== 1) {
-            $data['credit_card_id'] = null; // provavelmente deveria ser 'credit_card_id'
+            $data['credit_card_id'] = null;
         }
-
-        // Se quiser garantir total_amount, pode reativar essa regra:
-        // if (empty($data['total_amount'])) {
-        //     $data['total_amount'] = $data['amount'] ?? null;
-        // }
 
         $transaction = Transaction::create($data);
 
@@ -108,9 +103,8 @@ class TransactionRepository implements TransactionRepositoryInterface
     {
         $transaction = Transaction::findOrFail($id);
 
-        // Mesmo possível bug aqui: card_id vs credit_card_id
         if ((int) ($data['payment_method_id'] ?? 0) !== 1) {
-            $data['card_id'] = null; // deveria ser 'credit_card_id'
+            $data['credit_card_id'] = null;
         }
 
         // Garante total_amount se vier vazio
