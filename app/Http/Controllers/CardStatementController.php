@@ -2,164 +2,141 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\TransactionResource;
+use App\Models\CreditCard;
 use App\Models\CreditCardStatement;
 use App\Models\Transaction;
-use App\Repositories\TransactionRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class CardStatementController extends Controller
 {
-    public function __construct(
-        // Por enquanto esse repository nem está sendo usado nesse controller,
-        // mas já está injetado caso você queira reaproveitar depois
-        private readonly TransactionRepositoryInterface $transactions,
-    ) {}
-
     public function statement($cardId, Request $request)
     {
-        // Lê o ano e o mês da query string (?year=2025&month=12)
-        // Se não vier nada, usa ano e mês atuais
         $year  = (int)($request->query('year')  ?? now()->year);
         $month = (int)($request->query('month') ?? now()->month);
 
-        // Busca a fatura (CreditCardStatement) desse cartão/ano/mês
-        // Já carrega junto:
-        // - o cartão e o dono (card.owner)
-        // - as parcelas (installments) com a transaction e categoria
-        $statement = CreditCardStatement::with([
-            'card.owner',
-            'installments.transaction.category',
-        ])
-            ->forMonth($cardId, $year, $month);
+        // 1) Busca o cartão direto (SEM user)
+        $card = CreditCard::with('owner')->findOrFail($cardId);
 
-        // Se ainda não existe fatura pra esse mês
-        if (! $statement) {
-            return response()->json([
-                'card' => null,
-                'period' => null,
-                'summary' => [
-                    'income'  => 0,
-                    'expense' => 0,
-                    'net'     => 0,
-                ],
-                'transactions' => [],
-            ]);
+        if (!$card->closing_day) {
+            return response()->json(['message' => 'Cartão sem closing_day configurado.'], 422);
         }
 
-        // 1) Transações PARCELADAS (vêm da tabela transaction_installments)
-        $parceladas = $statement->installments->map(function ($inst) {
-            // Pega a transação original daquela parcela
+        // 2) Período SEM depender do statement existir
+        [$periodStart, $periodEnd] = $this->getBillingPeriodFor($card, $year, $month);
+
+        // 3) Tenta buscar statement (se existir, ótimo — traz parcelas)
+        $statement = CreditCardStatement::with([
+            'installments.transaction.category',
+        ])->where('credit_card_id', $cardId)
+          ->where('year', $year)
+          ->where('month', $month)
+          ->first();
+
+        $installments = $statement?->installments ?? collect();
+
+        // 4) Parceladas
+        $parceladas = $installments->map(function ($inst) {
             $t = $inst->transaction;
 
             return [
                 'id'          => $t->id,
                 'description' => $t->description,
                 'amount'      => (float)$inst->amount,
-
-                // Data que será mostrada na fatura:
-                // - se tiver due_date na parcela, usa ela
-                // - senão, cai pra transaction_date
                 'date'        => optional($inst->due_date)->toDateString()
                     ?? optional($t->transaction_date)->toDateString(),
-
                 'installments' => [
-                    // true se tem mais de 1 parcela
-                    'is_installment' => $inst->installment_total > 1,
-                    'number'         => $inst->installment_number,
-                    'total'          => $inst->installment_total,
-                    // Ex.: "3/10" ou null se não for parcelado
-                    'label'          => $inst->installment_total > 1
+                    'is_installment' => (int)$inst->installment_total > 1,
+                    'number'         => (int)$inst->installment_number,
+                    'total'          => (int)$inst->installment_total,
+                    'label'          => (int)$inst->installment_total > 1
                         ? "{$inst->installment_number}/{$inst->installment_total}"
                         : null,
                 ],
-
-                // Categoria da transação (se tiver)
                 'category' => $t->category
-                    ? [
-                        'id'   => $t->category->id,
-                        'name' => $t->category->name,
-                    ]
+                    ? ['id' => $t->category->id, 'name' => $t->category->name]
                     : null,
             ];
         });
 
-        // Pega os IDs das transações que já apareceram como parcela
-        // pra não duplicar na parte de "à vista"
-        $transactionIdsParceladas = $statement->installments
-            ->pluck('transaction_id')
-            ->unique();
+        $transactionIdsParceladas = $installments->pluck('transaction_id')->unique();
 
-        // 2) Compras À VISTA (sem parcelas) → vêm direto da tabela transactions
-        $aVista = Transaction::with('category')
+        // 5) À vista (1x) — SEM precisar statement existir
+        $aVistaQuery = Transaction::with('category')
             ->where('credit_card_id', $cardId)
             ->where(function ($q) {
-                // installment_total nulo OU <= 1 significa à vista
                 $q->whereNull('installment_total')
-                    ->orWhere('installment_total', '<=', 1);
+                  ->orWhere('installment_total', '<=', 1);
             })
-            // Garante que você não traga transações que já saíram nas parcelas
-            ->whereNotIn('id', $transactionIdsParceladas)
-            // Só dentro do período daquela fatura (period_start -> period_end)
-            ->whereBetween('transaction_date', [
-                $statement->period_start,
-                $statement->period_end,
-            ])
-            ->get()
-            ->map(function ($t) {
-                return [
-                    'id'          => $t->id,
-                    'description' => $t->description,
-                    'amount'      => (float)$t->amount,
-                    'date'        => optional($t->transaction_date)->toDateString(),
+            ->whereBetween('transaction_date', [$periodStart, $periodEnd]);
 
-                    // Como é à vista, não tem info de parcelas
-                    'installments' => [
-                        'is_installment' => false,
-                        'number'         => null,
-                        'total'          => null,
-                        'label'          => null,
-                    ],
+        if ($transactionIdsParceladas->isNotEmpty()) {
+            $aVistaQuery->whereNotIn('id', $transactionIdsParceladas);
+        }
 
-                    'category' => $t->category
-                        ? [
-                            'id'   => $t->category->id,
-                            'name' => $t->category->name,
-                        ]
-                        : null,
-                ];
-            });
+        $aVista = $aVistaQuery->get()->map(function ($t) {
+            return [
+                'id'          => $t->id,
+                'description' => $t->description,
+                'amount'      => (float)$t->amount,
+                'date'        => optional($t->transaction_date)->toDateString(),
+                'installments' => [
+                    'is_installment' => false,
+                    'number'         => null,
+                    'total'          => null,
+                    'label'          => null,
+                ],
+                'category' => $t->category
+                    ? ['id' => $t->category->id, 'name' => $t->category->name]
+                    : null,
+            ];
+        });
 
-        // 3) Junta PARCELADAS + À VISTA e ordena por data
-        $transactions = $parceladas
-            ->concat($aVista)
-            ->sortBy('date')
-            ->values(); // reseta os índices
-
-        // 4) Calcula o resumo (aqui você tratou tudo como despesa)
+        $transactions = $parceladas->concat($aVista)->sortBy('date')->values();
         $total = $transactions->sum('amount');
 
-        $summary = [
-            'income'  => 0,          // não está diferenciando receita/despesa aqui
-            'expense' => $total,     // tudo é gasto
-            'net'     => -$total,    // saldo negativo
-        ];
-
-        // Resposta final da API de fatura
         return response()->json([
             'card' => [
-                'id'          => $statement->card->id,
-                'name'        => $statement->card->name,
-                'owner'       => optional($statement->card->owner)->name,
-                'closing_day' => $statement->closing_day,
-                'due_day'     => $statement->due_day,
+                'id'          => $card->id,
+                'name'        => $card->name,
+                'owner'       => optional($card->owner)->name,
+                'closing_day' => (int)$card->closing_day,
+                'due_day'     => (int)$card->due_day,
             ],
             'period' => [
-                'start' => $statement->period_start->toDateString(),
-                'end'   => $statement->period_end->toDateString(),
+                'start' => $periodStart->toDateString(),
+                'end'   => $periodEnd->toDateString(),
             ],
-            'summary'      => $summary,
+            'summary' => [
+                'income'  => 0,
+                'expense' => $total,
+                'net'     => -$total,
+            ],
             'transactions' => $transactions,
+            'meta' => [
+                'statement_persisted' => (bool)$statement,
+            ],
         ]);
+    }
+
+    private function getBillingPeriodFor(CreditCard $card, int $year, int $month): array
+    {
+        // versão segura (tratando dia 31 em mês menor)
+        $closingDay = (int) $card->closing_day;
+
+        $closingDate = $this->safeDate($year, $month, $closingDay)->endOfDay();
+        $previousClosingDate = $closingDate->copy()->subMonthNoOverflow()->endOfDay();
+
+        $start = $previousClosingDate->copy()->addDay()->startOfDay();
+        $end   = $closingDate->copy();
+
+        return [$start, $end];
+    }
+
+    private function safeDate(int $year, int $month, int $day): Carbon
+    {
+        $base = Carbon::create($year, $month, 1)->startOfDay();
+        $day  = max(1, min($day, $base->daysInMonth));
+        return $base->copy()->day($day);
     }
 }

@@ -53,13 +53,12 @@ class CreditCard extends Model
     {
         $closingDay = (int) $this->closing_day;
 
-        // Data de fechamento do mês atual (2025-12-05 23:59)
-        $closingDate = Carbon::create($year, $month, $closingDay)->endOfDay();
+        $base = Carbon::create($year, $month, 1)->startOfDay();
+        $closingDay = max(1, min($closingDay, $base->daysInMonth));
 
-        // Fechamento anterior (2025-11-05 23:59)
-        $previousClosingDate = $closingDate->copy()->subMonth();
+        $closingDate = $base->copy()->day($closingDay)->endOfDay();
+        $previousClosingDate = $closingDate->copy()->subMonthNoOverflow()->endOfDay();
 
-        // Período de cobrança
         $start = $previousClosingDate->copy()->addDay()->startOfDay();
         $end   = $closingDate->copy();
 
