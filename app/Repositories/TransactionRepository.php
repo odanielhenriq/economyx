@@ -77,7 +77,7 @@ class TransactionRepository implements TransactionRepositoryInterface
     public function createTransaction(array $data, array $userIds): Transaction
     {
 
-        if ((int) ($data['payment_method_id'] ?? 0) !== 1) {
+        if (($data['payment_method_slug'] ?? '') !== 'cc') {
             $data['credit_card_id'] = null;
         }
 
@@ -103,7 +103,7 @@ class TransactionRepository implements TransactionRepositoryInterface
     {
         $transaction = Transaction::findOrFail($id);
 
-        if ((int) ($data['payment_method_id'] ?? 0) !== 1) {
+        if (($data['payment_method_slug'] ?? '') !== 'cc') {
             $data['credit_card_id'] = null;
         }
 

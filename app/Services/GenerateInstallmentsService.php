@@ -141,8 +141,8 @@ class GenerateInstallmentsService
      */
     private function isLoanLike($transaction): bool
     {
-        return in_array($transaction->category_id, [10]) // 10 = empréstimo
-            || $transaction->payment_method_id == 5;
+        return in_array($transaction->category_slug, ['ep']) // 'ep' = Empréstimos
+            || $transaction->payment_method_slug == 'tb'; // 'tb' = Transferência Bancária
     }
 
 

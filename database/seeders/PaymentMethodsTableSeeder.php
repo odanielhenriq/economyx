@@ -16,23 +16,46 @@ class PaymentMethodsTableSeeder extends Seeder
     {
         FacadesDB::table("payment_methods")->insert([
             [
-                'name' => 'Credit Card',
+                'name' => 'Cartão de Crédito',
+                'slug' => 'cc',
             ],
             [
-                'name' => 'Debit Card',
+                'name' => 'Cartão de Débito',
+                'slug' => 'cd',
             ],
             [
                 'name' => 'Pix',
+                'slug' => 'px',
             ],
             [
                 'name' => 'PayPal',
+                'slug' => 'pp',
             ],
             [
-                'name' => 'Bank Transfer',
+                'name' => 'Transferência Bancária',
+                'slug' => 'tb',
             ],
             [
-                'name' => 'Cash',
+                'name' => 'Dinheiro',
+                'slug' => 'dn'
             ],
+            [
+                'name' => 'Cheque',
+                'slug' => 'ch'
+            ],
+            [
+                'name' => 'Boleto Bancário',
+                'slug' => 'bb'
+            ],
+            [
+                'name' => 'Vale Alimentação',
+                'slug' => 'va'
+            ],
+            [
+                'name' => 'Vale Refeição',
+                'slug' => 'vr'
+            ],
+
         ]);
     }
 }

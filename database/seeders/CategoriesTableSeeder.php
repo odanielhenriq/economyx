@@ -14,23 +14,74 @@ class CategoriesTableSeeder extends Seeder
     public function run(): void
     {
         DB::table('categories')->insert([
-            ['name' => 'Mercado'],
-            ['name' => 'Transporte'],
-            ['name' => 'Assinaturas'],
-            ['name' => 'Lazer'],
-            ['name' => 'Comida'],
-            ['name' => 'Viagens'],
-            ['name' => 'Educação'],
-            ['name' => 'Saúde'],
-            ['name' => 'Contas'],
-            ['name' => 'Empréstimos'],
-            ['name' => 'Casamento'],
-            ['name' => 'Ferramentas'],
-            ['name' => 'Salário'],
-            ['name' => 'Freelas'],
-            ['name' => 'Investimentos'],
-            ['name' => 'Vestuário'],
-            ['name' => 'Outros'],
+            [
+                'name' => 'Mercado',
+                'slug' => 'mc'
+            ],
+            [
+                'name' => 'Transporte',
+                'slug' => 'tr'
+            ],
+            [
+                'name' => 'Assinaturas',
+                'slug' => 'ss'
+            ],
+            [
+                'name' => 'Lazer',
+                'slug' => 'lz'
+            ],
+            [
+                'name' => 'Comida',
+                'slug' => 'cm'
+            ],
+            [
+                'name' => 'Viagens',
+                'slug' => 'vg'
+            ],
+            [
+                'name' => 'Educação',
+                'slug' => 'ed'
+            ],
+            [
+                'name' => 'Saúde',
+                'slug' => 'sd'
+            ],
+            [
+                'name' => 'Contas',
+                'slug' => 'ct'
+            ],
+            [
+                'name' => 'Empréstimos',
+                'slug' => 'ep'
+            ],
+            [
+                'name' => 'Casamento',
+                'slug' => 'cm'
+            ],
+            [
+                'name' => 'Ferramentas',
+                'slug' => 'fm'
+            ],
+            [
+                'name' => 'Salário',
+                'slug' => 'sl'
+            ],
+            [
+                'name' => 'Freelas',
+                'slug' => 'fl'
+            ],
+            [
+                'name' => 'Investimentos',
+                'slug' => 'iv'
+            ],
+            [
+                'name' => 'Vestuário',
+                'slug' => 'vs'
+            ],
+            [
+                'name' => 'Outros',
+                'slug' => 'ot'
+            ],
         ]);
     }
 }
