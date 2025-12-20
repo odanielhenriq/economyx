@@ -187,7 +187,24 @@
                 </div>
 
                 {{-- BOTÕES --}}
+                @php
+                    $recurringQuery = [
+                        'description' => old('description', $transaction->description),
+                        'amount' => old('amount', $transaction->amount),
+                        'total_amount' => old('total_amount', $transaction->total_amount),
+                        'category_id' => old('category_id', $transaction->category_id),
+                        'type_id' => old('type_id', $transaction->type_id),
+                        'payment_method_id' => old('payment_method_id', $transaction->payment_method_id),
+                        'credit_card_id' => old('credit_card_id', $transaction->credit_card_id),
+                        'transaction_date' => old('transaction_date', optional($transaction->transaction_date)->toDateString()),
+                        'user_ids' => old('user_ids', $transaction->users->pluck('id')->toArray()),
+                    ];
+                @endphp
                 <div class="flex justify-between gap-3 items-center">
+                    <a href="{{ route('recurring-transactions.create', $recurringQuery) }}"
+                        class="text-sm text-indigo-600 hover:underline">
+                        Criar template de conta fixa
+                    </a>
 
                     <div class="flex gap-3">
                         <a href="{{ route('transactions.index') }}"

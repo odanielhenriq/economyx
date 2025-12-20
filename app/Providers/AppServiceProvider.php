@@ -8,6 +8,8 @@ use App\Repositories\CreditCardRepository;
 use App\Repositories\CreditCardRepositoryInterface;
 use App\Repositories\PaymentMethodRepository;
 use App\Repositories\PaymentMethodRepositoryInterface;
+use App\Repositories\RecurringTransactionRepository;
+use App\Repositories\RecurringTransactionRepositoryInterface;
 use App\Repositories\TransactionRepository;
 use App\Repositories\TransactionRepositoryInterface;
 use App\Repositories\TypeRepository;
@@ -44,6 +46,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             CreditCardRepositoryInterface::class,
             CreditCardRepository::class
+        );
+
+        $this->app->bind(
+            RecurringTransactionRepositoryInterface::class,
+            RecurringTransactionRepository::class
         );
     }
 

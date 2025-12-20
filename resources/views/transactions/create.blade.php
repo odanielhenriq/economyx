@@ -105,18 +105,36 @@
                 <div class="p-6 bg-white rounded shadow-sm border space-y-4">
                     <h3 class="font-semibold text-gray-700 mb-2">Pagamento</h3>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    @php $isInstallmentOld = (int) old('installment_total', 1) > 1; @endphp
+
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="installment_toggle" class="rounded border-gray-300"
+                            @checked($isInstallmentOld)>
+                        <label for="installment_toggle" class="text-sm text-gray-600">Compra parcelada</label>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm text-gray-600">Valor total da compra (R$)</label>
+                            <input type="number" step="0.01" min="0" name="total_amount" id="total_amount"
+                                value="{{ old('total_amount') }}" class="mt-1 w-full rounded border-gray-300 text-sm">
+                            <p class="mt-1 text-xs text-gray-500">
+                                Somatório de todas as parcelas (ex: 10 x 200 = 2.000).
+                            </p>
+                        </div>
 
                         {{-- Valor da parcela (amount) --}}
-                        <div>
+                        <div id="amount-wrapper" style="{{ $isInstallmentOld ? '' : 'display: none;' }}">
                             <label class="text-sm text-gray-600">Valor da parcela (R$)</label>
-                            <input type="number" step="0.01" min="0" name="amount"
+                            <input type="number" step="0.01" min="0" name="amount" id="amount"
                                 value="{{ old('amount') }}" class="mt-1 w-full rounded border-gray-300 text-sm">
                             <p class="mt-1 text-xs text-gray-500">
                                 Valor da parcela individual (se houver parcelamento).
                             </p>
                         </div>
+                    </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {{-- Forma de pagamento (vai controlar exibição do select de cartão) --}}
                         <div>
                             <label class="text-sm text-gray-600">Forma de pagamento</label>
@@ -148,19 +166,6 @@
                                 @endforeach
                             </select>
                         </div>
-
-                    </div>
-
-                    {{-- Campo separado para valor total da compra (total_amount) --}}
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="text-sm text-gray-600">Valor total da compra (R$)</label>
-                            <input type="number" step="0.01" min="0" name="total_amount"
-                                value="{{ old('total_amount') }}" class="mt-1 w-full rounded border-gray-300 text-sm">
-                            <p class="mt-1 text-xs text-gray-500">
-                                Somatório de todas as parcelas (ex: 10 x 200 = 2.000).
-                            </p>
-                        </div>
                     </div>
 
 
@@ -171,7 +176,8 @@
                 {{-- ======================================================
                     CARD 3 — PARCELAMENTO (número atual / total de parcelas)
                 ======================================================= --}}
-                <div class="p-6 bg-white rounded shadow-sm border space-y-4">
+                <div class="p-6 bg-white rounded shadow-sm border space-y-4" id="installment-card"
+                    style="{{ $isInstallmentOld ? '' : 'display: none;' }}">
                     <h3 class="font-semibold text-gray-700 mb-2">Parcelamento</h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -179,7 +185,7 @@
                         {{-- Número da parcela atual (ex: 1) --}}
                         <div>
                             <label class="text-sm text-gray-600">Parcela atual</label>
-                            <input type="number" min="1" name="installment_number"
+                            <input type="number" min="1" name="installment_number" id="installment_number"
                                 value="{{ old('installment_number') }}"
                                 class="mt-1 w-full rounded border-gray-300 text-sm">
                         </div>
@@ -187,7 +193,7 @@
                         {{-- Total de parcelas (ex: 10) --}}
                         <div>
                             <label class="text-sm text-gray-600">Total de parcelas</label>
-                            <input type="number" min="1" name="installment_total"
+                            <input type="number" min="1" name="installment_total" id="installment_total"
                                 value="{{ old('installment_total') }}"
                                 class="mt-1 w-full rounded border-gray-300 text-sm">
                         </div>
@@ -195,8 +201,6 @@
                     </div>
 
                 </div>
-
-
 
                 {{-- ======================================================
                     CARD 4 — PARTICIPANTES
@@ -220,16 +224,24 @@
 
 
                 {{-- BOTÕES DE AÇÃO DO FORM --}}
-                <div class="flex justify-end gap-3">
-                    <a href="{{ route('transactions.index') }}"
-                        class="px-4 py-2 text-sm border rounded text-gray-700 hover:bg-gray-50">
-                        Cancelar
+                <div class="flex justify-between items-center gap-3">
+                    <a href="{{ route('recurring-transactions.create') }}"
+                        id="create-recurring-template"
+                        class="text-sm text-indigo-600 hover:underline">
+                        Criar template de conta fixa
                     </a>
 
-                    <button type="submit"
-                        class="px-4 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700">
-                        Salvar
-                    </button>
+                    <div class="flex gap-3">
+                        <a href="{{ route('transactions.index') }}"
+                            class="px-4 py-2 text-sm border rounded text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </a>
+
+                        <button type="submit"
+                            class="px-4 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                            Salvar
+                        </button>
+                    </div>
                 </div>
 
             </form>
@@ -242,7 +254,20 @@
         document.addEventListener('DOMContentLoaded', function() {
             const paymentSelect = document.getElementById('payment_method_id');
             const creditCardWrapper = document.getElementById('credit-card-wrapper');
-
+            const installmentToggle = document.getElementById('installment_toggle');
+            const amountWrapper = document.getElementById('amount-wrapper');
+            const amountInput = document.getElementById('amount');
+            const totalAmountInput = document.getElementById('total_amount');
+            const installmentCard = document.getElementById('installment-card');
+            const installmentNumberInput = document.getElementById('installment_number');
+            const installmentTotalInput = document.getElementById('installment_total');
+            const recurringLink = document.getElementById('create-recurring-template');
+            const descriptionInput = document.querySelector('input[name="description"]');
+            const typeSelect = document.querySelector('select[name="type_id"]');
+            const categorySelect = document.querySelector('select[name="category_id"]');
+            const creditCardSelect = document.querySelector('select[name="credit_card_id"]');
+            const dateInput = document.querySelector('input[name="transaction_date"]');
+            const userCheckboxes = document.querySelectorAll('input[name="user_ids[]"]');
             function toggleCreditCard() {
                 // 1 = Credit Card (você definiu esse ID nos seeds/tabela de payment_methods)
                 if (paymentSelect.value == '1') {
@@ -252,11 +277,62 @@
                 }
             }
 
+            function syncAmountWithTotal() {
+                if (!installmentToggle.checked) {
+                    amountInput.value = totalAmountInput.value;
+                }
+            }
+
+            function toggleInstallmentFields() {
+                const isInstallment = installmentToggle.checked;
+                amountWrapper.style.display = isInstallment ? 'block' : 'none';
+                installmentCard.style.display = isInstallment ? 'block' : 'none';
+                installmentNumberInput.disabled = !isInstallment;
+                installmentTotalInput.disabled = !isInstallment;
+
+                if (!isInstallment) {
+                    installmentNumberInput.value = '';
+                    installmentTotalInput.value = '';
+                    syncAmountWithTotal();
+                }
+            }
+
+            function buildRecurringQuery() {
+                const params = new URLSearchParams();
+                const descriptionValue = descriptionInput?.value?.trim();
+                const totalAmountValue = totalAmountInput?.value;
+                const amountValue = amountInput?.value || totalAmountValue;
+
+                if (descriptionValue) params.set('description', descriptionValue);
+                if (amountValue) params.set('amount', amountValue);
+                if (totalAmountValue) params.set('total_amount', totalAmountValue);
+                if (categorySelect?.value) params.set('category_id', categorySelect.value);
+                if (typeSelect?.value) params.set('type_id', typeSelect.value);
+                if (paymentSelect?.value) params.set('payment_method_id', paymentSelect.value);
+                if (creditCardSelect?.value) params.set('credit_card_id', creditCardSelect.value);
+                if (dateInput?.value) params.set('transaction_date', dateInput.value);
+
+                userCheckboxes.forEach((checkbox) => {
+                    if (checkbox.checked) {
+                        params.append('user_ids[]', checkbox.value);
+                    }
+                });
+
+                return params.toString();
+            }
+
             // Inicializa ao carregar a página (útil quando veio erro de validação e old() preenche o select)
             toggleCreditCard();
+            toggleInstallmentFields();
 
             // Atualiza sempre que o select mudar
             paymentSelect.addEventListener('change', toggleCreditCard);
+            installmentToggle.addEventListener('change', toggleInstallmentFields);
+            totalAmountInput.addEventListener('input', syncAmountWithTotal);
+            recurringLink.addEventListener('click', (event) => {
+                const query = buildRecurringQuery();
+                recurringLink.href = query ? `${recurringLink.href.split('?')[0]}?${query}` : recurringLink.href;
+            });
         });
     </script>
 

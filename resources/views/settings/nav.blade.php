@@ -15,4 +15,8 @@
         class="px-3 py-1 rounded border {{ request()->routeIs('credit-cards.*') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700' }}">
         Cartoes
     </a>
+    <a href="{{ route('recurring-templates.index') }}"
+        class="px-3 py-1 rounded border {{ request()->routeIs('recurring-templates.*') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700' }}">
+        Recorrencias
+    </a>
 </div>

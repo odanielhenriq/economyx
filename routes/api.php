@@ -4,6 +4,7 @@ use App\Http\Controllers\CardStatementController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CreditCardController;
 use App\Http\Controllers\PaymentMethodController;
+use App\Http\Controllers\RecurringTransactionController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TypeController;
 use Illuminate\Http\Request;
@@ -57,6 +58,13 @@ Route::post('/credit-cards', [CreditCardController::class, 'store']);
 Route::get('/credit-cards/{id}', [CreditCardController::class, 'show']);
 Route::put('/credit-cards/{id}', [CreditCardController::class, 'update']);
 Route::delete('/credit-cards/{id}', [CreditCardController::class, 'destroy']);
+
+// CRUD de templates recorrentes
+Route::get('/recurring-templates', [RecurringTransactionController::class, 'index']);
+Route::post('/recurring-templates', [RecurringTransactionController::class, 'store']);
+Route::get('/recurring-templates/{id}', [RecurringTransactionController::class, 'show']);
+Route::put('/recurring-templates/{id}', [RecurringTransactionController::class, 'update']);
+Route::delete('/recurring-templates/{id}', [RecurringTransactionController::class, 'destroy']);
 
 // API de extrato de cartão: /api/cards/{card}/statement?year=2025&month=12
 Route::get('cards/{card}/statement', [CardStatementController::class, 'statement']);
