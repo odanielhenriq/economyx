@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Resources\TransactionResource;
 use App\Models\RecurringTransaction;
-use App\Models\Transaction;
 use App\Repositories\TransactionRepositoryInterface;
 use App\Services\RecurringTemplateService;
 use Illuminate\Http\Request;
@@ -157,7 +156,7 @@ class TransactionController extends Controller
         try {
             $deleted = $this->transactions->deleteTransaction($id);
 
-            if (!$deleted) {
+            if (! $deleted) {
                 return response()->json([
                     'error' => 'Transaction not found'
                 ], 404);

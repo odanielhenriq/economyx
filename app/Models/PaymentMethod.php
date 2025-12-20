@@ -8,14 +8,6 @@ class PaymentMethod extends Model
 {
     protected $fillable = [
         "name",
-        "closing_day",
-        "due_day",
+        "slug",
     ];
-
-    protected $casts = [
-        'closing_day' => 'date',
-        'due_day' => 'date',
-    ];
-
-
 }

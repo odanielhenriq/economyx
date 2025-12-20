@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Web\CategoryWebController;
+use App\Http\Controllers\Web\CreditCardWebController;
+use App\Http\Controllers\Web\PaymentMethodWebController;
 use App\Http\Controllers\Web\CardStatementWebController;
 use App\Http\Controllers\Web\TransactionWebController;
+use App\Http\Controllers\Web\TypeWebController;
 use Illuminate\Support\Facades\Route;
 
 // Página inicial (welcome) — ainda não integrada com Economyx de fato
@@ -43,7 +47,18 @@ Route::middleware('auth')->group(function () {
     // Tela web do extrato de cartão (usa CardStatementWebController pra montar Blade cards/statement)
     Route::get('/cards/statement', [CardStatementWebController::class, 'index'])
         ->name('cards.statement.index');
+
+
 });
+
+// routes/web.php
+Route::middleware(['auth'])->prefix('settings')->group(function () {
+    Route::resource('categories', CategoryWebController::class)->except('show');
+    Route::resource('types', TypeWebController::class)->except('show');
+    Route::resource('payment-methods', PaymentMethodWebController::class)->except('show');
+    Route::resource('credit-cards', CreditCardWebController::class)->except('show');
+});
+
 
 // Rotas de autenticação (login, registro, etc.)
 require __DIR__ . '/auth.php';
