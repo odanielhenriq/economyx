@@ -16,16 +16,19 @@ class Transaction extends Model
         'total_amount',
         'amount',
         'transaction_date',
+        'due_date',
         'category_id',
         'type_id',
         'payment_method_id',
         'credit_card_id',
         'installment_number',
-        'installment_total'
+        'installment_total',
+        'recurring_transaction_id',
     ];
 
     protected $casts = [
         'transaction_date' => 'date',      // vira Carbon
+        'due_date'         => 'date',
         'amount'           => 'decimal:2', // formata como decimal com 2 casas
     ];
 
@@ -53,6 +56,11 @@ class Transaction extends Model
     public function creditCard()
     {
         return $this->belongsTo(CreditCard::class);
+    }
+
+    public function recurringTransaction()
+    {
+        return $this->belongsTo(RecurringTransaction::class);
     }
 
     /**

@@ -27,6 +27,8 @@ class TransactionResource extends JsonResource
         // Considera despesa se o slug do type for "dc"
         $isExpense = $this->type?->slug === 'dc';
 
+        $baseDate = $this->due_date ?? $this->transaction_date;
+
         return [
             'id'            => $this->id,
             'description'   => $this->description,
@@ -36,8 +38,10 @@ class TransactionResource extends JsonResource
             // signed_amount já traz sinal (+/-) baseado no tipo
             'signed_amount' => $isExpense ? -1 * $this->amount : $this->amount,
 
-            // Data padronizada em Y-m-d
-            'date'          => $this->transaction_date->format('Y-m-d'),
+            // Data base do calendário (due_date) com fallback
+            'date'          => $baseDate?->format('Y-m-d'),
+            'due_date'      => $this->due_date?->format('Y-m-d'),
+            'transaction_date' => $this->transaction_date?->format('Y-m-d'),
 
             'installments' => [
                 'number'        => $this->installment_number,

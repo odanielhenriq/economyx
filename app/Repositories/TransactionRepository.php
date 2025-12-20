@@ -34,7 +34,7 @@ class TransactionRepository implements TransactionRepositoryInterface
             'paymentMethod',
             'creditCard',
             'users'
-        ])->orderByDesc('transaction_date');
+        ])->orderByDesc('due_date');
 
         // Filtro por usuário (relacionamento N:N)
         if (!empty($filters['user_id'])) {
@@ -48,12 +48,12 @@ class TransactionRepository implements TransactionRepositoryInterface
             [$year, $month] = explode('-', $filters['month']);
 
             $query
-                ->whereYear('transaction_date', $year)
-                ->whereMonth('transaction_date', $month);
+                ->whereYear('due_date', $year)
+                ->whereMonth('due_date', $month);
         }
 
         if (!empty($filters['year'])) {
-            $query->whereYear('transaction_date', $filters['year']);
+            $query->whereYear('due_date', $filters['year']);
         }
 
         if (!empty($filters['category_id'])) {
@@ -76,6 +76,9 @@ class TransactionRepository implements TransactionRepositoryInterface
      */
     public function createTransaction(array $data, array $userIds): Transaction
     {
+        if (empty($data['due_date']) && !empty($data['transaction_date'])) {
+            $data['due_date'] = $data['transaction_date'];
+        }
 
         if (($data['payment_method_slug'] ?? '') !== 'cc') {
             $data['credit_card_id'] = null;
@@ -102,6 +105,10 @@ class TransactionRepository implements TransactionRepositoryInterface
     public function updateTransaction(int $id, array $data, ?array $userIds = null): Transaction
     {
         $transaction = Transaction::findOrFail($id);
+
+        if (empty($data['due_date']) && !empty($data['transaction_date'])) {
+            $data['due_date'] = $data['transaction_date'];
+        }
 
         if (($data['payment_method_slug'] ?? '') !== 'cc') {
             $data['credit_card_id'] = null;

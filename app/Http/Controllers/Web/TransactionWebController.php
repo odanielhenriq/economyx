@@ -8,10 +8,12 @@ use App\Models\Category;
 use App\Models\Type;
 use App\Models\PaymentMethod;
 use App\Models\CreditCard;
+use App\Models\RecurringTransaction;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Repositories\TransactionRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Arr;
 
 class TransactionWebController extends Controller
 {
@@ -129,12 +131,51 @@ class TransactionWebController extends Controller
             $userIds = $data['user_ids'] ?? null;
             unset($data['user_ids']);
 
-            // Atualiza via repository
-            $this->transactions->updateTransaction(
-                $transaction->id,
-                $data,
-                $userIds
-            );
+            $editScope = $data['edit_scope'] ?? null;
+            unset($data['edit_scope']);
+
+            if ($transaction->recurring_transaction_id) {
+                $editScope = $editScope ?: 'single';
+            }
+
+            if ($transaction->recurring_transaction_id && $editScope === 'template') {
+                $template = RecurringTransaction::find($transaction->recurring_transaction_id);
+
+                if ($template) {
+                    $templateData = Arr::only($data, [
+                        'description',
+                        'amount',
+                        'total_amount',
+                        'category_id',
+                        'type_id',
+                        'payment_method_id',
+                        'credit_card_id',
+                    ]);
+
+                    $template->update($templateData);
+
+                    if ($userIds !== null) {
+                        $template->users()->sync($userIds);
+                    }
+                }
+
+                // Atualiza a transação do mês atual para alinhar com o template
+                $this->transactions->updateTransaction(
+                    $transaction->id,
+                    $data,
+                    $userIds
+                );
+            } else {
+                if ($transaction->recurring_transaction_id) {
+                    $data['recurring_transaction_id'] = null;
+                }
+
+                $this->transactions->updateTransaction(
+                    $transaction->id,
+                    $data,
+                    $userIds
+                );
+            }
 
             // OBS: aqui você ainda não lida com recalcular parcelas ao editar
 

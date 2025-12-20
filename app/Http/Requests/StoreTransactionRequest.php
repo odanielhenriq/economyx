@@ -35,6 +35,7 @@ class StoreTransactionRequest extends FormRequest
             'installment_total'     => 'nullable|integer|min:1',
             'user_ids'              => 'required|array|min:1',
             'user_ids.*'            => 'exists:users,id',
+            'edit_scope'            => 'nullable|in:single,template',
         ];
     }
 

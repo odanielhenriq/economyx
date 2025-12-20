@@ -19,7 +19,7 @@ class RecurringTransactionRequest extends FormRequest
             'total_amount' => ['nullable', 'numeric'],
             'frequency' => ['required', 'in:monthly,yearly'],
             'day_of_month' => ['nullable', 'integer', 'min:1', 'max:31'],
-            'start_date' => ['nullable', 'date'],
+            'start_date' => ['nullable', 'date', 'required_if:frequency,yearly'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['nullable', 'boolean'],
             'category_id' => ['required', 'exists:categories,id'],

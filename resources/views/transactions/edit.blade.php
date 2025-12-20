@@ -35,6 +35,34 @@
                 @csrf
                 @method('PUT')
 
+                @if ($transaction->recurring_transaction_id)
+                    <div class="p-6 bg-white rounded shadow-sm border space-y-4">
+                        <h3 class="font-semibold text-gray-700 mb-2">Atualização da recorrência</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                            <label class="flex items-start gap-2">
+                                <input type="radio" name="edit_scope" value="single" class="mt-1"
+                                    @checked(old('edit_scope', 'single') === 'single')>
+                                <span>
+                                    <strong>Alterar só este mês</strong>
+                                    <span class="block text-xs text-gray-500">
+                                        Mantém a conta fixa como está e quebra o vínculo desta transação.
+                                    </span>
+                                </span>
+                            </label>
+                            <label class="flex items-start gap-2">
+                                <input type="radio" name="edit_scope" value="template" class="mt-1"
+                                    @checked(old('edit_scope') === 'template')>
+                                <span>
+                                    <strong>Alterar conta fixa</strong>
+                                    <span class="block text-xs text-gray-500">
+                                        Atualiza o template e alinha esta transação do mês atual.
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                @endif
+
                 {{-- CARD 1 — INFORMAÇÕES GERAIS --}}
                 <div class="p-6 bg-white rounded shadow-sm border space-y-4">
                     <h3 class="font-semibold text-gray-700 mb-2">Informações gerais</h3>
