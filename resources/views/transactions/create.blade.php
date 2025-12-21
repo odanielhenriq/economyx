@@ -15,28 +15,17 @@
     <div class="py-6">
         <div class="mx-auto max-w-4xl sm:px-6 lg:px-8 space-y-6">
 
-            {{-- Mensagem de sucesso caso venha da sessão --}}
-            @if (session('success'))
-                <div class="p-3 text-sm text-green-800 bg-green-100 border border-green-200 rounded">
-                    {{ session('success') }}
-                </div>
-            @endif
+            <div id="transaction-success"
+                class="hidden p-3 text-sm text-green-800 bg-green-100 border border-green-200 rounded">
+                Transação criada com sucesso.
+            </div>
 
-            {{-- Erros de validação (StoreTransactionRequest) --}}
-            @if ($errors->any())
-                <div class="p-3 text-sm text-red-800 bg-red-100 border border-red-200 rounded">
-                    <div class="font-semibold">Erros ao salvar:</div>
-                    <ul class="list-disc list-inside">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+            <div id="transaction-errors"
+                class="hidden p-3 text-sm text-red-800 bg-red-100 border border-red-200 rounded"></div>
 
 
-            {{-- Formulário principal, enviando para a rota web .store --}}
-            <form method="POST" action="{{ route('transactions.store') }}" class="space-y-6">
+            {{-- Formulário principal (submit via API) --}}
+            <form id="transaction-form" method="POST" class="space-y-6">
                 @csrf
 
                 {{-- ======================================================
@@ -51,7 +40,7 @@
                         {{-- Descrição da transação --}}
                         <div class="col-span-2">
                             <label class="text-sm text-gray-600">Descrição</label>
-                            <input type="text" name="description" value="{{ old('description') }}"
+                            <input type="text" name="description" value=""
                                 class="mt-1 w-full rounded border-gray-300 text-sm"
                                 placeholder="Ex: Mercado, aluguel...">
                         </div>
@@ -61,12 +50,6 @@
                             <label class="text-sm text-gray-600">Tipo</label>
                             <select name="type_id" class="mt-1 w-full rounded border-gray-300 text-sm">
                                 <option value="">...</option>
-                                @foreach ($types as $type)
-                                    <option value="{{ $type->id }}"
-                                        {{ old('type_id') == $type->id ? 'selected' : '' }}>
-                                        {{ $type->name }}
-                                    </option>
-                                @endforeach
                             </select>
                         </div>
 
@@ -74,7 +57,7 @@
                         <div>
                             <label class="text-sm text-gray-600">Data</label>
                             <input type="date" name="transaction_date"
-                                value="{{ old('transaction_date', now()->toDateString()) }}"
+                                value="{{ now()->toDateString() }}"
                                 class="mt-1 w-full rounded border-gray-300 text-sm">
                         </div>
                     </div>
@@ -85,12 +68,6 @@
                             <label class="text-sm text-gray-600">Categoria</label>
                             <select name="category_id" class="mt-1 w-full rounded border-gray-300 text-sm">
                                 <option value="">...</option>
-                                @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}"
-                                        {{ old('category_id') == $category->id ? 'selected' : '' }}>
-                                        {{ $category->name }}
-                                    </option>
-                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -105,11 +82,8 @@
                 <div class="p-6 bg-white rounded shadow-sm border space-y-4">
                     <h3 class="font-semibold text-gray-700 mb-2">Pagamento</h3>
 
-                    @php $isInstallmentOld = (int) old('installment_total', 1) > 1; @endphp
-
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" id="installment_toggle" class="rounded border-gray-300"
-                            @checked($isInstallmentOld)>
+                        <input type="checkbox" id="installment_toggle" class="rounded border-gray-300">
                         <label for="installment_toggle" class="text-sm text-gray-600">Compra parcelada</label>
                     </div>
 
@@ -117,17 +91,17 @@
                         <div>
                             <label class="text-sm text-gray-600">Valor total da compra (R$)</label>
                             <input type="number" step="0.01" min="0" name="total_amount" id="total_amount"
-                                value="{{ old('total_amount') }}" class="mt-1 w-full rounded border-gray-300 text-sm">
+                                value="" class="mt-1 w-full rounded border-gray-300 text-sm">
                             <p class="mt-1 text-xs text-gray-500">
                                 Somatório de todas as parcelas (ex: 10 x 200 = 2.000).
                             </p>
                         </div>
 
                         {{-- Valor da parcela (amount) --}}
-                        <div id="amount-wrapper" style="{{ $isInstallmentOld ? '' : 'display: none;' }}">
+                        <div id="amount-wrapper" style="display: none;">
                             <label class="text-sm text-gray-600">Valor da parcela (R$)</label>
                             <input type="number" step="0.01" min="0" name="amount" id="amount"
-                                value="{{ old('amount') }}" class="mt-1 w-full rounded border-gray-300 text-sm">
+                                value="" class="mt-1 w-full rounded border-gray-300 text-sm">
                             <p class="mt-1 text-xs text-gray-500">
                                 Valor da parcela individual (se houver parcelamento).
                             </p>
@@ -141,29 +115,15 @@
                             <select name="payment_method_id" id="payment_method_id"
                                 class="mt-1 w-full rounded border-gray-300 text-sm">
                                 <option value="">...</option>
-                                @foreach ($paymentMethods as $pm)
-                                    <option value="{{ $pm->id }}"
-                                        {{ old('payment_method_id') == $pm->id ? 'selected' : '' }}>
-                                        {{ $pm->name }}
-                                    </option>
-                                @endforeach
                             </select>
                         </div>
 
                         {{-- Select de cartão (só faz sentido quando payment_method_id = 1 / Credit Card) --}}
                         <div id="credit-card-wrapper">
                             <label class="text-sm text-gray-600">Cartão</label>
-                            <select name="credit_card_id" class="mt-1 w-full rounded border-gray-300 text-sm">
+                            <select name="credit_card_id" id="credit_card_id"
+                                class="mt-1 w-full rounded border-gray-300 text-sm">
                                 <option value="">Nenhum</option>
-                                @foreach ($creditCards as $card)
-                                    @php $ownerLabel = $card->owner?->name ?? $card->owner_name; @endphp
-                                    <option value="{{ $card->id }}"
-                                        {{ old('credit_card_id') == $card->id ? 'selected' : '' }}>
-                                        {{ $card->name }} @if ($ownerLabel)
-                                            ({{ $ownerLabel }})
-                                        @endif
-                                    </option>
-                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -177,7 +137,7 @@
                     CARD 3 — PARCELAMENTO (número atual / total de parcelas)
                 ======================================================= --}}
                 <div class="p-6 bg-white rounded shadow-sm border space-y-4" id="installment-card"
-                    style="{{ $isInstallmentOld ? '' : 'display: none;' }}">
+                    style="display: none;">
                     <h3 class="font-semibold text-gray-700 mb-2">Parcelamento</h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,7 +146,7 @@
                         <div>
                             <label class="text-sm text-gray-600">Parcela atual</label>
                             <input type="number" min="1" name="installment_number" id="installment_number"
-                                value="{{ old('installment_number') }}"
+                                value=""
                                 class="mt-1 w-full rounded border-gray-300 text-sm">
                         </div>
 
@@ -194,7 +154,7 @@
                         <div>
                             <label class="text-sm text-gray-600">Total de parcelas</label>
                             <input type="number" min="1" name="installment_total" id="installment_total"
-                                value="{{ old('installment_total') }}"
+                                value=""
                                 class="mt-1 w-full rounded border-gray-300 text-sm">
                         </div>
 
@@ -209,16 +169,7 @@
                 <div class="p-6 bg-white rounded shadow-sm border space-y-3">
                     <h3 class="font-semibold text-gray-700">Participantes</h3>
 
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        @foreach ($users as $user)
-                            <label class="inline-flex items-center space-x-2">
-                                <input type="checkbox" name="user_ids[]" value="{{ $user->id }}"
-                                    class="rounded border-gray-300 text-indigo-600"
-                                    {{ in_array($user->id, old('user_ids', [])) ? 'checked' : '' }}>
-                                <span class="text-sm">{{ $user->name }}</span>
-                            </label>
-                        @endforeach
-                    </div>
+                    <div id="users-grid" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
 
                 </div>
 
@@ -249,9 +200,14 @@
         </div>
     </div>
 
-    {{-- Script simples para mostrar/esconder o select de cartão baseado na forma de pagamento --}}
+    {{-- Script da página: carrega dados via API, submit via fetch --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const currentUserId = Number(@json(auth()->id()));
+            const form = document.getElementById('transaction-form');
+            const errorsEl = document.getElementById('transaction-errors');
+            const successEl = document.getElementById('transaction-success');
+            const submitBtn = form.querySelector('button[type="submit"]');
             const paymentSelect = document.getElementById('payment_method_id');
             const creditCardWrapper = document.getElementById('credit-card-wrapper');
             const installmentToggle = document.getElementById('installment_toggle');
@@ -267,10 +223,96 @@
             const categorySelect = document.querySelector('select[name="category_id"]');
             const creditCardSelect = document.querySelector('select[name="credit_card_id"]');
             const dateInput = document.querySelector('input[name="transaction_date"]');
-            const userCheckboxes = document.querySelectorAll('input[name="user_ids[]"]');
+            const usersGrid = document.getElementById('users-grid');
+            let creditCardMethodId = null;
+
+            const apiFetch = async (url) => {
+                const response = await fetch(url, {
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro ao carregar ${url}`);
+                }
+
+                return response.json();
+            };
+
+            const fillSelect = (select, items, labelBuilder) => {
+                const currentValue = select.value;
+                select.querySelectorAll('option:not([value=""])').forEach((option) => option.remove());
+
+                items.forEach((item) => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = labelBuilder(item);
+                    if (String(item.id) === String(currentValue)) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            };
+
+            const renderUsers = (users) => {
+                usersGrid.innerHTML = '';
+
+                users.forEach((user) => {
+                    const label = document.createElement('label');
+                    label.className = 'inline-flex items-center space-x-2';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = 'user_ids[]';
+                    checkbox.value = user.id;
+                    checkbox.className = 'rounded border-gray-300 text-indigo-600';
+                    checkbox.checked = currentUserId && Number(user.id) === currentUserId;
+
+                    const span = document.createElement('span');
+                    span.className = 'text-sm';
+                    span.textContent = user.name;
+
+                    label.appendChild(checkbox);
+                    label.appendChild(span);
+                    usersGrid.appendChild(label);
+                });
+            };
+
+            const loadOptions = async () => {
+                const userQuery = currentUserId ? `?user_id=${currentUserId}` : '';
+
+                const [types, categories, paymentMethods, creditCards, users] = await Promise.all([
+                    apiFetch('/api/types'),
+                    apiFetch('/api/categories'),
+                    apiFetch('/api/payment-methods'),
+                    apiFetch('/api/credit-cards'),
+                    apiFetch(`/api/users${userQuery}`),
+                ]);
+
+                const typeList = types.data ?? [];
+                const categoryList = categories.data ?? [];
+                const paymentMethodList = paymentMethods.data ?? [];
+                const creditCardList = creditCards.data ?? [];
+                const userList = users.data ?? [];
+
+                fillSelect(typeSelect, typeList, (item) => item.name);
+                fillSelect(categorySelect, categoryList, (item) => item.name);
+                fillSelect(paymentSelect, paymentMethodList, (item) => item.name);
+                fillSelect(creditCardSelect, creditCardList, (item) => {
+                    const ownerLabel = item.owner?.name ?? item.owner_name;
+                    return ownerLabel ? `${item.name} (${ownerLabel})` : item.name;
+                });
+                renderUsers(userList);
+
+                creditCardMethodId = paymentMethodList.find((item) => item.slug === 'cc')?.id ?? null;
+                toggleCreditCard();
+            };
+
             function toggleCreditCard() {
-                // 1 = Credit Card (você definiu esse ID nos seeds/tabela de payment_methods)
-                if (paymentSelect.value == '1') {
+                const methodId = creditCardMethodId ?? '1';
+
+                if (paymentSelect.value == methodId) {
                     creditCardWrapper.style.display = 'block';
                 } else {
                     creditCardWrapper.style.display = 'none';
@@ -312,7 +354,7 @@
                 if (creditCardSelect?.value) params.set('credit_card_id', creditCardSelect.value);
                 if (dateInput?.value) params.set('transaction_date', dateInput.value);
 
-                userCheckboxes.forEach((checkbox) => {
+                document.querySelectorAll('input[name="user_ids[]"]').forEach((checkbox) => {
                     if (checkbox.checked) {
                         params.append('user_ids[]', checkbox.value);
                     }
@@ -321,7 +363,35 @@
                 return params.toString();
             }
 
-            // Inicializa ao carregar a página (útil quando veio erro de validação e old() preenche o select)
+            function clearErrors() {
+                errorsEl.classList.add('hidden');
+                errorsEl.innerHTML = '';
+            }
+
+            function showErrors(errors) {
+                const messages = Object.values(errors || {}).flat();
+
+                if (!messages.length) {
+                    return;
+                }
+
+                errorsEl.innerHTML = '';
+                const title = document.createElement('div');
+                title.className = 'font-semibold';
+                title.textContent = 'Erros ao salvar:';
+                errorsEl.appendChild(title);
+
+                const list = document.createElement('ul');
+                list.className = 'list-disc list-inside';
+                messages.forEach((message) => {
+                    const item = document.createElement('li');
+                    item.textContent = message;
+                    list.appendChild(item);
+                });
+                errorsEl.appendChild(list);
+                errorsEl.classList.remove('hidden');
+            }
+
             toggleCreditCard();
             toggleInstallmentFields();
 
@@ -332,6 +402,64 @@
             recurringLink.addEventListener('click', (event) => {
                 const query = buildRecurringQuery();
                 recurringLink.href = query ? `${recurringLink.href.split('?')[0]}?${query}` : recurringLink.href;
+            });
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                clearErrors();
+                successEl.classList.add('hidden');
+
+                if (!installmentToggle.checked) {
+                    amountInput.value = totalAmountInput.value;
+                    installmentNumberInput.value = '';
+                    installmentTotalInput.value = '';
+                }
+
+                const formData = new FormData(form);
+
+                if (!installmentToggle.checked) {
+                    formData.delete('installment_number');
+                    formData.delete('installment_total');
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Salvando...';
+
+                try {
+                    const response = await fetch('/api/transactions', {
+                        method: 'POST',
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                        body: formData,
+                    });
+
+                    if (response.status === 422) {
+                        const data = await response.json();
+                        showErrors(data.errors);
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('Erro ao salvar transação.');
+                    }
+
+                    successEl.classList.remove('hidden');
+                    window.location.href = "{{ route('transactions.index') }}";
+                } catch (error) {
+                    showErrors({
+                        general: [error.message || 'Erro inesperado ao salvar.'],
+                    });
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Salvar';
+                }
+            });
+
+            loadOptions().catch((error) => {
+                showErrors({
+                    general: [error.message || 'Erro ao carregar dados do formulário.'],
+                });
             });
         });
     </script>

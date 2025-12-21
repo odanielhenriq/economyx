@@ -8,13 +8,14 @@ use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\RecurringTransactionController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TypeController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // endpoint padrão de user do Laravel Sanctum (não está sendo usado aqui ainda)
 Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum');
+});
 
 // endpoint simples de teste de "saúde" da API
 Route::get('/ping', function (Request $request) {
@@ -45,6 +46,9 @@ Route::post('/types', [TypeController::class, 'store']);
 Route::get('/types/{id}', [TypeController::class, 'show']);
 Route::put('/types/{id}', [TypeController::class, 'update']);
 Route::delete('/types/{id}', [TypeController::class, 'destroy']);
+
+// Listagem de usuários (opcionalmente filtrando rede via user_id)
+Route::get('/users', [UserController::class, 'index']);
 
 // CRUD de formas de pagamento
 Route::get('/payment-methods', [PaymentMethodController::class, 'index']);

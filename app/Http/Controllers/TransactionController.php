@@ -7,6 +7,7 @@ use App\Http\Resources\TransactionResource;
 use App\Models\RecurringTransaction;
 use App\Repositories\TransactionRepositoryInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class TransactionController extends Controller
 {
@@ -117,7 +118,50 @@ class TransactionController extends Controller
             $userIds = $data['user_ids'] ?? null;
             unset($data['user_ids']);
 
-            $transaction = $this->transactions->updateTransaction($id, $data, $userIds);
+            $editScope = $data['edit_scope'] ?? null;
+            unset($data['edit_scope']);
+
+            $transactionModel = $this->transactions->findTransactionById((int) $id);
+
+            if (! $transactionModel) {
+                return response()->json([
+                    'error' => 'Transaction not found',
+                ], 404);
+            }
+
+            if ($transactionModel->recurring_transaction_id) {
+                $editScope = $editScope ?: 'single';
+            }
+
+            if ($transactionModel->recurring_transaction_id && $editScope === 'template') {
+                $template = RecurringTransaction::find($transactionModel->recurring_transaction_id);
+
+                if ($template) {
+                    $templateData = Arr::only($data, [
+                        'description',
+                        'amount',
+                        'total_amount',
+                        'category_id',
+                        'type_id',
+                        'payment_method_id',
+                        'credit_card_id',
+                    ]);
+
+                    $template->update($templateData);
+
+                    if ($userIds !== null) {
+                        $template->users()->sync($userIds);
+                    }
+                }
+
+                $transaction = $this->transactions->updateTransaction($id, $data, $userIds);
+            } else {
+                if ($transactionModel->recurring_transaction_id) {
+                    $data['recurring_transaction_id'] = null;
+                }
+
+                $transaction = $this->transactions->updateTransaction($id, $data, $userIds);
+            }
 
             if (!$transaction) {
                 return response()->json([

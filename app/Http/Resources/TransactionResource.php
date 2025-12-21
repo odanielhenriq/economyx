@@ -34,6 +34,11 @@ class TransactionResource extends JsonResource
             'description'   => $this->description,
             'total_amount'  => $this->total_amount,
             'amount'        => $this->amount,
+            'category_id'   => $this->category_id,
+            'type_id'       => $this->type_id,
+            'payment_method_id' => $this->payment_method_id,
+            'credit_card_id' => $this->credit_card_id,
+            'recurring_transaction_id' => $this->recurring_transaction_id,
 
             // signed_amount já traz sinal (+/-) baseado no tipo
             'signed_amount' => $isExpense ? -1 * $this->amount : $this->amount,

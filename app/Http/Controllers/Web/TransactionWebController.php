@@ -7,12 +7,10 @@ use App\Http\Requests\StoreTransactionRequest;
 use App\Models\Category;
 use App\Models\Type;
 use App\Models\PaymentMethod;
-use App\Models\CreditCard;
 use App\Models\RecurringTransaction;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Repositories\TransactionRepositoryInterface;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Arr;
 
 class TransactionWebController extends Controller
@@ -43,32 +41,7 @@ class TransactionWebController extends Controller
 
     public function create()
     {
-        /** @var \App\Models\User $viewer */
-        $viewer = Auth::user();
-
-        // Dados de apoio do formulário
-        $categories     = Category::orderBy('name')->get();
-        $types          = Type::orderBy('name')->get();
-        $paymentMethods = PaymentMethod::orderBy('name')->get();
-
-        // "Rede" de pessoas com quem você divide contas
-        $users          = $viewer->networkUsers();
-
-        // Cartões que ESTE usuário pode usar:
-        //  - cartões dele
-        //  - cartões compartilhados por outras pessoas
-        $creditCards    = $viewer->creditCards()
-            ->with('owner') // pra exibir nome do dono (Daniel, Joyce, etc)
-            ->orderBy('name')
-            ->get();
-
-        return view('transactions.create', compact(
-            'categories',
-            'types',
-            'paymentMethods',
-            'creditCards',
-            'users'
-        ));
+        return view('transactions.create');
     }
 
     public function store(StoreTransactionRequest $request)
@@ -97,30 +70,7 @@ class TransactionWebController extends Controller
 
     public function edit(Transaction $transaction)
     {
-        /** @var \App\Models\User $viewer */
-        $viewer = Auth::user();
-
-        // Já carrega usuários relacionados e cartão da transação
-        $transaction->load(['users', 'creditCard']);
-
-        $categories     = Category::orderBy('name')->get();
-        $types          = Type::orderBy('name')->get();
-        $paymentMethods = PaymentMethod::orderBy('name')->get();
-
-        $users          = $viewer->networkUsers();
-        $creditCards    = $viewer->creditCards()
-            ->with('owner')
-            ->orderBy('name')
-            ->get();
-
-        return view('transactions.edit', compact(
-            'transaction',
-            'categories',
-            'types',
-            'paymentMethods',
-            'creditCards',
-            'users'
-        ));
+        return view('transactions.edit', compact('transaction'));
     }
 
     public function update(StoreTransactionRequest $request, Transaction $transaction)
