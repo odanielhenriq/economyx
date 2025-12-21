@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Web\CategoryWebController;
 use App\Http\Controllers\Web\CreditCardWebController;
+use App\Http\Controllers\Web\MonthlyDashboardController;
 use App\Http\Controllers\Web\PaymentMethodWebController;
 use App\Http\Controllers\Web\RecurringTemplateWebController;
 use App\Http\Controllers\Web\RecurringTransactionWebController;
@@ -18,8 +19,15 @@ Route::get('/', function () {
 
 // Dashboard padrão (Jetstream) protegido
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return redirect()->route('dashboard.monthly', [
+        'year' => now()->year,
+        'month' => now()->month,
+    ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/dashboard/monthly', [MonthlyDashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard.monthly');
 
 // Rotas de perfil (nome, senha, etc.), protegidas por auth
 Route::middleware('auth')->group(function () {

@@ -4,21 +4,30 @@ namespace App\Services;
 
 use App\Models\RecurringTransaction;
 use App\Models\Transaction;
+use App\Models\User;
 use Carbon\Carbon;
 
 class CashflowService
 {
-    public function forMonth(int $year, int $month, bool $includeProjections = true): array
+    public function forMonth(int $year, int $month, bool $includeProjections = true, ?User $user = null): array
     {
         $now = Carbon::now();
         $monthStart = Carbon::create($year, $month, 1)->startOfDay();
         $monthEnd = $monthStart->copy()->endOfMonth()->endOfDay();
         $schedule = new RecurringScheduleService();
 
-        $transactions = Transaction::query()
+        $transactionsQuery = Transaction::query()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-            ->orderBy('due_date')
-            ->get();
+            ->orderBy('due_date');
+
+        if ($user) {
+            $networkIds = $user->networkUsers()->pluck('id')->all();
+            $transactionsQuery->whereHas('users', function ($query) use ($networkIds) {
+                $query->whereIn('users.id', $networkIds);
+            });
+        }
+
+        $transactions = $transactionsQuery->get();
 
         $items = $transactions->map(function (Transaction $transaction) {
             $baseDate = $transaction->due_date ?? $transaction->transaction_date;
@@ -41,9 +50,17 @@ class CashflowService
         })->all();
 
         if ($includeProjections) {
-            $templates = RecurringTransaction::query()
-                ->where('is_active', true)
-                ->get();
+            $templatesQuery = RecurringTransaction::query()
+                ->where('is_active', true);
+
+            if ($user) {
+                $networkIds = $user->networkUsers()->pluck('id')->all();
+                $templatesQuery->whereHas('users', function ($query) use ($networkIds) {
+                    $query->whereIn('users.id', $networkIds);
+                });
+            }
+
+            $templates = $templatesQuery->get();
 
             foreach ($templates as $template) {
                 $dueDate = $schedule->dueDateForMonth($template, $year, $month, $now);
