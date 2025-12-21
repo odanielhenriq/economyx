@@ -39,41 +39,29 @@
         </div>
     </x-slot>
 
-    @php
-        $formatMoney = fn ($value) => 'R$ ' . number_format((float) $value, 2, ',', '.');
-    @endphp
-
     <div class="py-8">
         <div class="mx-auto max-w-6xl sm:px-6 lg:px-8 space-y-8">
             {{-- Cards de resumo --}}
             <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
                 <div class="p-4 bg-white border rounded shadow-sm">
                     <div class="text-xs text-gray-500">Receitas do mês</div>
-                    <div class="text-lg font-semibold text-emerald-700">
-                        {{ $formatMoney($cards['income_total_month']) }}
-                    </div>
+                    <div id="dashboard-income" class="text-lg font-semibold text-emerald-700">Carregando...</div>
                 </div>
                 <div class="p-4 bg-white border rounded shadow-sm">
                     <div class="text-xs text-gray-500">Despesas do mês</div>
-                    <div class="text-lg font-semibold text-red-600">
-                        {{ $formatMoney($cards['expense_total_month']) }}
-                    </div>
+                    <div id="dashboard-expense" class="text-lg font-semibold text-red-600">Carregando...</div>
                 </div>
                 <div class="p-4 bg-white border rounded shadow-sm">
                     <div class="text-xs text-gray-500">Saldo do mês</div>
-                    @php $balance = $cards['balance_month']; @endphp
-                    <div class="text-lg font-semibold {{ $balance < 0 ? 'text-red-600' : 'text-emerald-700' }}">
-                        {{ $formatMoney($balance) }}
-                    </div>
+                    <div id="dashboard-balance" class="text-lg font-semibold text-emerald-700">Carregando...</div>
                 </div>
                 <div class="p-4 bg-white border rounded shadow-sm">
                     <div class="text-xs text-gray-500">A pagar no mês</div>
-                    <div class="text-lg font-semibold text-gray-800">
-                        {{ $formatMoney($cards['payable_total_month']) }}
+                    <div id="dashboard-payable-total" class="text-lg font-semibold text-gray-800">
+                        Carregando...
                     </div>
-                    <div class="mt-1 text-xs text-gray-500">
-                        Cartões: {{ $formatMoney($cards['breakdown']['payable_cards_total']) }} ·
-                        Empréstimos: {{ $formatMoney($cards['breakdown']['payable_loans_total']) }}
+                    <div id="dashboard-payable-breakdown" class="mt-1 text-xs text-gray-500">
+                        Carregando...
                     </div>
                 </div>
             </div>
@@ -84,23 +72,8 @@
                     <div class="px-4 py-3 border-b">
                         <h3 class="text-sm font-semibold text-gray-700">A pagar no mês — Cartões</h3>
                     </div>
-                    <div class="p-4 space-y-3 text-sm">
-                        @forelse ($lists['payables_cards'] as $card)
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <div class="font-medium text-gray-800">
-                                        {{ $card['card_name'] ?? 'Cartão' }}
-                                        @if (!empty($card['owner_name']))
-                                            <span class="text-xs text-gray-500">({{ $card['owner_name'] }})</span>
-                                        @endif
-                                    </div>
-                                    <div class="text-xs text-gray-500">Vencimento: {{ $card['due_date'] }}</div>
-                                </div>
-                                <div class="font-semibold text-red-600">{{ $formatMoney($card['total']) }}</div>
-                            </div>
-                        @empty
-                            <div class="text-xs text-gray-500">Nenhuma fatura encontrada para este mês.</div>
-                        @endforelse
+                    <div id="payables-cards-list" class="p-4 space-y-3 text-sm">
+                        <div class="text-xs text-gray-500">Carregando faturas...</div>
                     </div>
                 </div>
 
@@ -108,25 +81,8 @@
                     <div class="px-4 py-3 border-b">
                         <h3 class="text-sm font-semibold text-gray-700">A pagar no mês — Empréstimos</h3>
                     </div>
-                    <div class="p-4 space-y-3 text-sm">
-                        @forelse ($lists['payables_loans'] as $loan)
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <div class="font-medium text-gray-800">
-                                        {{ $loan['description'] ?? 'Parcela' }}
-                                    </div>
-                                    <div class="text-xs text-gray-500">
-                                        Vencimento: {{ $loan['due_date'] ?? '-' }}
-                                        @if (!empty($loan['installment_total']) && $loan['installment_total'] > 1)
-                                            · {{ $loan['installment_number'] }}/{{ $loan['installment_total'] }}
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="font-semibold text-red-600">{{ $formatMoney($loan['amount']) }}</div>
-                            </div>
-                        @empty
-                            <div class="text-xs text-gray-500">Nenhuma parcela de empréstimo neste mês.</div>
-                        @endforelse
+                    <div id="payables-loans-list" class="p-4 space-y-3 text-sm">
+                        <div class="text-xs text-gray-500">Carregando parcelas...</div>
                     </div>
                 </div>
             </div>
@@ -146,31 +102,12 @@
                                 <th class="px-3 py-2 text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y">
-                            @forelse ($lists['cashflow_items'] as $item)
-                                @php
-                                    $isProjection = ($item['source'] ?? '') === 'projection';
-                                @endphp
-                                <tr>
-                                    <td class="px-3 py-2 text-gray-600">{{ $item['due_date'] ?? '-' }}</td>
-                                    <td class="px-3 py-2 text-gray-800">{{ $item['description'] ?? '-' }}</td>
-                                    <td class="px-3 py-2 text-right">
-                                        {{ $formatMoney($item['amount'] ?? 0) }}
-                                    </td>
-                                    <td class="px-3 py-2 text-center">
-                                        <span
-                                            class="inline-flex items-center px-2 py-0.5 text-[11px] rounded-full {{ $isProjection ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }}">
-                                            {{ $isProjection ? 'Previsto' : 'Real' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="px-3 py-4 text-xs text-gray-500">
-                                        Nenhuma movimentação encontrada.
-                                    </td>
-                                </tr>
-                            @endforelse
+                        <tbody id="cashflow-body" class="divide-y">
+                            <tr>
+                                <td colspan="4" class="px-3 py-4 text-xs text-gray-500">
+                                    Carregando movimentações...
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -178,4 +115,255 @@
 
         </div>
     </div>
+
+    <script type="module">
+        const dashboardYear = @json($year);
+        const dashboardMonth = @json($month);
+
+        const incomeEl = document.getElementById('dashboard-income');
+        const expenseEl = document.getElementById('dashboard-expense');
+        const balanceEl = document.getElementById('dashboard-balance');
+        const payableTotalEl = document.getElementById('dashboard-payable-total');
+        const payableBreakdownEl = document.getElementById('dashboard-payable-breakdown');
+        const payablesCardsListEl = document.getElementById('payables-cards-list');
+        const payablesLoansListEl = document.getElementById('payables-loans-list');
+        const cashflowBodyEl = document.getElementById('cashflow-body');
+
+        const moneyFormatter = new Intl.NumberFormat('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+
+        const formatMoney = (value) => {
+            const amount = Number(value ?? 0);
+            const safeAmount = Number.isFinite(amount) ? amount : 0;
+            return `R$ ${moneyFormatter.format(safeAmount)}`;
+        };
+
+        const renderCards = (cards = {}) => {
+            incomeEl.textContent = formatMoney(cards.income_total_month);
+            expenseEl.textContent = formatMoney(cards.expense_total_month);
+
+            const balance = Number(cards.balance_month ?? 0);
+            balanceEl.textContent = formatMoney(balance);
+            balanceEl.classList.remove('text-emerald-700', 'text-red-600', 'text-gray-500');
+            balanceEl.classList.add(balance < 0 ? 'text-red-600' : 'text-emerald-700');
+
+            payableTotalEl.textContent = formatMoney(cards.payable_total_month);
+
+            const breakdown = cards.breakdown ?? {};
+            const cardsTotal = breakdown.payable_cards_total ?? 0;
+            const loansTotal = breakdown.payable_loans_total ?? 0;
+            payableBreakdownEl.textContent =
+                `Cartões: ${formatMoney(cardsTotal)} · Empréstimos: ${formatMoney(loansTotal)}`;
+        };
+
+        const renderPayablesCards = (list = []) => {
+            payablesCardsListEl.innerHTML = '';
+
+            if (!list.length) {
+                const empty = document.createElement('div');
+                empty.className = 'text-xs text-gray-500';
+                empty.textContent = 'Nenhuma fatura encontrada para este mês.';
+                payablesCardsListEl.appendChild(empty);
+                return;
+            }
+
+            list.forEach((card) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-center justify-between gap-3';
+
+                const info = document.createElement('div');
+
+                const title = document.createElement('div');
+                title.className = 'font-medium text-gray-800';
+                title.textContent = card?.card_name ?? 'Cartão';
+
+                if (card?.owner_name) {
+                    const owner = document.createElement('span');
+                    owner.className = 'text-xs text-gray-500';
+                    owner.textContent = `(${card.owner_name})`;
+                    title.appendChild(document.createTextNode(' '));
+                    title.appendChild(owner);
+                }
+
+                const due = document.createElement('div');
+                due.className = 'text-xs text-gray-500';
+                due.textContent = `Vencimento: ${card?.due_date ?? '-'}`;
+
+                info.appendChild(title);
+                info.appendChild(due);
+
+                const amount = document.createElement('div');
+                amount.className = 'font-semibold text-red-600';
+                amount.textContent = formatMoney(card?.total ?? 0);
+
+                wrapper.appendChild(info);
+                wrapper.appendChild(amount);
+
+                payablesCardsListEl.appendChild(wrapper);
+            });
+        };
+
+        const renderPayablesLoans = (list = []) => {
+            payablesLoansListEl.innerHTML = '';
+
+            if (!list.length) {
+                const empty = document.createElement('div');
+                empty.className = 'text-xs text-gray-500';
+                empty.textContent = 'Nenhuma parcela de empréstimo neste mês.';
+                payablesLoansListEl.appendChild(empty);
+                return;
+            }
+
+            list.forEach((loan) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-center justify-between gap-3';
+
+                const info = document.createElement('div');
+
+                const title = document.createElement('div');
+                title.className = 'font-medium text-gray-800';
+                title.textContent = loan?.description ?? 'Parcela';
+
+                const due = document.createElement('div');
+                due.className = 'text-xs text-gray-500';
+
+                const dueText = `Vencimento: ${loan?.due_date ?? '-'}`;
+                const totalInstallments = Number(loan?.installment_total ?? 0);
+                const installmentNumber = loan?.installment_number ?? null;
+
+                if (totalInstallments > 1 && installmentNumber) {
+                    due.textContent = `${dueText} · ${installmentNumber}/${totalInstallments}`;
+                } else {
+                    due.textContent = dueText;
+                }
+
+                info.appendChild(title);
+                info.appendChild(due);
+
+                const amount = document.createElement('div');
+                amount.className = 'font-semibold text-red-600';
+                amount.textContent = formatMoney(loan?.amount ?? 0);
+
+                wrapper.appendChild(info);
+                wrapper.appendChild(amount);
+
+                payablesLoansListEl.appendChild(wrapper);
+            });
+        };
+
+        const renderCashflow = (items = []) => {
+            cashflowBodyEl.innerHTML = '';
+
+            if (!items.length) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 4;
+                cell.className = 'px-3 py-4 text-xs text-gray-500';
+                cell.textContent = 'Nenhuma movimentação encontrada.';
+                row.appendChild(cell);
+                cashflowBodyEl.appendChild(row);
+                return;
+            }
+
+            items.forEach((item) => {
+                const row = document.createElement('tr');
+
+                const dueCell = document.createElement('td');
+                dueCell.className = 'px-3 py-2 text-gray-600';
+                dueCell.textContent = item?.due_date ?? '-';
+
+                const descCell = document.createElement('td');
+                descCell.className = 'px-3 py-2 text-gray-800';
+                descCell.textContent = item?.description ?? '-';
+
+                const amountCell = document.createElement('td');
+                amountCell.className = 'px-3 py-2 text-right';
+                amountCell.textContent = formatMoney(item?.amount ?? 0);
+
+                const statusCell = document.createElement('td');
+                statusCell.className = 'px-3 py-2 text-center';
+
+                const isProjection = (item?.source ?? '') === 'projection';
+                const badge = document.createElement('span');
+                badge.className =
+                    `inline-flex items-center px-2 py-0.5 text-[11px] rounded-full ${isProjection ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`;
+                badge.textContent = isProjection ? 'Previsto' : 'Real';
+
+                statusCell.appendChild(badge);
+
+                row.appendChild(dueCell);
+                row.appendChild(descCell);
+                row.appendChild(amountCell);
+                row.appendChild(statusCell);
+
+                cashflowBodyEl.appendChild(row);
+            });
+        };
+
+        const renderError = () => {
+            incomeEl.textContent = '-';
+            expenseEl.textContent = '-';
+            balanceEl.textContent = '-';
+            balanceEl.classList.remove('text-emerald-700', 'text-red-600');
+            balanceEl.classList.add('text-gray-500');
+            payableTotalEl.textContent = '-';
+            payableBreakdownEl.textContent = 'Erro ao carregar dados do dashboard.';
+
+            payablesCardsListEl.innerHTML = '';
+            payablesLoansListEl.innerHTML = '';
+            cashflowBodyEl.innerHTML = '';
+
+            const cardsError = document.createElement('div');
+            cardsError.className = 'text-xs text-gray-500';
+            cardsError.textContent = 'Erro ao carregar cartões.';
+            payablesCardsListEl.appendChild(cardsError);
+
+            const loansError = document.createElement('div');
+            loansError.className = 'text-xs text-gray-500';
+            loansError.textContent = 'Erro ao carregar empréstimos.';
+            payablesLoansListEl.appendChild(loansError);
+
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 4;
+            cell.className = 'px-3 py-4 text-xs text-gray-500';
+            cell.textContent = 'Erro ao carregar movimentações.';
+            row.appendChild(cell);
+            cashflowBodyEl.appendChild(row);
+        };
+
+        const loadDashboard = async () => {
+            const url = new URL('/api/dashboard/monthly', window.location.origin);
+            url.searchParams.set('year', dashboardYear);
+            url.searchParams.set('month', dashboardMonth);
+
+            try {
+                const response = await fetch(url.toString(), {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro na API: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                renderCards(data?.cards ?? {});
+                renderPayablesCards(data?.lists?.payables_cards ?? []);
+                renderPayablesLoans(data?.lists?.payables_loans ?? []);
+                renderCashflow(data?.lists?.cashflow_items ?? []);
+            } catch (error) {
+                console.error(error);
+                renderError();
+            }
+        };
+
+        loadDashboard();
+    </script>
 </x-app-layout>

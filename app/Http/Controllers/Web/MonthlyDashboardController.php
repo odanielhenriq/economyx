@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Services\MonthlyDashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class MonthlyDashboardController extends Controller
 {
-    public function index(Request $request, MonthlyDashboardService $service)
+    public function index(Request $request)
     {
         // Define o mês alvo (fallback para mês/ano atuais)
         $year = (int) $request->query('year', now()->year);
@@ -29,9 +28,6 @@ class MonthlyDashboardController extends Controller
         $prev = $current->copy()->subMonthNoOverflow();
         $next = $current->copy()->addMonthNoOverflow();
 
-        // Monta o payload consolidado do dashboard
-        $payload = $service->build($year, $month, $request->user());
-
         // Envia tudo para a view mensal
         return view('dashboard.monthly', [
             'year' => $year,
@@ -39,8 +35,6 @@ class MonthlyDashboardController extends Controller
             'monthLabel' => $current->format('m/Y'),
             'prev' => ['year' => $prev->year, 'month' => $prev->month],
             'next' => ['year' => $next->year, 'month' => $next->month],
-            'cards' => $payload['cards'],
-            'lists' => $payload['lists'],
         ]);
     }
 }

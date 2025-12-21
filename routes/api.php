@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\MonthlyDashboardController as MonthlyDashboardApiController;
 use App\Http\Controllers\CardStatementController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CreditCardController;
@@ -68,3 +69,6 @@ Route::delete('/recurring-templates/{id}', [RecurringTransactionController::clas
 
 // API de extrato de cartão: /api/cards/{card}/statement?year=2025&month=12
 Route::get('cards/{card}/statement', [CardStatementController::class, 'statement']);
+
+// Dashboard mensal em JSON (usado pela tela web via fetch)
+Route::middleware(['web'])->get('/dashboard/monthly', [MonthlyDashboardApiController::class, 'index']);
