@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\CreditCard;
 use App\Models\CreditCardStatement;
 use App\Models\Transaction;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class CardStatementController extends Controller
@@ -22,10 +21,7 @@ class CardStatementController extends Controller
             return response()->json(['message' => 'Cartão sem closing_day configurado.'], 422);
         }
 
-        // 2) Período SEM depender do statement existir
-        [$periodStart, $periodEnd] = $this->getBillingPeriodFor($card, $year, $month);
-
-        // 3) Tenta buscar statement (se existir, ótimo — traz parcelas)
+        // 2) Tenta buscar statement (se existir, ótimo — traz parcelas)
         $statement = CreditCardStatement::with([
             'installments.transaction.category',
         ])->where('credit_card_id', $cardId)
@@ -34,6 +30,9 @@ class CardStatementController extends Controller
           ->first();
 
         $installments = $statement?->installments ?? collect();
+
+        // 3) Período baseado no mês de vencimento (regra padrão do app)
+        [$periodStart, $periodEnd] = $card->getStatementPeriodForDueMonth($year, $month);
 
         // 4) Parceladas
         $parceladas = $installments->map(function ($inst) {
@@ -119,24 +118,4 @@ class CardStatementController extends Controller
         ]);
     }
 
-    private function getBillingPeriodFor(CreditCard $card, int $year, int $month): array
-    {
-        // versão segura (tratando dia 31 em mês menor)
-        $closingDay = (int) $card->closing_day;
-
-        $closingDate = $this->safeDate($year, $month, $closingDay)->endOfDay();
-        $previousClosingDate = $closingDate->copy()->subMonthNoOverflow()->endOfDay();
-
-        $start = $previousClosingDate->copy()->addDay()->startOfDay();
-        $end   = $closingDate->copy();
-
-        return [$start, $end];
-    }
-
-    private function safeDate(int $year, int $month, int $day): Carbon
-    {
-        $base = Carbon::create($year, $month, 1)->startOfDay();
-        $day  = max(1, min($day, $base->daysInMonth));
-        return $base->copy()->day($day);
-    }
 }

@@ -64,4 +64,32 @@ class CreditCard extends Model
 
         return [$start, $end];
     }
+
+    /**
+     * Período de fatura baseado no mês de vencimento.
+     * Se closing_day <= due_day: fechamento no mesmo mês do vencimento.
+     * Se closing_day > due_day: fechamento no mês anterior.
+     */
+    public function getStatementPeriodForDueMonth(int $year, int $month): array
+    {
+        $closingDay = (int) $this->closing_day;
+        $dueDay = (int) $this->due_day;
+
+        $dueMonth = Carbon::create($year, $month, 1)->startOfDay();
+        $closingMonth = $closingDay <= $dueDay
+            ? $dueMonth->copy()
+            : $dueMonth->copy()->subMonthNoOverflow();
+
+        $closingDay = max(1, min($closingDay, $closingMonth->daysInMonth));
+        $closingDate = $closingMonth->copy()->day($closingDay)->endOfDay();
+
+        $previousClosingMonth = $closingMonth->copy()->subMonthNoOverflow();
+        $previousClosingDay = max(1, min($closingDay, $previousClosingMonth->daysInMonth));
+        $previousClosingDate = $previousClosingMonth->copy()->day($previousClosingDay)->endOfDay();
+
+        $start = $previousClosingDate->copy()->addDay()->startOfDay();
+        $end = $closingDate->copy();
+
+        return [$start, $end];
+    }
 }

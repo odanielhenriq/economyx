@@ -69,14 +69,8 @@ class MonthlyDashboardService
             $installmentsTotal = (float) $installments->sum('amount');
             $transactionIdsParceladas = $installments->pluck('transaction_id')->unique();
 
-            if ($statement) {
-                $periodStart = $statement->period_start;
-                $periodEnd = $statement->period_end;
-                $dueDay = $statement->due_day;
-            } else {
-                [$periodStart, $periodEnd] = $card->getBillingPeriodFor($year, $month);
-                $dueDay = $card->due_day;
-            }
+            [$periodStart, $periodEnd] = $card->getStatementPeriodForDueMonth($year, $month);
+            $dueDay = $statement?->due_day ?: $card->due_day;
 
             $aVistaQuery = Transaction::query()
                 ->where('credit_card_id', $card->id)
