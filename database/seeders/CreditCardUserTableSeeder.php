@@ -30,6 +30,10 @@ class CreditCardUserTableSeeder extends Seeder
             ->where('owner_name', 'Joyce')
             ->firstOrFail();
 
+        $mercadoPagoDaniel = CreditCard::where('name', 'Mercado Pago')
+            ->where('owner_name', 'Daniel')
+            ->firstOrFail();
+
         $magaluJoyce = CreditCard::where('name', 'Magalu')
             ->where('owner_name', 'Joyce')
             ->firstOrFail();
@@ -75,9 +79,29 @@ class CreditCardUserTableSeeder extends Seeder
                 'updated_at'     => now(),
             ],
 
-            // Will Bank (Joyce) – só Joyce usa (exemplo)
+            // Will Bank (Joyce) – o casal usa (contas são todas do Daniel)
             [
                 'credit_card_id' => $willJoyce->id,
+                'user_id'        => $daniel->id,
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ],
+            [
+                'credit_card_id' => $willJoyce->id,
+                'user_id'        => $joyce->id,
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ],
+
+            // Mercado Pago (Daniel) – o casal usa (contas são todas do Daniel)
+            [
+                'credit_card_id' => $mercadoPagoDaniel->id,
+                'user_id'        => $daniel->id,
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ],
+            [
+                'credit_card_id' => $mercadoPagoDaniel->id,
                 'user_id'        => $joyce->id,
                 'created_at'     => now(),
                 'updated_at'     => now(),
