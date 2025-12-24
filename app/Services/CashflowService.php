@@ -26,7 +26,7 @@ class CashflowService
             ->all();
 
         $transactionsQuery = Transaction::query()
-            ->with('creditCard')
+            ->with(['creditCard', 'type'])
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->orderBy('due_date');
 
@@ -45,6 +45,7 @@ class CashflowService
         $items = $transactions->map(function (Transaction $transaction) {
             $baseDate = $transaction->due_date ?? $transaction->transaction_date;
             $card = $transaction->creditCard;
+            $isSpot = !$transaction->installment_total || $transaction->installment_total <= 1;
 
             return [
                 'id' => $transaction->id,
@@ -57,10 +58,12 @@ class CashflowService
                 'total_amount' => $transaction->total_amount,
                 'category_id' => $transaction->category_id,
                 'type_id' => $transaction->type_id,
+                'type_slug' => $transaction->type?->slug,
                 'payment_method_id' => $transaction->payment_method_id,
                 'credit_card_id' => $transaction->credit_card_id,
                 'credit_card_name' => $card?->name,
                 'recurring_transaction_id' => $transaction->recurring_transaction_id,
+                'is_spot' => $isSpot,
             ];
         })->all();
 
@@ -93,12 +96,14 @@ class CashflowService
                 'total_amount' => (float) $transaction?->total_amount,
                 'category_id' => $transaction?->category_id,
                 'type_id' => $transaction?->type_id,
+                'type_slug' => $transaction?->type?->slug,
                 'payment_method_id' => $transaction?->payment_method_id,
                 'credit_card_id' => $transaction?->credit_card_id,
                 'credit_card_name' => $card?->name,
                 'recurring_transaction_id' => $transaction?->recurring_transaction_id,
                 'installment_number' => $installment->installment_number,
                 'installment_total' => $installment->installment_total,
+                'is_spot' => false,
             ];
         })->all();
 
@@ -115,7 +120,7 @@ class CashflowService
                 });
             }
 
-            $templates = $templatesQuery->get();
+            $templates = $templatesQuery->with('type')->get();
 
             foreach ($templates as $template) {
                 $dueDate = $schedule->dueDateForMonth($template, $year, $month, $now);
@@ -144,9 +149,11 @@ class CashflowService
                     'total_amount' => $template->total_amount ?? $template->amount,
                     'category_id' => $template->category_id,
                     'type_id' => $template->type_id,
+                    'type_slug' => $template->type?->slug,
                     'payment_method_id' => $template->payment_method_id,
                     'credit_card_id' => $template->credit_card_id,
                     'recurring_transaction_id' => $template->id,
+                    'is_spot' => true,
                 ];
             }
         }

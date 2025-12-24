@@ -63,6 +63,11 @@ class Transaction extends Model
         return $this->belongsTo(RecurringTransaction::class);
     }
 
+    public function installments()
+    {
+        return $this->hasMany(TransactionInstallment::class);
+    }
+
     /**
      * Eventos de modelo
      */

@@ -117,19 +117,30 @@ class GenerateInstallmentsService
     {
         $installments = $transaction->installment_total ?: 1;
         $amountPerInstallment = $transaction->amount;
+        
+        // Se a transação já tem installment_number, significa que já estava em andamento
+        // Nesse caso, as parcelas geradas devem começar desse número
+        $startInstallmentNumber = $transaction->installment_number ?: 1;
+        $remainingInstallments = $installments - $startInstallmentNumber + 1;
 
         // base real do vencimento
         $base = $transaction->first_due_date
             ? Carbon::parse($transaction->first_due_date)
-            : Carbon::parse($transaction->transaction_date)->addMonthNoOverflow(); // sugiro +1 mês
+            : Carbon::parse($transaction->transaction_date)->addMonthNoOverflow();
 
-        for ($i = 1; $i <= $installments; $i++) {
-            $dueDate = $base->copy()->addMonthsNoOverflow($i - 1);
+        // Se já estava em andamento, ajusta a base para a parcela atual
+        if ($startInstallmentNumber > 1) {
+            $base = $base->copy()->addMonthsNoOverflow($startInstallmentNumber - 1);
+        }
+
+        for ($i = 0; $i < $remainingInstallments; $i++) {
+            $installmentNumber = $startInstallmentNumber + $i;
+            $dueDate = $base->copy()->addMonthsNoOverflow($i);
 
             TransactionInstallment::create([
                 'transaction_id'           => $transaction->id,
                 'credit_card_statement_id' => null,
-                'installment_number'       => $i,
+                'installment_number'       => $installmentNumber,
                 'installment_total'        => $installments,
                 'amount'                   => $amountPerInstallment,
                 'year'                     => $dueDate->year,
@@ -137,8 +148,8 @@ class GenerateInstallmentsService
                 'due_date'                 => $dueDate,
             ]);
             
-            // Atualiza o due_date da transação principal com o due_date da primeira parcela
-            if ($i === 1 && !$transaction->due_date) {
+            // Atualiza o due_date da transação principal com o due_date da primeira parcela gerada
+            if ($i === 0 && !$transaction->due_date) {
                 $transaction->due_date = $dueDate;
                 $transaction->save();
             }

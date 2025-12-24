@@ -306,7 +306,16 @@
                 amountCell.className = 'px-3 py-2 text-right font-medium';
                 const amount = Number(item?.amount ?? 0);
                 amountCell.textContent = formatMoney(amount);
-                amountCell.classList.add(amount < 0 ? 'text-red-600' : 'text-emerald-700');
+                
+                // Cor baseada no tipo (receita = verde, despesa = vermelho)
+                const typeSlug = item?.type_slug ?? '';
+                if (typeSlug === 'rc') {
+                    amountCell.classList.add('text-emerald-700');
+                } else if (typeSlug === 'dc') {
+                    amountCell.classList.add('text-red-600');
+                } else {
+                    amountCell.classList.add(amount < 0 ? 'text-red-600' : 'text-emerald-700');
+                }
 
                 // Status
                 const statusCell = document.createElement('td');
@@ -314,6 +323,7 @@
 
                 const isProjection = (item?.source ?? '') === 'projection';
                 const isInstallment = (item?.source ?? '') === 'installment';
+                const isSpot = item?.is_spot ?? false;
                 const badge = document.createElement('span');
                 
                 if (isProjection) {
@@ -322,6 +332,9 @@
                 } else if (isInstallment) {
                     badge.className = 'inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-700';
                     badge.textContent = 'Parcela';
+                } else if (isSpot) {
+                    badge.className = 'inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-blue-100 text-blue-700';
+                    badge.textContent = 'À vista';
                 } else {
                     badge.className = 'inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-emerald-100 text-emerald-700';
                     badge.textContent = 'Real';

@@ -59,6 +59,49 @@ class MonthlyDashboardService
         // Elas aparecem apenas em "A Pagar - Cartões" para evitar duplicação
         // As parcelas aparecem no fluxo de caixa apenas para visualização
 
+        // Adiciona projeções de transações recorrentes aos totais
+        $schedule = new RecurringScheduleService();
+        $now = Carbon::now();
+        $recurringTemplates = \App\Models\RecurringTransaction::query()
+            ->with('type')
+            ->where('is_active', true)
+            ->whereHas('users', function ($query) use ($networkIds) {
+                $query->whereIn('users.id', $networkIds);
+            })
+            ->get();
+
+        $projectedIncome = 0.0;
+        $projectedExpense = 0.0;
+
+        foreach ($recurringTemplates as $template) {
+            $dueDate = $schedule->dueDateForMonth($template, $year, $month, $now);
+
+            if (!$dueDate) {
+                continue;
+            }
+
+            // Verifica se já existe transação materializada para este mês
+            $exists = Transaction::query()
+                ->where('recurring_transaction_id', $template->id)
+                ->whereDate('due_date', $dueDate->toDateString())
+                ->exists();
+
+            if ($exists) {
+                continue; // Já está materializada, não precisa projetar
+            }
+
+            // Adiciona aos totais projetados
+            if ($template->type?->slug === 'rc') {
+                $projectedIncome += (float) $template->amount;
+            } elseif ($template->type?->slug === 'dc') {
+                $projectedExpense += (float) $template->amount;
+            }
+        }
+
+        // Adiciona projeções aos totais
+        $incomeTotal += $projectedIncome;
+        $directExpenseTotal += $projectedExpense;
+
         $cards = $user->creditCards()->with('owner')->get();
         $statements = CreditCardStatement::with(['installments'])
             ->whereIn('credit_card_id', $cards->pluck('id')->all())
