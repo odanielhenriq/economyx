@@ -29,6 +29,12 @@ class CreditCardStatement extends Model
         return $this->belongsTo(CreditCard::class, 'credit_card_id');
     }
 
+    // Alias para compatibilidade
+    public function creditCard()
+    {
+        return $this->belongsTo(CreditCard::class, 'credit_card_id');
+    }
+
     // Uma fatura tem muitas parcelas (TransactionInstallment)
     public function installments()
     {

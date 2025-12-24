@@ -76,8 +76,9 @@ class TransactionRepository implements TransactionRepositoryInterface
      */
     public function createTransaction(array $data, array $userIds): Transaction
     {
+        // Calcula due_date se não foi fornecido
         if (empty($data['due_date']) && !empty($data['transaction_date'])) {
-            $data['due_date'] = $data['transaction_date'];
+            $data['due_date'] = $this->calculateDueDate($data);
         }
 
         if (($data['payment_method_slug'] ?? '') !== 'cc') {
@@ -90,6 +91,44 @@ class TransactionRepository implements TransactionRepositoryInterface
         $transaction->users()->sync($userIds);
 
         return $transaction->load(['category', 'type', 'paymentMethod', 'users']);
+    }
+
+    /**
+     * Calcula o due_date baseado nas regras do sistema.
+     */
+    private function calculateDueDate(array $data): ?string
+    {
+        $transactionDate = \Carbon\Carbon::parse($data['transaction_date']);
+
+        // Se tem cartão de crédito
+        if (!empty($data['credit_card_id'])) {
+            $card = \App\Models\CreditCard::find($data['credit_card_id']);
+            
+            if ($card) {
+                // Se é parcelada, o due_date será calculado quando as parcelas forem geradas
+                // Por enquanto, usa o mês seguinte ao da compra
+                if (!empty($data['installment_total']) && $data['installment_total'] > 1) {
+                    $dueMonth = $transactionDate->copy()->addMonthNoOverflow();
+                    return \Carbon\Carbon::create($dueMonth->year, $dueMonth->month, min($card->due_day, $dueMonth->daysInMonth))->format('Y-m-d');
+                }
+                
+                // Compra à vista: vence no mês seguinte ao da compra
+                $dueMonth = $transactionDate->copy()->addMonthNoOverflow();
+                return \Carbon\Carbon::create($dueMonth->year, $dueMonth->month, min($card->due_day, $dueMonth->daysInMonth))->format('Y-m-d');
+            }
+        }
+        
+        // Se é empréstimo parcelado
+        if (!empty($data['installment_total']) && $data['installment_total'] > 1) {
+            if (!empty($data['first_due_date'])) {
+                return $data['first_due_date'];
+            }
+            // Usa transaction_date + 1 mês
+            return $transactionDate->copy()->addMonthNoOverflow()->format('Y-m-d');
+        }
+        
+        // Caso padrão: usa transaction_date
+        return $transactionDate->format('Y-m-d');
     }
 
     public function findTransactionById(int $id): ?Transaction
@@ -106,8 +145,9 @@ class TransactionRepository implements TransactionRepositoryInterface
     {
         $transaction = Transaction::findOrFail($id);
 
+        // Calcula due_date se não foi fornecido
         if (empty($data['due_date']) && !empty($data['transaction_date'])) {
-            $data['due_date'] = $data['transaction_date'];
+            $data['due_date'] = $this->calculateDueDate($data);
         }
 
         if (($data['payment_method_slug'] ?? '') !== 'cc') {

@@ -89,22 +89,24 @@
 
             {{-- Movimentações do mês --}}
             <div class="bg-white border rounded shadow-sm">
-                <div class="px-4 py-3 border-b">
+                <div class="px-4 py-3 border-b bg-gray-50">
                     <h3 class="text-sm font-semibold text-gray-700">Movimentações do mês</h3>
+                    <p class="mt-1 text-xs text-gray-500">Transações à vista e parcelas com vencimento neste mês</p>
                 </div>
                 <div class="p-4 overflow-x-auto">
-                    <table class="min-w-full text-sm text-left">
-                        <thead class="border-b text-gray-600">
+                    <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-3 py-2">Vencimento</th>
-                                <th class="px-3 py-2">Descrição</th>
-                                <th class="px-3 py-2 text-right">Valor</th>
-                                <th class="px-3 py-2 text-center">Status</th>
+                                <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">Vencimento</th>
+                                <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">Descrição</th>
+                                <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">Cartão</th>
+                                <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider text-right">Valor</th>
+                                <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody id="cashflow-body" class="divide-y">
                             <tr>
-                                <td colspan="4" class="px-3 py-4 text-xs text-gray-500">
+                                <td colspan="5" class="px-3 py-4 text-xs text-gray-500">
                                     Carregando movimentações...
                                 </td>
                             </tr>
@@ -259,7 +261,7 @@
             if (!items.length) {
                 const row = document.createElement('tr');
                 const cell = document.createElement('td');
-                cell.colSpan = 4;
+                cell.colSpan = 5;
                 cell.className = 'px-3 py-4 text-xs text-gray-500';
                 cell.textContent = 'Nenhuma movimentação encontrada.';
                 row.appendChild(cell);
@@ -269,32 +271,67 @@
 
             items.forEach((item) => {
                 const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
 
+                // Vencimento
                 const dueCell = document.createElement('td');
-                dueCell.className = 'px-3 py-2 text-gray-600';
-                dueCell.textContent = item?.due_date ?? '-';
+                dueCell.className = 'px-3 py-2 text-gray-600 whitespace-nowrap';
+                if (item?.due_date) {
+                    const date = new Date(item.due_date);
+                    dueCell.textContent = date.toLocaleDateString('pt-BR');
+                } else {
+                    dueCell.textContent = '-';
+                }
 
+                // Descrição
                 const descCell = document.createElement('td');
                 descCell.className = 'px-3 py-2 text-gray-800';
                 descCell.textContent = item?.description ?? '-';
 
-                const amountCell = document.createElement('td');
-                amountCell.className = 'px-3 py-2 text-right';
-                amountCell.textContent = formatMoney(item?.amount ?? 0);
+                // Cartão
+                const cardCell = document.createElement('td');
+                cardCell.className = 'px-3 py-2';
+                if (item?.credit_card_name) {
+                    const cardBadge = document.createElement('span');
+                    cardBadge.className = 'inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full bg-blue-100 text-blue-700';
+                    cardBadge.textContent = item.credit_card_name;
+                    cardCell.appendChild(cardBadge);
+                } else {
+                    cardCell.textContent = '-';
+                    cardCell.className += ' text-gray-400';
+                }
 
+                // Valor
+                const amountCell = document.createElement('td');
+                amountCell.className = 'px-3 py-2 text-right font-medium';
+                const amount = Number(item?.amount ?? 0);
+                amountCell.textContent = formatMoney(amount);
+                amountCell.classList.add(amount < 0 ? 'text-red-600' : 'text-emerald-700');
+
+                // Status
                 const statusCell = document.createElement('td');
                 statusCell.className = 'px-3 py-2 text-center';
 
                 const isProjection = (item?.source ?? '') === 'projection';
+                const isInstallment = (item?.source ?? '') === 'installment';
                 const badge = document.createElement('span');
-                badge.className =
-                    `inline-flex items-center px-2 py-0.5 text-[11px] rounded-full ${isProjection ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`;
-                badge.textContent = isProjection ? 'Previsto' : 'Real';
+                
+                if (isProjection) {
+                    badge.className = 'inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-amber-100 text-amber-700';
+                    badge.textContent = 'Previsto';
+                } else if (isInstallment) {
+                    badge.className = 'inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-700';
+                    badge.textContent = 'Parcela';
+                } else {
+                    badge.className = 'inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-emerald-100 text-emerald-700';
+                    badge.textContent = 'Real';
+                }
 
                 statusCell.appendChild(badge);
 
                 row.appendChild(dueCell);
                 row.appendChild(descCell);
+                row.appendChild(cardCell);
                 row.appendChild(amountCell);
                 row.appendChild(statusCell);
 
@@ -327,7 +364,7 @@
 
             const row = document.createElement('tr');
             const cell = document.createElement('td');
-            cell.colSpan = 4;
+            cell.colSpan = 5;
             cell.className = 'px-3 py-4 text-xs text-gray-500';
             cell.textContent = 'Erro ao carregar movimentações.';
             row.appendChild(cell);

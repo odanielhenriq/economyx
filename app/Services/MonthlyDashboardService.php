@@ -22,6 +22,7 @@ class MonthlyDashboardService
             ->pluck('transaction_id')
             ->all();
 
+        // Transações à vista (excluindo parceladas)
         $transactionBase = Transaction::query()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->whereHas('users', function ($query) use ($networkIds) {
@@ -32,12 +33,14 @@ class MonthlyDashboardService
             $transactionBase->whereNotIn('id', $installmentParentIds);
         }
 
+        // Receitas do mês (transações à vista)
         $incomeTotal = (clone $transactionBase)
             ->whereHas('type', function ($query) {
                 $query->where('slug', 'rc');
             })
             ->sum('amount');
 
+        // Despesas diretas do mês (transações à vista, sem cartão, sem empréstimos)
         $directExpenseTotal = (clone $transactionBase)
             ->whereNull('credit_card_id')
             ->whereHas('type', function ($query) {
@@ -51,6 +54,10 @@ class MonthlyDashboardService
                 });
             })
             ->sum('amount');
+
+        // NOTA: Parcelas de cartão NÃO entram nas despesas/receitas do mês
+        // Elas aparecem apenas em "A Pagar - Cartões" para evitar duplicação
+        // As parcelas aparecem no fluxo de caixa apenas para visualização
 
         $cards = $user->creditCards()->with('owner')->get();
         $statements = CreditCardStatement::with(['installments'])

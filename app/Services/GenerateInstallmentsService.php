@@ -87,6 +87,8 @@ class GenerateInstallmentsService
             );
 
             // Cria o registro da parcela na tabela `transaction_installments`
+            $installmentDueDate = $this->calcDueDate($card, $year, $month);
+            
             TransactionInstallment::create([
                 'transaction_id'           => $transaction->id,
                 'credit_card_statement_id' => $statement->id,
@@ -95,8 +97,14 @@ class GenerateInstallmentsService
                 'amount'                   => $amountPerInstallment,
                 'year'                     => $year,
                 'month'                    => $month,
-                'due_date' => $this->calcDueDate($card, $year, $month),
+                'due_date'                 => $installmentDueDate,
             ]);
+            
+            // Atualiza o due_date da transação principal com o due_date da primeira parcela
+            if ($i === 1 && !$transaction->due_date) {
+                $transaction->due_date = $installmentDueDate;
+                $transaction->save();
+            }
         }
     }
 
@@ -128,6 +136,12 @@ class GenerateInstallmentsService
                 'month'                    => $dueDate->month,
                 'due_date'                 => $dueDate,
             ]);
+            
+            // Atualiza o due_date da transação principal com o due_date da primeira parcela
+            if ($i === 1 && !$transaction->due_date) {
+                $transaction->due_date = $dueDate;
+                $transaction->save();
+            }
         }
     }
 
