@@ -4,6 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model que representa uma fatura de cartão de crédito.
+ * 
+ * Uma fatura agrupa:
+ * - Parcelas de compras parceladas
+ * - Compras à vista do período
+ * 
+ * Campos Importantes:
+ * - year/month: Mês de vencimento da fatura
+ * - period_start/period_end: Período de fechamento (quais compras entram)
+ * - closing_day: Dia de fechamento
+ * - due_day: Dia de vencimento
+ * 
+ * Relacionamentos:
+ * - creditCard (ou card): Cartão dono da fatura
+ * - installments: Parcelas que compõem a fatura
+ */
 class CreditCardStatement extends Model
 {
     protected $fillable = [

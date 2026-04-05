@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
             // TransactionsTableSeeder::class,
 
             // seus dados reais:
-            RealTransactionsSeeder::class,
+            //RealTransactionsSeeder::class,
         ]);
     }
 }

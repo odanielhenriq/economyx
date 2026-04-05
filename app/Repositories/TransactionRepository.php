@@ -7,6 +7,20 @@ use App\Models\CreditCard;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
+/**
+ * Repository responsável por todas as operações de banco de dados relacionadas a transações.
+ * 
+ * Este repository abstrai o acesso ao banco de dados, seguindo o padrão Repository.
+ * Todas as queries e operações CRUD de transações passam por aqui.
+ * 
+ * Responsabilidades:
+ * - CRUD de transações
+ * - Filtros e paginação
+ * - Cálculo automático de due_date
+ * - Relacionamento com usuários
+ * 
+ * @see App\Repositories\TransactionRepositoryInterface
+ */
 class TransactionRepository implements TransactionRepositoryInterface
 {
     /**
@@ -81,8 +95,18 @@ class TransactionRepository implements TransactionRepositoryInterface
             $data['due_date'] = $this->calculateDueDate($data);
         }
 
-        if (($data['payment_method_slug'] ?? '') !== 'cc') {
+        // Se o método de pagamento NÃO é cartão de crédito (ID 1), remove credit_card_id
+        // Mas só remove se realmente não for cartão (não remove se vier vazio mas for cartão)
+        if (!empty($data['payment_method_id']) && $data['payment_method_id'] != 1) {
             $data['credit_card_id'] = null;
+        }
+        
+        // Se é cartão de crédito (ID 1) mas credit_card_id está vazio, garante que seja null
+        // (não deixa string vazia)
+        if (!empty($data['payment_method_id']) && $data['payment_method_id'] == 1) {
+            if (empty($data['credit_card_id']) || $data['credit_card_id'] === '') {
+                $data['credit_card_id'] = null;
+            }
         }
 
         $transaction = Transaction::create($data);
@@ -94,7 +118,16 @@ class TransactionRepository implements TransactionRepositoryInterface
     }
 
     /**
-     * Calcula o due_date baseado nas regras do sistema.
+     * Calcula o due_date automaticamente baseado nas regras do sistema.
+     * 
+     * Regras:
+     * 1. Cartão à vista: mês seguinte + dia do cartão
+     * 2. Cartão parcelado: será atualizado quando parcelas forem geradas
+     * 3. Empréstimo: usa first_due_date ou transaction_date + 1 mês
+     * 4. Outros: usa transaction_date
+     * 
+     * @param array $data Dados da transação
+     * @return string|null Data de vencimento no formato Y-m-d
      */
     private function calculateDueDate(array $data): ?string
     {

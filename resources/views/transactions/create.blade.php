@@ -314,8 +314,13 @@
 
                 if (paymentSelect.value == methodId) {
                     creditCardWrapper.style.display = 'block';
+                    // Garante que o campo seja obrigatório quando é cartão
+                    creditCardSelect.required = true;
                 } else {
                     creditCardWrapper.style.display = 'none';
+                    // Limpa o valor quando não é cartão de crédito
+                    creditCardSelect.value = '';
+                    creditCardSelect.required = false;
                 }
             }
 
@@ -409,6 +414,15 @@
                 clearErrors();
                 successEl.classList.add('hidden');
 
+                // Validação: se método de pagamento é cartão de crédito, cartão é obrigatório
+                const methodId = creditCardMethodId ?? '1';
+                if (paymentSelect.value == methodId && !creditCardSelect.value) {
+                    showErrors({
+                        credit_card_id: ['É necessário selecionar um cartão quando a forma de pagamento é Cartão de Crédito.']
+                    });
+                    return;
+                }
+
                 if (!installmentToggle.checked) {
                     amountInput.value = totalAmountInput.value;
                     installmentNumberInput.value = '';
@@ -420,6 +434,11 @@
                 if (!installmentToggle.checked) {
                     formData.delete('installment_number');
                     formData.delete('installment_total');
+                }
+
+                // Se não é cartão de crédito, remove o credit_card_id do formData
+                if (paymentSelect.value != methodId) {
+                    formData.delete('credit_card_id');
                 }
 
                 submitBtn.disabled = true;

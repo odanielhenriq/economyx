@@ -4,14 +4,21 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\CreditCard;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class CardStatementWebController extends Controller
 {
+    /**
+     * Exibe a tela de extrato de cartão com todos os cartões disponíveis.
+     * 
+     * Lista TODOS os cartões do sistema, não apenas os do usuário logado,
+     * para que o usuário possa visualizar faturas de qualquer cartão.
+     */
     public function index()
     {
-        $cards = Auth::user()->creditCards()->with('owner')->get();
+        // Busca todos os cartões com seus donos
+        $cards = CreditCard::with('owner')
+            ->orderBy('name')
+            ->get();
 
         return view('cards.statement', compact('cards'));
     }

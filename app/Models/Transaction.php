@@ -6,6 +6,27 @@ use App\Services\GenerateInstallmentsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Model que representa uma transação financeira.
+ * 
+ * Uma transação pode ser:
+ * - Receita ou despesa
+ * - À vista ou parcelada
+ * - Com ou sem cartão de crédito
+ * - Vinculada a uma transação recorrente
+ * 
+ * Eventos:
+ * - created: Dispara GenerateInstallmentsService para gerar parcelas
+ * 
+ * Relacionamentos:
+ * - users: N:N (múltiplos usuários podem dividir uma transação)
+ * - category: Categoria da transação
+ * - type: Tipo (Receita/Despesa)
+ * - paymentMethod: Método de pagamento
+ * - creditCard: Cartão de crédito (se aplicável)
+ * - installments: Parcelas geradas (se parcelada)
+ * - recurringTransaction: Template recorrente (se aplicável)
+ */
 class Transaction extends Model
 {
     use SoftDeletes;
@@ -69,7 +90,17 @@ class Transaction extends Model
     }
 
     /**
-     * Eventos de modelo
+     * Eventos do modelo.
+     * 
+     * Quando uma transação é criada, automaticamente gera as parcelas
+     * se a transação for parcelada (cartão ou empréstimo).
+     * 
+     * IMPORTANTE: Este evento é desabilitado durante seeding se usar
+     * WithoutModelEvents. Certifique-se de que DatabaseSeeder não usa
+     * esse trait para que as parcelas sejam geradas durante o seed.
+     * 
+     * @see App\Services\GenerateInstallmentsService
+     * @see Database\Seeders\DatabaseSeeder
      */
     protected static function booted()
     {

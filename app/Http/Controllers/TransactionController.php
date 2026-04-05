@@ -9,11 +9,34 @@ use App\Repositories\TransactionRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
+/**
+ * Controller responsável por gerenciar transações via API.
+ *
+ * Este controller lida com todas as operações CRUD de transações:
+ * - Listar transações (com filtros e paginação)
+ * - Criar novas transações
+ * - Atualizar transações existentes
+ * - Excluir transações (soft delete)
+ *
+ * Fluxo de criação:
+ * 1. Valida dados (StoreTransactionRequest)
+ * 2. Cria transação via Repository
+ * 3. Repository dispara evento Transaction::created
+ * 4. Evento gera parcelas automaticamente (se aplicável)
+ *
+ * @see App\Repositories\TransactionRepository
+ * @see App\Models\Transaction
+ * @see App\Services\GenerateInstallmentsService
+ */
 class TransactionController extends Controller
 {
 
+    /**
+     * Injeção de dependência do repository de transações.
+     *
+     * @param \App\Repositories\TransactionRepositoryInterface $transactions
+     */
     public function __construct(
-        // Repository de transações (injeção de dependência)
         private TransactionRepositoryInterface $transactions
     ) {}
 
@@ -59,6 +82,11 @@ class TransactionController extends Controller
         try {
             // Valida dados conforme StoreTransactionRequest
             $data = $request->validated();
+
+            // Converte credit_card_id vazio para null
+            if (isset($data['credit_card_id']) && $data['credit_card_id'] === '') {
+                $data['credit_card_id'] = null;
+            }
 
             // Separa os usuários que vão dividir a transação
             $userIds = $data['user_ids'];

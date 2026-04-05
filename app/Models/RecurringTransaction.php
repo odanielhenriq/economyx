@@ -7,6 +7,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Model que representa um template de transação recorrente.
+ * 
+ * Um template define:
+ * - Descrição, valor, categoria, tipo
+ * - Frequência (mensal ou anual)
+ * - Dia do mês de vencimento
+ * - Período de validade (start_date/end_date)
+ * 
+ * Materialização:
+ * - O comando RecurringMaterializeCommand cria transações reais
+ * - Baseado neste template
+ * - Aparece no dashboard como projeção antes de ser materializada
+ * 
+ * Relacionamentos:
+ * - users: Usuários que dividem (N:N)
+ * - transactions: Transações materializadas deste template
+ * - category, type, paymentMethod, creditCard: Dados da transação
+ */
 class RecurringTransaction extends Model
 {
     protected $fillable = [

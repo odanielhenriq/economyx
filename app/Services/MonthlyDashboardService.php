@@ -8,8 +8,34 @@ use App\Models\TransactionInstallment;
 use App\Models\User;
 use Carbon\Carbon;
 
+/**
+ * Service responsável por construir os dados do dashboard mensal.
+ * 
+ * Este service agrega todas as informações necessárias para exibir o dashboard:
+ * - Totais de receitas e despesas do mês
+ * - Faturas de cartões a pagar
+ * - Parcelas de empréstimos a pagar
+ * - Itens do fluxo de caixa
+ * 
+ * Fluxo:
+ * 1. Calcula receitas/despesas à vista (excluindo parceladas)
+ * 2. Adiciona projeções de transações recorrentes
+ * 3. Busca faturas de cartões do mês
+ * 4. Busca parcelas de empréstimos do mês
+ * 5. Monta array com todos os dados
+ * 
+ * @see App\Http\Controllers\Api\MonthlyDashboardController
+ */
 class MonthlyDashboardService
 {
+    /**
+     * Constrói todos os dados do dashboard para um mês específico.
+     * 
+     * @param int $year Ano
+     * @param int $month Mês (1-12)
+     * @param \App\Models\User $user Usuário logado
+     * @return array Array com cards (totais) e lists (itens detalhados)
+     */
     public function build(int $year, int $month, User $user): array
     {
         $monthStart = Carbon::create($year, $month, 1)->startOfDay();
@@ -251,25 +277,59 @@ class MonthlyDashboardService
     private function loanFallbackForMonth(Transaction $transaction, int $year, int $month): ?array
     {
         $totalInstallments = (int) ($transaction->installment_total ?: 1);
+        $startInstallmentNumber = (int) ($transaction->installment_number ?: 1);
 
+        // Calcula a data base: se tem first_due_date, usa ela; senão, usa transaction_date + 1 mês
         $base = $transaction->first_due_date
             ? Carbon::parse($transaction->first_due_date)
             : Carbon::parse($transaction->transaction_date)->addMonthNoOverflow();
 
-        $monthDiff = ($year - $base->year) * 12 + ($month - $base->month);
+        // Se a transação já está em andamento (installment_number > 1),
+        // a base atual representa quando a parcela 1 seria se começasse do zero.
+        // Mas como estamos na parcela startInstallmentNumber, precisamos calcular
+        // quando a parcela 1 REAL começou.
+        // 
+        // Exemplo: transaction_date = ago/2025, base = set/2025 (parcela 1 se começasse do zero)
+        // Mas installment_number = 11 significa que já pagamos 10 parcelas.
+        // Se a parcela 11 deve aparecer em fev/2026, então:
+        // - Parcela 11: fev/2026
+        // - Parcela 1: fev/2026 - 10 meses = abr/2025
+        // 
+        // Então a base real (parcela 1) é: base atual - (startInstallmentNumber - 1) meses
+        
+        $targetDate = Carbon::create($year, $month, 1);
+        
+        // Se temos installment_number > 1, calcula quando a parcela 1 REAL começou
+        // a partir do mês alvo, retrocedendo (startInstallmentNumber - 1) meses
+        if ($startInstallmentNumber > 1) {
+            // Exemplo: se installment_number = 11 e queremos fev/2026,
+            // a parcela 1 foi em (fev/2026 - 10 meses) = abr/2025
+            $parcela1Date = $targetDate->copy()->subMonthsNoOverflow($startInstallmentNumber - 1);
+            // Preserva o dia da base original
+            $parcela1Date->day(min($base->day, $parcela1Date->daysInMonth));
+            $base = $parcela1Date;
+        }
+        
+        $monthDiff = ($targetDate->year - $base->year) * 12 + ($targetDate->month - $base->month);
+        
+        // O número da parcela é: quantos meses desde a base + 1 (porque base é parcela 1)
+        $installmentNumber = $monthDiff + 1;
 
-        if ($monthDiff < 0 || $monthDiff >= $totalInstallments) {
+        // Verifica se a parcela está dentro do range válido
+        // A parcela deve estar entre startInstallmentNumber e totalInstallments
+        if ($installmentNumber < $startInstallmentNumber || $installmentNumber > $totalInstallments) {
             return null;
         }
 
-        $dueDate = $base->copy()->addMonthsNoOverflow($monthDiff);
+        // A data de vencimento é o mesmo dia do mês alvo (preservando o dia da base)
+        $dueDate = $targetDate->copy()->day(min($base->day, $targetDate->daysInMonth));
 
         return [
             'transaction_id' => $transaction->id,
             'description' => $transaction->description,
             'due_date' => $dueDate->toDateString(),
             'amount' => (float) $transaction->amount,
-            'installment_number' => $monthDiff + 1,
+            'installment_number' => $installmentNumber,
             'installment_total' => $totalInstallments,
         ];
     }

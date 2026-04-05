@@ -7,8 +7,27 @@ use App\Models\CreditCardStatement;
 use App\Models\TransactionInstallment;
 use Carbon\Carbon;
 
+/**
+ * Service responsável por gerar parcelas de transações.
+ * 
+ * Este service é chamado automaticamente quando uma transação é criada
+ * através do evento Transaction::created no modelo Transaction.
+ * 
+ * Fluxo:
+ * 1. Transação é criada → Evento created dispara
+ * 2. Este service é chamado → Analisa o tipo de transação
+ * 3. Gera parcelas conforme o tipo (cartão ou empréstimo)
+ * 
+ * @see App\Models\Transaction::booted()
+ */
 class GenerateInstallmentsService
 {
+    /**
+     * Método principal que decide qual fluxo usar para gerar parcelas.
+     * 
+     * @param \App\Models\Transaction $transaction Transação recém-criada
+     * @return void
+     */
     public function generate($transaction)
     {
         // Decide qual fluxo usar baseado no que a transação é
@@ -28,8 +47,20 @@ class GenerateInstallmentsService
     }
 
     /**
-     * Gera parcelas para compras de cartão de crédito
-     * (entra na tabela credit_card_statements + transaction_installments).
+     * Gera parcelas para compras de cartão de crédito.
+     * 
+     * Cria:
+     * - CreditCardStatement: Fatura do cartão para cada mês
+     * - TransactionInstallment: Parcela individual vinculada à fatura
+     * 
+     * Lógica:
+     * 1. Calcula em qual fatura cada parcela cai (baseado no período de fechamento)
+     * 2. Cria ou busca a fatura do mês
+     * 3. Cria a parcela vinculada à fatura
+     * 4. Atualiza due_date da transação principal com a primeira parcela
+     * 
+     * @param \App\Models\Transaction $transaction Transação parcelada com cartão
+     * @return void
      */
     private function generateForCreditCard($transaction): void
     {
@@ -111,7 +142,18 @@ class GenerateInstallmentsService
 
     /**
      * Gera parcelas para empréstimos/financiamentos (sem cartão de crédito).
-     * Tudo cai em `transaction_installments` com `credit_card_statement_id = null`.
+     * 
+     * Cria apenas:
+     * - TransactionInstallment: Parcela individual (sem fatura de cartão)
+     * 
+     * Lógica:
+     * 1. Verifica se já estava em andamento (installment_number > 1)
+     * 2. Se sim, ajusta a base de cálculo para a parcela atual
+     * 3. Gera apenas as parcelas restantes
+     * 4. Atualiza due_date da transação principal
+     * 
+     * @param \App\Models\Transaction $transaction Transação parcelada sem cartão
+     * @return void
      */
     private function generateForLoan($transaction): void
     {
@@ -160,9 +202,13 @@ class GenerateInstallmentsService
 
     /**
      * Decide se uma transação "parece" empréstimo/financiamento.
-     * Aqui a regra é:
-     *  - categoria_id == 10 (Empréstimos)
-     *  - ou payment_method_id == 5 (Débito em conta)
+     * 
+     * Regras:
+     * - Categoria com slug 'ep' (Empréstimos)
+     * - OU Método de pagamento com slug 'tb' (Transferência Bancária/Débito em conta)
+     * 
+     * @param \App\Models\Transaction $transaction Transação a verificar
+     * @return bool True se for empréstimo/financiamento
      */
     private function isLoanLike($transaction): bool
     {
@@ -174,19 +220,45 @@ class GenerateInstallmentsService
     }
 
 
-    // Calcula o vencimento no mês da fatura
+    /**
+     * Calcula a data de vencimento da fatura no mês especificado.
+     * 
+     * Usa o due_day do cartão, ajustando para o último dia do mês
+     * se o due_day for maior que os dias do mês.
+     * 
+     * @param \App\Models\CreditCard $card Cartão de crédito
+     * @param int $y Ano
+     * @param int $m Mês
+     * @return \Carbon\Carbon Data de vencimento
+     */
     private function calcDueDate($card, $y, $m)
     {
         $d = Carbon::create($y, $m, 1);
         return $d->copy()->day(min($card->due_day, $d->daysInMonth));
     }
 
+    /**
+     * Calcula a data final do período de fechamento da fatura.
+     * 
+     * @param \App\Models\CreditCard $card Cartão de crédito
+     * @param int $y Ano
+     * @param int $m Mês
+     * @return \Carbon\Carbon Data final do período
+     */
     private function calcPeriodEnd($card, $y, $m)
     {
         [, $end] = $card->getStatementPeriodForDueMonth($y, $m);
         return $end;
     }
 
+    /**
+     * Calcula a data inicial do período de fechamento da fatura.
+     * 
+     * @param \App\Models\CreditCard $card Cartão de crédito
+     * @param int $y Ano
+     * @param int $m Mês
+     * @return \Carbon\Carbon Data inicial do período
+     */
     private function calcPeriodStart($card, $y, $m)
     {
         [$start, ] = $card->getStatementPeriodForDueMonth($y, $m);

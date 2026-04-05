@@ -8,12 +8,38 @@ use App\Services\RecurringScheduleService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
+/**
+ * Comando Artisan para materializar transações recorrentes.
+ * 
+ * Este comando cria transações reais na tabela `transactions` baseado
+ * nos templates de transações recorrentes ativas.
+ * 
+ * Funcionamento:
+ * 1. Busca todos os templates recorrentes ativos
+ * 2. Para cada template, verifica se se aplica ao mês especificado
+ * 3. Verifica se já existe transação materializada para aquele mês
+ * 4. Se não existe, cria uma nova transação real
+ * 5. Vincula aos mesmos usuários do template
+ * 
+ * Agendamento:
+ * - Roda automaticamente todo dia às 02:00
+ * - Pode ser executado manualmente: php artisan recurring:materialize
+ * 
+ * @see routes/console.php Para agendamento
+ * @see App\Models\RecurringTransaction Para templates
+ */
 class RecurringMaterializeCommand extends Command
 {
     protected $signature = 'recurring:materialize {--year=} {--month=}';
 
     protected $description = 'Materializa transações recorrentes para o mês alvo';
 
+    /**
+     * Executa o comando de materialização.
+     * 
+     * @param \App\Services\RecurringScheduleService $schedule Service para calcular datas
+     * @return int Código de saída (0 = sucesso)
+     */
     public function handle(RecurringScheduleService $schedule): int
     {
         $now = Carbon::now();

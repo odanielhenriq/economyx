@@ -7,8 +7,30 @@ use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
 
+/**
+ * Service responsável por construir o fluxo de caixa mensal.
+ * 
+ * Este service retorna todas as movimentações de um mês, incluindo:
+ * - Transações à vista
+ * - Parcelas de cartão
+ * - Projeções de transações recorrentes
+ * 
+ * Diferente do MonthlyDashboardService, este service foca apenas nas
+ * movimentações individuais (não nos totais agregados).
+ * 
+ * @see App\Services\MonthlyDashboardService Para totais agregados
+ */
 class CashflowService
 {
+    /**
+     * Retorna todas as movimentações de um mês.
+     * 
+     * @param int $year Ano
+     * @param int $month Mês (1-12)
+     * @param bool $includeProjections Se deve incluir projeções de recorrentes
+     * @param \App\Models\User|null $user Usuário para filtrar (null = todos)
+     * @return array Array de itens ordenados por due_date
+     */
     public function forMonth(int $year, int $month, bool $includeProjections = true, ?User $user = null): array
     {
         $now = Carbon::now();

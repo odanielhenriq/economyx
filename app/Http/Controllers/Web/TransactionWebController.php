@@ -49,6 +49,11 @@ class TransactionWebController extends Controller
         try {
             $data = $request->validated();
 
+            // Converte credit_card_id vazio para null
+            if (isset($data['credit_card_id']) && $data['credit_card_id'] === '') {
+                $data['credit_card_id'] = null;
+            }
+
             // usuários relacionados (pra divisão de gastos)
             $usersIds = $data['user_ids'];
             unset($data['user_ids']);

@@ -4,19 +4,49 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Request de validação para criação/atualização de transações.
+ * 
+ * Este FormRequest valida todos os dados necessários para criar ou atualizar
+ * uma transação, incluindo:
+ * - Dados básicos (descrição, valor, datas)
+ * - Relacionamentos (categoria, tipo, método de pagamento, cartão)
+ * - Parcelamento (se aplicável)
+ * - Usuários que dividem a transação
+ * 
+ * @see App\Http\Controllers\TransactionController Para uso
+ */
 class StoreTransactionRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Determina se o usuário está autorizado a fazer esta requisição.
+     * 
+     * @return bool Sempre true (autorização é feita no controller/middleware)
      */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Prepara os dados para validação.
+     * Converte strings vazias em null para campos opcionais.
+     */
+    protected function prepareForValidation(): void
+    {
+        // Converte credit_card_id vazio para null antes da validação
+        if ($this->has('credit_card_id') && $this->credit_card_id === '') {
+            $this->merge(['credit_card_id' => null]);
+        }
+    }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Regras de validação para os dados da transação.
+     * 
+     * Regras importantes:
+     * - credit_card_id: Obrigatório se payment_method_id = 1 (cartão)
+     * - installment_total: Opcional, mas se fornecido deve ser >= 1
+     * - user_ids: Obrigatório, pelo menos 1 usuário
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
@@ -61,6 +91,9 @@ class StoreTransactionRequest extends FormRequest
 
             'payment_method_id.required' => 'A forma de pagamento é obrigatória.',
             'payment_method_id.exists'   => 'A forma de pagamento selecionada não existe.',
+
+            'credit_card_id.required_if' => 'É necessário selecionar um cartão quando a forma de pagamento é Cartão de Crédito.',
+            'credit_card_id.exists'      => 'O cartão selecionado não existe.',
 
             'installment_number.integer' => 'O número da parcela deve ser um valor inteiro.',
             'installment_number.min'     => 'O número da parcela deve ser pelo menos 1.',

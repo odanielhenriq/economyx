@@ -8,8 +8,28 @@ use App\Services\MonthlyDashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
+/**
+ * Controller da API para o dashboard mensal.
+ * 
+ * Este controller retorna todos os dados necessários para exibir o dashboard:
+ * - Totais de receitas/despesas
+ * - Faturas de cartões
+ * - Parcelas de empréstimos
+ * - Itens do fluxo de caixa
+ * 
+ * Endpoint: GET /api/dashboard/monthly?year=2026&month=1
+ * 
+ * @see App\Services\MonthlyDashboardService Para lógica de negócio
+ */
 class MonthlyDashboardController extends Controller
 {
+    /**
+     * Retorna os dados do dashboard para um mês específico.
+     * 
+     * @param \Illuminate\Http\Request $request Request HTTP
+     * @param \App\Services\MonthlyDashboardService $service Service do dashboard
+     * @return \Illuminate\Http\JsonResponse JSON com todos os dados do dashboard
+     */
     public function index(Request $request, MonthlyDashboardService $service)
     {
         $year = (int) $request->query('year', now()->year);
