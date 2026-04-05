@@ -44,14 +44,14 @@
 
             {{-- Skeleton: visível enquanto carrega --}}
             <div x-show="loading" class="space-y-4">
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="h-24 bg-slate-200 rounded-xl animate-pulse"></div>
                     <div class="h-24 bg-slate-200 rounded-xl animate-pulse"></div>
                     <div class="h-24 bg-slate-200 rounded-xl animate-pulse"></div>
                     <div class="h-24 bg-slate-200 rounded-xl animate-pulse"></div>
                 </div>
                 <div class="h-44 bg-slate-200 rounded-xl animate-pulse"></div>
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div class="h-44 bg-slate-200 rounded-xl animate-pulse"></div>
                     <div class="h-44 bg-slate-200 rounded-xl animate-pulse"></div>
                 </div>
@@ -62,7 +62,7 @@
             <div x-show="!loading" style="display:none" class="space-y-6">
 
                 {{-- Cards de resumo --}}
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {{-- Receitas --}}
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
                         <div class="flex items-center justify-between mb-3">
@@ -206,7 +206,7 @@
                 </div>
 
                 {{-- A pagar no mês --}}
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
                         <div class="px-5 py-4 border-b border-slate-200">
                             <h3 class="text-sm font-semibold text-slate-700">A pagar no mês — Cartões</h3>

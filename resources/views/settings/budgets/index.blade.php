@@ -49,7 +49,7 @@
         {{-- Tabela de orçamentos existentes --}}
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="min-w-full text-sm text-left divide-y divide-slate-100">
+                <table class="w-full text-sm text-left divide-y divide-slate-100 min-w-[640px]">
                     <thead class="bg-slate-50">
                         <tr>
                             <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Categoria</th>

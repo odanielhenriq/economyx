@@ -55,10 +55,10 @@
                 <div class="p-6 bg-white rounded shadow-sm border space-y-4">
                     <h3 class="font-semibold text-gray-700 mb-2">Informações gerais</h3>
 
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                         {{-- Descrição --}}
-                        <div class="col-span-2">
+                        <div class="col-span-2 sm:col-span-2">
                             <label class="text-sm text-gray-600">Descrição</label>
                             <input type="text" name="description" value=""
                                 class="mt-1 w-full rounded border-gray-300 text-sm">
@@ -81,8 +81,8 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="col-span-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="col-span-2 sm:col-span-2">
                             <label class="text-sm text-gray-600">Categoria</label>
                             <select name="category_id" class="mt-1 w-full rounded border-gray-300 text-sm">
                                 <option value="">...</option>
@@ -92,7 +92,7 @@
                 </div>
 
                 {{-- CARD 2 — PAGAMENTO --}}
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
                     <div x-data="{ raw: '', onInput(e) { const d = e.target.value.replace(/\D/g,''); const n = (parseInt(d||'0')/100); this.raw = n.toFixed(2); e.target.value = 'R$ ' + n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); } }">
                         <label class="text-sm text-gray-600">Valor da parcela (R$)</label>

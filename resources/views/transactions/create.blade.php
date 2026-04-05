@@ -55,7 +55,7 @@
             class="hidden mb-4 px-4 py-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl"></div>
 
         {{-- Seletor de tipo --}}
-        <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
 
             <button type="button" @click="selectTipo('pontual')"
                 :class="tipo === 'pontual'

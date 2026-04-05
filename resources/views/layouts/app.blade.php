@@ -14,13 +14,21 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-sans antialiased" style="background-color: #f8fafc;">
+<body
+    x-data="{ sidebarOpen: false }"
+    x-on:keydown.escape.window="sidebarOpen = false"
+    class="font-sans antialiased"
+    style="background-color: #f8fafc;">
 
 <div class="flex min-h-screen">
 
     {{-- ===== SIDEBAR ===== --}}
-    <aside class="fixed inset-y-0 left-0 z-30 w-64 flex flex-col"
-           style="background-color: #0f1a13;">
+    <aside
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        class="fixed inset-y-0 left-0 z-40 w-64 flex flex-col
+               transform transition-transform duration-300 ease-in-out
+               lg:translate-x-0"
+        style="background-color: #0f1a13;">
 
         {{-- Logo --}}
         <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 flex-shrink-0">
@@ -35,6 +43,7 @@
 
             {{-- Dashboard --}}
             <a href="{{ route('dashboard.monthly') }}"
+               @click="sidebarOpen = false"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                       {{ request()->routeIs('dashboard*')
                          ? 'bg-green-600 text-white'
@@ -55,6 +64,7 @@
 
             {{-- Transações --}}
             <a href="{{ route('transactions.index') }}"
+               @click="sidebarOpen = false"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                       {{ request()->routeIs('transactions*')
                          ? 'bg-green-600 text-white'
@@ -68,6 +78,7 @@
 
             {{-- Cartões --}}
             <a href="{{ route('cards.statement.index') }}"
+               @click="sidebarOpen = false"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                       {{ request()->routeIs('cards*')
                          ? 'bg-green-600 text-white'
@@ -81,6 +92,7 @@
 
             {{-- Contas fixas --}}
             <a href="{{ route('recurring-templates.index') }}"
+               @click="sidebarOpen = false"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                       {{ request()->routeIs('recurring-templates*')
                          ? 'bg-green-600 text-white'
@@ -134,37 +146,32 @@
                      class="mt-0.5 space-y-0.5 pl-7"
                      style="display:none">
 
-                    @php
-                        $subLink = fn($route, $label) =>
-                            '<a href="' . route($route) . '" '
-                            . 'class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors '
-                            . (request()->routeIs(str_replace('.index', '.*', $route))
-                               ? 'bg-green-600/20 text-green-300'
-                               : 'text-green-100/50 hover:bg-white/5 hover:text-white')
-                            . '">' . $label . '</a>';
-                    @endphp
-
                     <a href="{{ route('categories.index') }}"
+                       @click="sidebarOpen = false"
                        class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors
                               {{ request()->routeIs('categories.*') ? 'bg-green-600/20 text-green-300' : 'text-green-100/50 hover:bg-white/5 hover:text-white' }}">
                         Categorias
                     </a>
                     <a href="{{ route('types.index') }}"
+                       @click="sidebarOpen = false"
                        class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors
                               {{ request()->routeIs('types.*') ? 'bg-green-600/20 text-green-300' : 'text-green-100/50 hover:bg-white/5 hover:text-white' }}">
                         Tipos
                     </a>
                     <a href="{{ route('payment-methods.index') }}"
+                       @click="sidebarOpen = false"
                        class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors
                               {{ request()->routeIs('payment-methods.*') ? 'bg-green-600/20 text-green-300' : 'text-green-100/50 hover:bg-white/5 hover:text-white' }}">
                         Formas de pagamento
                     </a>
                     <a href="{{ route('credit-cards.index') }}"
+                       @click="sidebarOpen = false"
                        class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors
                               {{ request()->routeIs('credit-cards.*') ? 'bg-green-600/20 text-green-300' : 'text-green-100/50 hover:bg-white/5 hover:text-white' }}">
                         Cartões
                     </a>
                     <a href="{{ route('budgets.index') }}"
+                       @click="sidebarOpen = false"
                        class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors
                               {{ request()->routeIs('budgets.*') ? 'bg-green-600/20 text-green-300' : 'text-green-100/50 hover:bg-white/5 hover:text-white' }}">
                         Orçamentos
@@ -204,19 +211,49 @@
 
     </aside>
 
+    {{-- Overlay mobile --}}
+    <div
+        x-show="sidebarOpen"
+        x-transition:enter="transition-opacity ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition-opacity ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @click="sidebarOpen = false"
+        class="fixed inset-0 z-30 bg-black/50 lg:hidden"
+    ></div>
+
     {{-- ===== CONTEÚDO PRINCIPAL ===== --}}
-    <div class="ml-64 flex-1 flex flex-col min-h-screen" style="background-color: #f8fafc;">
+    <div class="lg:ml-64 flex-1 flex flex-col min-h-screen" style="background-color: #f8fafc;">
 
         {{-- Topbar --}}
         @isset($header)
-            <header class="sticky top-0 z-20 bg-white border-b px-8 py-4 flex-shrink-0"
+            <header class="sticky top-0 z-10 bg-white border-b flex-shrink-0
+                           px-4 lg:px-8 py-4 flex items-center"
                     style="border-color: #e2e8f0;">
-                {{ $header }}
+
+                {{-- Hamburguer — só mobile --}}
+                <button
+                    @click="sidebarOpen = true"
+                    class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100
+                           hover:text-slate-900 transition mr-3 flex-shrink-0"
+                    aria-label="Abrir menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <div class="flex-1 min-w-0">
+                    {{ $header }}
+                </div>
             </header>
         @endisset
 
         {{-- Conteúdo --}}
-        <main class="flex-1 px-8 py-6">
+        <main class="flex-1 px-4 py-4 lg:px-8 lg:py-6">
             {{ $slot }}
         </main>
 
