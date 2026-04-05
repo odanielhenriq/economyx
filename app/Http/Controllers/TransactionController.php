@@ -64,8 +64,14 @@ class TransactionController extends Controller
             // Pede pro repository fazer a query filtrada e paginada
             $transactions = $this->transactions->getPaginatedTransactions($perPage, $filters);
 
-            // Retorna coleção de TransactionResource (formato padronizado da API)
-            return TransactionResource::collection($transactions);
+            // Totais do período completo (não só da página)
+            $periodTotals = $this->transactions->getPeriodTotals($filters);
+
+            // Serializa a coleção paginada e injeta totais no meta
+            $responseData = TransactionResource::collection($transactions)->response()->getData(true);
+            $responseData['meta']['totals'] = $periodTotals;
+
+            return response()->json($responseData);
         } catch (\Throwable $th) {
             return response()->json([
                 'error' => 'Failed to retrieve transactions',

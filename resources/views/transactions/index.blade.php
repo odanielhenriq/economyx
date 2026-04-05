@@ -183,6 +183,22 @@
 
             {{-- Skeleton --}}
             <div x-show="loading" class="space-y-3">
+                {{-- Skeleton dos cards de resumo --}}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                        <div class="h-3 w-28 bg-slate-200 rounded animate-pulse mb-3"></div>
+                        <div class="h-7 w-36 bg-slate-200 rounded animate-pulse"></div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                        <div class="h-3 w-28 bg-slate-200 rounded animate-pulse mb-3"></div>
+                        <div class="h-7 w-36 bg-slate-200 rounded animate-pulse"></div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                        <div class="h-3 w-28 bg-slate-200 rounded animate-pulse mb-3"></div>
+                        <div class="h-7 w-36 bg-slate-200 rounded animate-pulse"></div>
+                    </div>
+                </div>
+                {{-- Skeleton das linhas da tabela --}}
                 <div class="h-10 bg-slate-200 rounded-xl animate-pulse"></div>
                 <div class="h-10 bg-slate-200 rounded-xl animate-pulse"></div>
                 <div class="h-10 bg-slate-200 rounded-xl animate-pulse"></div>
@@ -326,31 +342,27 @@
 
                 stateEl.innerHTML = '';
 
-                // Resumo da página
-                let totalIncome = 0;
-                let totalExpense = 0;
-                items.forEach(tx => {
-                    const signed = Number(tx.signed_amount);
-                    if (signed > 0) totalIncome += signed;
-                    if (signed < 0) totalExpense += signed;
-                });
-                const balance = totalIncome + totalExpense;
+                // Totais do período completo (vindos do meta da API, não da página atual)
+                const periodTotals = meta?.totals ?? {};
+                const totalIncome   = periodTotals.income  ?? 0;
+                const totalExpense  = Math.abs(periodTotals.expense ?? 0);
+                const balance       = periodTotals.balance ?? 0;
 
                 summaryEl.innerHTML = `
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-                        <div class="text-xs font-medium text-slate-500 mb-1">Receitas</div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Receitas do período</div>
                         <div class="text-xl font-bold text-emerald-700 tabular-nums">
                             ${totalIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </div>
                     </div>
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-                        <div class="text-xs font-medium text-slate-500 mb-1">Despesas</div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Despesas do período</div>
                         <div class="text-xl font-bold text-red-600 tabular-nums">
                             ${totalExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </div>
                     </div>
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-                        <div class="text-xs font-medium text-slate-500 mb-1">Saldo</div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Saldo do período</div>
                         <div class="text-xl font-bold tabular-nums ${balance >= 0 ? 'text-emerald-700' : 'text-red-600'}">
                             ${balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </div>

@@ -525,7 +525,7 @@
                 window.dispatchEvent(new CustomEvent('toast', {
                     detail: { message: 'Conta fixa criada! Ela vai aparecer automaticamente todo mês.', type: 'success' }
                 }));
-                window.location.href = "{{ route('recurring-templates.index') }}";
+                window.location.href = "{{ route('transactions.index') }}";
             }
 
             // ── Submit transação → /api/transactions ─────────────────────────

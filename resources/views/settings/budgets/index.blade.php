@@ -3,7 +3,7 @@
         <h1 class="text-lg font-semibold text-slate-900">Orçamentos por categoria</h1>
     </x-slot>
 
-    <div class="max-w-3xl space-y-6">
+    <div class="space-y-6">
 
         @if (session('success'))
             <div class="px-4 py-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl">
@@ -33,11 +33,13 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="w-44">
+                <div class="w-44" x-data="{ raw: 0 }">
                     <label class="block text-xs font-medium text-slate-500 mb-1">Limite mensal (R$)</label>
-                    <input type="number" name="amount" min="0.01" step="0.01" required
-                        placeholder="0,00"
+                    <input type="text" inputmode="numeric" required
+                        @input="raw = formatCurrency($event)"
+                        placeholder="R$ 0,00"
                         class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <input type="hidden" name="amount" :value="raw.toFixed(2)">
                 </div>
                 <button type="submit"
                     class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">

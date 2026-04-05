@@ -84,9 +84,12 @@
                         const amountLabel = Number(template.amount ?? 0).toLocaleString('pt-BR', {
                             minimumFractionDigits: 2, maximumFractionDigits: 2
                         });
+                        const rowClass = template.is_active
+                            ? 'hover:bg-slate-50 transition'
+                            : 'opacity-50 bg-slate-50 hover:bg-slate-100 transition';
 
                         return `
-                            <tr class="hover:bg-slate-50">
+                            <tr class="${rowClass}">
                                 <td class="px-4 py-3">
                                     <div class="font-medium text-slate-800">${escapeHtml(template.description)}</div>
                                     <div class="text-xs text-slate-400">

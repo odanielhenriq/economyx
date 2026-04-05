@@ -9,7 +9,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-3xl space-y-6">
+    <div class="space-y-6">
 
         @if ($errors->any())
             <div class="px-4 py-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl">
@@ -53,11 +53,18 @@
                             value="{{ old('due_day', $creditCard->due_day) }}"
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     </div>
-                    <div>
+                    @php
+                        $limitVal = (float) old('limit', $creditCard->limit ?? 0);
+                        $fmtLimit = $limitVal > 0 ? 'R$ ' . number_format($limitVal, 2, ',', '.') : '';
+                    @endphp
+                    <div x-data="{ raw: {{ $limitVal }} }">
                         <label class="block text-sm font-medium text-slate-700 mb-1">Limite (R$)</label>
-                        <input type="number" step="0.01" min="0" name="limit"
-                            value="{{ old('limit', $creditCard->limit) }}"
+                        <input type="text" inputmode="numeric"
+                            value="{{ $fmtLimit }}"
+                            @input="raw = formatCurrency($event)"
+                            placeholder="R$ 0,00"
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <input type="hidden" name="limit" :value="raw.toFixed(2)">
                     </div>
                 </div>
             </div>

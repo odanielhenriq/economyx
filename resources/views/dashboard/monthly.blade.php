@@ -61,6 +61,17 @@
             {{-- Conteúdo real: visível após carregar --}}
             <div x-show="!loading" style="display:none" class="space-y-6">
 
+                {{-- Variação mês-a-mês (calculada a partir do histórico PHP) --}}
+                @php
+                    $curIncome  = $chartData[5]['income']  ?? 0;
+                    $prevIncome = $previousMonthData['income']  ?? 0;
+                    $curExpense = $chartData[5]['expense'] ?? 0;
+                    $prevExpense = $previousMonthData['expense'] ?? 0;
+
+                    $incomeVar  = $prevIncome  > 0 ? (($curIncome  - $prevIncome)  / $prevIncome)  * 100 : null;
+                    $expenseVar = $prevExpense > 0 ? (($curExpense - $prevExpense) / $prevExpense) * 100 : null;
+                @endphp
+
                 {{-- Cards de resumo --}}
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {{-- Receitas --}}
@@ -74,6 +85,11 @@
                             </div>
                         </div>
                         <p id="dashboard-income" class="text-2xl font-bold text-slate-900 tabular-nums"></p>
+                        @if($incomeVar !== null)
+                            <p class="text-xs mt-1 font-medium {{ $incomeVar >= 0 ? 'text-green-600' : 'text-red-500' }}">
+                                {{ $incomeVar >= 0 ? '↑' : '↓' }} {{ number_format(abs($incomeVar), 1) }}% vs mês passado
+                            </p>
+                        @endif
                     </div>
 
                     {{-- Despesas --}}
@@ -87,6 +103,12 @@
                             </div>
                         </div>
                         <p id="dashboard-expense" class="text-2xl font-bold text-slate-900 tabular-nums"></p>
+                        @if($expenseVar !== null)
+                            {{-- Despesa subindo = ruim (vermelho), descendo = bom (verde) --}}
+                            <p class="text-xs mt-1 font-medium {{ $expenseVar > 0 ? 'text-red-500' : 'text-green-600' }}">
+                                {{ $expenseVar > 0 ? '↑' : '↓' }} {{ number_format(abs($expenseVar), 1) }}% vs mês passado
+                            </p>
+                        @endif
                     </div>
 
                     {{-- Saldo --}}
@@ -157,6 +179,23 @@
                 </div>
                 @endif
 
+                {{-- A pagar no mês — Cartões / Parcelas --}}
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div class="px-5 py-4 border-b border-slate-200">
+                            <h3 class="text-sm font-semibold text-slate-700">A pagar no mês — Cartões</h3>
+                        </div>
+                        <div id="payables-cards-list" class="p-5 space-y-3 text-sm"></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div class="px-5 py-4 border-b border-slate-200">
+                            <h3 class="text-sm font-semibold text-slate-700">A pagar no mês — Parcelas de compras</h3>
+                        </div>
+                        <div id="payables-loans-list" class="p-5 space-y-3 text-sm"></div>
+                    </div>
+                </div>
+
                 {{-- Alertas de orçamento por categoria --}}
                 @if (count($budgetAlerts) > 0)
                     <div class="space-y-2">
@@ -190,6 +229,43 @@
                         @endforeach
                     </div>
                 @endif
+
+                {{-- Gastos por categoria --}}
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                    <h3 class="text-sm font-semibold text-slate-700 mb-5">Onde o dinheiro foi</h3>
+
+                    @if(count($spendingByCategory) === 0)
+                        <p class="text-sm text-slate-400 text-center py-6">
+                            Nenhuma despesa registrada neste mês.
+                        </p>
+                    @else
+                        @php
+                            $categoryColors = [
+                                'bg-green-500', 'bg-blue-500', 'bg-amber-500',
+                                'bg-purple-500', 'bg-red-500', 'bg-slate-400'
+                            ];
+                        @endphp
+                        <div class="space-y-4">
+                            @foreach($spendingByCategory as $index => $item)
+                                <div>
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-2.5 h-2.5 rounded-full {{ $categoryColors[$index % count($categoryColors)] }}"></div>
+                                            <span class="text-sm font-medium text-slate-700">{{ $item['category'] }}</span>
+                                        </div>
+                                        <span class="text-sm font-semibold text-slate-900 tabular-nums">
+                                            R$ {{ number_format($item['total'], 2, ',', '.') }}
+                                        </span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 rounded-full h-2">
+                                        <div class="h-2 rounded-full transition-all duration-500 {{ $categoryColors[$index % count($categoryColors)] }}"
+                                             style="width: {{ $item['percentage'] }}%"></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
 
                 {{-- Gráfico Receita × Despesa — últimos 6 meses --}}
                 <script>window._chartData = @json($chartData);</script>
@@ -245,80 +321,26 @@
                     </div>
                 </div>
 
-                {{-- Gastos por categoria --}}
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                    <h3 class="text-sm font-semibold text-slate-700 mb-5">Onde o dinheiro foi</h3>
-
-                    @if(count($spendingByCategory) === 0)
-                        <p class="text-sm text-slate-400 text-center py-6">
-                            Nenhuma despesa registrada neste mês.
+                {{-- Link para ver todas as movimentações do mês --}}
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5
+                            flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-800">
+                            Movimentações de {{ $monthLabel }}
                         </p>
-                    @else
-                        @php
-                            $categoryColors = [
-                                'bg-green-500', 'bg-blue-500', 'bg-amber-500',
-                                'bg-purple-500', 'bg-red-500', 'bg-slate-400'
-                            ];
-                        @endphp
-                        <div class="space-y-4">
-                            @foreach($spendingByCategory as $index => $item)
-                                <div>
-                                    <div class="flex items-center justify-between mb-1.5">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-2.5 h-2.5 rounded-full {{ $categoryColors[$index % count($categoryColors)] }}"></div>
-                                            <span class="text-sm font-medium text-slate-700">{{ $item['category'] }}</span>
-                                        </div>
-                                        <span class="text-sm font-semibold text-slate-900 tabular-nums">
-                                            R$ {{ number_format($item['total'], 2, ',', '.') }}
-                                        </span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 rounded-full h-2">
-                                        <div class="h-2 rounded-full transition-all duration-500 {{ $categoryColors[$index % count($categoryColors)] }}"
-                                             style="width: {{ $item['percentage'] }}%"></div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-
-                {{-- A pagar no mês --}}
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
-                        <div class="px-5 py-4 border-b border-slate-200">
-                            <h3 class="text-sm font-semibold text-slate-700">A pagar no mês — Cartões</h3>
-                        </div>
-                        <div id="payables-cards-list" class="p-5 space-y-3 text-sm"></div>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            Ver todas as receitas e despesas do mês com filtros
+                        </p>
                     </div>
-
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
-                        <div class="px-5 py-4 border-b border-slate-200">
-                            <h3 class="text-sm font-semibold text-slate-700">A pagar no mês — Parcelas de compras</h3>
-                        </div>
-                        <div id="payables-loans-list" class="p-5 space-y-3 text-sm"></div>
-                    </div>
-                </div>
-
-                {{-- Movimentações do mês --}}
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50">
-                        <h3 class="text-sm font-semibold text-slate-700">Movimentações do mês</h3>
-                        <p class="mt-0.5 text-xs text-slate-500">Transações à vista e parcelas com vencimento neste mês</p>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm text-left divide-y divide-slate-100">
-                            <thead class="bg-slate-50">
-                                <tr>
-                                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Vencimento</th>
-                                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Descrição</th>
-                                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cartão</th>
-                                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Valor</th>
-                                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cashflow-body" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
+                    <a href="{{ route('transactions.index') }}?month={{ $year }}-{{ str_pad($month, 2, '0', STR_PAD_LEFT) }}"
+                       class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium
+                              text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition">
+                        Ver movimentações
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </a>
                 </div>
 
             </div>
@@ -457,6 +479,7 @@
         };
 
         const renderCashflow = (items = []) => {
+            if (!cashflowBodyEl) return;
             cashflowBodyEl.innerHTML = '';
 
             if (!items.length) {
@@ -563,15 +586,6 @@
 
             payablesCardsListEl.innerHTML = '<div class="text-xs text-slate-400">Erro ao carregar cartões.</div>';
             payablesLoansListEl.innerHTML = '<div class="text-xs text-slate-400">Erro ao carregar empréstimos.</div>';
-
-            cashflowBodyEl.innerHTML = '';
-            const row = document.createElement('tr');
-            const cell = document.createElement('td');
-            cell.colSpan = 5;
-            cell.className = 'px-4 py-4 text-xs text-slate-400';
-            cell.textContent = 'Erro ao carregar movimentações.';
-            row.appendChild(cell);
-            cashflowBodyEl.appendChild(row);
         };
 
         const loadDashboard = async () => {

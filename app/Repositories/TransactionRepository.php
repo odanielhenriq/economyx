@@ -207,6 +207,49 @@ class TransactionRepository implements TransactionRepositoryInterface
         ]);
     }
 
+    /**
+     * Soma receitas, despesas e saldo do período completo (sem paginação).
+     * Usa os mesmos filtros de getPaginatedTransactions para garantir consistência.
+     */
+    public function getPeriodTotals(array $filters = []): array
+    {
+        $baseQuery = Transaction::query();
+
+        if (!empty($filters['user_id'])) {
+            $baseQuery->whereHas('users', fn($q) => $q->where('users.id', $filters['user_id']));
+        }
+        if (!empty($filters['month'])) {
+            [$year, $month] = explode('-', $filters['month']);
+            $baseQuery->whereYear('due_date', $year)->whereMonth('due_date', $month);
+        }
+        if (!empty($filters['year'])) {
+            $baseQuery->whereYear('due_date', $filters['year']);
+        }
+        if (!empty($filters['category_id'])) {
+            $baseQuery->where('category_id', $filters['category_id']);
+        }
+        if (!empty($filters['type_id'])) {
+            $baseQuery->where('type_id', $filters['type_id']);
+        }
+        if (!empty($filters['payment_method_id'])) {
+            $baseQuery->where('payment_method_id', $filters['payment_method_id']);
+        }
+
+        $income  = round((float) (clone $baseQuery)
+            ->whereHas('type', fn($q) => $q->where('slug', 'rc'))
+            ->sum('amount'), 2);
+
+        $expense = round((float) (clone $baseQuery)
+            ->whereHas('type', fn($q) => $q->where('slug', 'dc'))
+            ->sum('amount'), 2);
+
+        return [
+            'income'  => $income,
+            'expense' => -1 * $expense,
+            'balance' => $income - $expense,
+        ];
+    }
+
     public function deleteTransaction(int $id): bool
     {
         $transaction = Transaction::find($id);

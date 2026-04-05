@@ -9,7 +9,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-3xl space-y-6">
+    <div class="space-y-6">
 
         @if ($errors->any())
             <div class="px-4 py-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl">
@@ -31,18 +31,30 @@
                         class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 </div>
 
+                @php
+                    $amountVal = (float) old('amount', $recurringTemplate->amount ?? 0);
+                    $totalAmountVal = (float) old('total_amount', $recurringTemplate->total_amount ?? 0);
+                    $fmtAmount = $amountVal > 0 ? 'R$ ' . number_format($amountVal, 2, ',', '.') : '';
+                    $fmtTotalAmount = $totalAmountVal > 0 ? 'R$ ' . number_format($totalAmountVal, 2, ',', '.') : '';
+                @endphp
                 <div class="grid gap-4 md:grid-cols-2">
-                    <div>
+                    <div x-data="{ raw: {{ $amountVal }} }">
                         <label class="block text-sm font-medium text-slate-700 mb-1">Valor</label>
-                        <input type="number" step="0.01" name="amount"
-                            value="{{ old('amount', $recurringTemplate->amount) }}"
+                        <input type="text" inputmode="numeric"
+                            value="{{ $fmtAmount }}"
+                            @input="raw = formatCurrency($event)"
+                            placeholder="R$ 0,00"
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <input type="hidden" name="amount" :value="raw.toFixed(2)">
                     </div>
-                    <div>
+                    <div x-data="{ raw: {{ $totalAmountVal }} }">
                         <label class="block text-sm font-medium text-slate-700 mb-1">Valor total (opcional)</label>
-                        <input type="number" step="0.01" name="total_amount"
-                            value="{{ old('total_amount', $recurringTemplate->total_amount) }}"
+                        <input type="text" inputmode="numeric"
+                            value="{{ $fmtTotalAmount }}"
+                            @input="raw = formatCurrency($event)"
+                            placeholder="R$ 0,00"
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <input type="hidden" name="total_amount" :value="raw > 0 ? raw.toFixed(2) : ''">
                         <p class="mt-1 text-xs text-slate-400">Se este gasto tem um valor total definido (ex: financiamento de R$ 10.000), informe aqui. Caso contrário, deixe em branco.</p>
                     </div>
                 </div>

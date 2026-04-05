@@ -31,6 +31,10 @@ class MonthlyDashboardController extends Controller
         $prev = $current->copy()->subMonthNoOverflow();
         $next = $current->copy()->addMonthNoOverflow();
 
+        $chartData = $this->getLast6MonthsSummary($year, $month);
+        // Índice 4 = mês anterior (índice 5 = mês atual)
+        $previousMonthData = $chartData[count($chartData) - 2] ?? null;
+
         // Envia tudo para a view mensal
         return view('dashboard.monthly', [
             'year' => $year,
@@ -38,7 +42,8 @@ class MonthlyDashboardController extends Controller
             'monthLabel' => $current->format('m/Y'),
             'prev' => ['year' => $prev->year, 'month' => $prev->month],
             'next' => ['year' => $next->year, 'month' => $next->month],
-            'chartData' => $this->getLast6MonthsSummary($year, $month),
+            'chartData' => $chartData,
+            'previousMonthData' => $previousMonthData,
             'budgetAlerts' => $this->getBudgetAlerts($year, $month),
             'spendingByCategory' => $this->getSpendingByCategory($year, $month),
             'upcomingDues' => $this->getUpcomingDues(),

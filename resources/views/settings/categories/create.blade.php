@@ -9,7 +9,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-2xl space-y-6">
+    <div class="space-y-6">
 
         @if ($errors->any())
             <div class="px-4 py-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl">

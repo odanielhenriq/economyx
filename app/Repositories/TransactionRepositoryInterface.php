@@ -21,4 +21,6 @@ interface TransactionRepositoryInterface
     public function deleteTransaction(int $id): bool;
 
     public function getCardBill(int $cardId, int $year, int $month):array;
+
+    public function getPeriodTotals(array $filters = []): array;
 }

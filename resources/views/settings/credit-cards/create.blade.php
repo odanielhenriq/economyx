@@ -9,7 +9,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-3xl space-y-6">
+    <div class="space-y-6">
 
         @if ($errors->any())
             <div class="px-4 py-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl">
@@ -53,11 +53,13 @@
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             placeholder="17">
                     </div>
-                    <div>
+                    <div x-data="{ raw: 0 }">
                         <label class="block text-sm font-medium text-slate-700 mb-1">Limite (R$)</label>
-                        <input type="number" step="0.01" min="0" name="limit" value="{{ old('limit') }}"
-                            class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="5000">
+                        <input type="text" inputmode="numeric"
+                            @input="raw = formatCurrency($event)"
+                            placeholder="R$ 0,00"
+                            class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <input type="hidden" name="limit" :value="raw.toFixed(2)">
                     </div>
                 </div>
             </div>
