@@ -5,26 +5,66 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'Economyx') }}</title>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <!-- DM Sans -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 
-        <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-            <div>
-                <a href="/">
-                    <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
-                </a>
+    <body class="font-sans antialiased">
+        <div class="min-h-screen flex">
+
+            {{-- Left panel — dark green brand area (hidden on mobile) --}}
+            <div class="hidden lg:flex lg:w-2/5 flex-col items-center justify-center p-14"
+                 style="background-color: #0f1a13;">
+                <div class="text-center">
+                    {{-- Logo badge --}}
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-500 mb-6">
+                        <span class="text-2xl font-bold text-white tracking-tight">E$</span>
+                    </div>
+
+                    <h1 class="text-3xl font-bold text-white mb-3">Economyx</h1>
+                    <p class="text-green-300 text-base leading-relaxed max-w-xs">
+                        Controle suas finanças com clareza.<br>
+                        Para você e para quem mora com você.
+                    </p>
+
+                    <div class="mt-12 grid grid-cols-3 gap-6 text-center">
+                        <div>
+                            <div class="text-2xl font-bold text-white tabular-nums">0%</div>
+                            <div class="text-xs text-green-400 mt-1">Custo</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-white">∞</div>
+                            <div class="text-xs text-green-400 mt-1">Transações</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-white">1</div>
+                            <div class="text-xs text-green-400 mt-1">Painel</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-                {{ $slot }}
+            {{-- Right panel — white form area --}}
+            <div class="flex-1 flex flex-col items-center justify-center px-8 py-12 bg-white">
+
+                {{-- Mobile logo --}}
+                <div class="flex lg:hidden items-center gap-2 mb-8">
+                    <div class="w-9 h-9 rounded-xl bg-green-500 flex items-center justify-center">
+                        <span class="text-sm font-bold text-white">E$</span>
+                    </div>
+                    <span class="text-lg font-bold text-slate-900">Economyx</span>
+                </div>
+
+                <div class="w-full max-w-sm">
+                    {{ $slot }}
+                </div>
             </div>
+
         </div>
     </body>
 </html>

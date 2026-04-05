@@ -1,3 +1,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        --color-primary:       #16a34a;
+        --color-primary-dark:  #15803d;
+        --color-primary-light: #dcfce7;
+        --color-sidebar-bg:    #0f1a13;
+        --color-sidebar-text:  #d1fae5;
+        --color-sidebar-active:#16a34a;
+        --color-bg:            #f8fafc;
+        --color-surface:       #ffffff;
+        --color-border:        #e2e8f0;
+        --color-text:          #0f172a;
+        --color-text-muted:    #64748b;
+        --color-danger:        #dc2626;
+        --color-warning:       #d97706;
+    }
+
+    body {
+        background-color: var(--color-bg);
+        color: var(--color-text);
+    }
+
+    /* Tabular numbers for financial values */
+    .tabular-nums {
+        font-variant-numeric: tabular-nums;
+    }
+}
