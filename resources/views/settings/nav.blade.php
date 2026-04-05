@@ -19,4 +19,8 @@
         class="px-3 py-1 rounded border {{ request()->routeIs('recurring-templates.*') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700' }}">
         Recorrencias
     </a>
+    <a href="{{ route('budgets.index') }}"
+        class="px-3 py-1 rounded border {{ request()->routeIs('budgets.*') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700' }}">
+        Orçamentos
+    </a>
 </div>

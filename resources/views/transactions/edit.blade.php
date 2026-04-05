@@ -93,10 +93,14 @@
                 {{-- CARD 2 — PAGAMENTO --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                    <div>
+                    <div x-data="{ raw: '', onInput(e) { const d = e.target.value.replace(/\D/g,''); const n = (parseInt(d||'0')/100); this.raw = n.toFixed(2); e.target.value = 'R$ ' + n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); } }">
                         <label class="text-sm text-gray-600">Valor da parcela (R$)</label>
-                        <input type="number" step="0.01" min="0" name="amount" value=""
+                        <input type="text" inputmode="numeric"
+                            x-ref="display"
+                            x-on:input="onInput($event)"
+                            placeholder="R$ 0,00"
                             class="mt-1 w-full rounded border-gray-300 text-sm">
+                        <input type="hidden" name="amount" id="amount" x-bind:value="raw">
                         <p class="mt-1 text-xs text-gray-500">
                             Valor da parcela individual (se houver parcelamento).
                         </p>
@@ -122,10 +126,14 @@
 
                 {{-- linha extra com valor total --}}
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
+                    <div x-data="{ raw: '', onInput(e) { const d = e.target.value.replace(/\D/g,''); const n = (parseInt(d||'0')/100); this.raw = n.toFixed(2); e.target.value = 'R$ ' + n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); } }">
                         <label class="text-sm text-gray-600">Valor total da compra (R$)</label>
-                        <input type="number" step="0.01" min="0" name="total_amount"
-                            value="" class="mt-1 w-full rounded border-gray-300 text-sm">
+                        <input type="text" inputmode="numeric"
+                            x-ref="display"
+                            x-on:input="onInput($event)"
+                            placeholder="R$ 0,00"
+                            class="mt-1 w-full rounded border-gray-300 text-sm">
+                        <input type="hidden" name="total_amount" id="total_amount" x-bind:value="raw">
                         <p class="mt-1 text-xs text-gray-500">
                             Somatório de todas as parcelas (ex: 10 x 200 = 2.000).
                         </p>
@@ -219,6 +227,21 @@
             let creditCardMethodId = null;
             let transactionData = null;
             let userListCache = [];
+
+            // Pré-popula o display de um input mascarado a partir do valor numérico
+            function setCurrencyDisplay(hiddenInput, rawValue) {
+                const number = parseFloat(rawValue || 0);
+                if (number <= 0) return;
+                const wrapper = hiddenInput.closest('[x-data]');
+                if (!wrapper) return;
+                const displayInput = wrapper.querySelector('input[type="text"]');
+                if (displayInput) {
+                    displayInput.value = 'R$ ' + number.toFixed(2)
+                        .replace('.', ',')
+                        .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                }
+                hiddenInput.value = number.toFixed(2);
+            }
 
             const apiFetch = async (url, options = {}) => {
                 const response = await fetch(url, {
@@ -383,8 +406,8 @@
                 }
 
                 descriptionInput.value = transactionData.description ?? '';
-                amountInput.value = transactionData.amount ?? '';
-                totalAmountInput.value = transactionData.total_amount ?? '';
+                setCurrencyDisplay(amountInput, transactionData.amount ?? '');
+                setCurrencyDisplay(totalAmountInput, transactionData.total_amount ?? '');
                 dateInput.value = transactionData.transaction_date ?? '';
                 installmentNumberInput.value = transactionData.installments?.number ?? '';
                 installmentTotalInput.value = transactionData.installments?.total ?? '';
@@ -455,34 +478,32 @@
                 }
             });
 
-            deleteBtn.addEventListener('click', async () => {
-                if (!confirm('Tem certeza que deseja remover esta transação?')) {
-                    return;
-                }
+            deleteBtn.addEventListener('click', () => {
+                window.dispatchEvent(new CustomEvent('request-delete', {
+                    detail: {
+                        callback: async () => {
+                            deleteBtn.disabled = true;
+                            deleteBtn.textContent = 'Excluindo...';
 
-                deleteBtn.disabled = true;
-                deleteBtn.textContent = 'Excluindo...';
+                            try {
+                                const response = await fetch(`/api/transactions/${transactionId}`, {
+                                    method: 'DELETE',
+                                    headers: { Accept: 'application/json' },
+                                });
 
-                try {
-                    const response = await fetch(`/api/transactions/${transactionId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            Accept: 'application/json',
-                        },
-                    });
+                                if (!response.ok) throw new Error('Erro ao excluir transação.');
 
-                    if (!response.ok) {
-                        throw new Error('Erro ao excluir transação.');
+                                window.location.href = "{{ route('transactions.index') }}";
+                            } catch (error) {
+                                showErrors({
+                                    general: [error.message || 'Erro inesperado ao excluir.'],
+                                });
+                                deleteBtn.disabled = false;
+                                deleteBtn.textContent = 'Excluir';
+                            }
+                        }
                     }
-
-                    window.location.href = "{{ route('transactions.index') }}";
-                } catch (error) {
-                    showErrors({
-                        general: [error.message || 'Erro inesperado ao excluir.'],
-                    });
-                    deleteBtn.disabled = false;
-                    deleteBtn.textContent = 'Excluir';
-                }
+                }));
             });
 
             recurringLink.addEventListener('click', (event) => {

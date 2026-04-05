@@ -73,6 +73,8 @@ Route::delete('/recurring-templates/{id}', [RecurringTransactionController::clas
 
 // API de extrato de cartão: /api/cards/{card}/statement?year=2025&month=12
 Route::get('cards/{card}/statement', [CardStatementController::class, 'statement']);
+// Marca fatura como paga
+Route::middleware('auth')->patch('cards/statements/{statement}/pay', [CardStatementController::class, 'markAsPaid']);
 
 // Dashboard mensal em JSON (usado pela tela web via fetch)
 Route::middleware(['web'])->get('/dashboard/monthly', [MonthlyDashboardApiController::class, 'index']);

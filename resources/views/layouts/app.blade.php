@@ -35,8 +35,7 @@
             </main>
         </div>
 
-        <!-- TOAST CONTAINER GLOBAL (poderia ser usado por qualquer página) -->
-        <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3"></div>
-
+        <x-toast-container />
+        <x-confirm-delete-modal />
     </body>
 </html>

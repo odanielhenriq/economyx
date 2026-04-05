@@ -29,6 +29,11 @@ class CardStatementController extends Controller
           ->where('month', $month)
           ->first();
 
+        // Mantém o status sempre atualizado quando a fatura é carregada
+        if ($statement) {
+            $statement->updateStatus();
+        }
+
         $installments = $statement?->installments ?? collect();
 
         // 3) Período baseado no mês de vencimento (regra padrão do app)
@@ -114,8 +119,29 @@ class CardStatementController extends Controller
             'transactions' => $transactions,
             'meta' => [
                 'statement_persisted' => (bool)$statement,
+                'statement_id'        => $statement?->id,
+                'status'              => $statement?->status ?? 'open',
             ],
         ]);
+    }
+
+    /**
+     * Marca uma fatura como paga.
+     * Só usuários da rede do dono do cartão podem executar essa ação.
+     */
+    public function markAsPaid(CreditCardStatement $statement)
+    {
+        $card = $statement->creditCard;
+        $user = auth()->user();
+
+        $inNetwork = $card->users()->where('users.id', $user->id)->exists()
+            || $card->owner_user_id === $user->id;
+
+        abort_if(! $inNetwork, 403);
+
+        $statement->update(['status' => 'paid']);
+
+        return response()->json(['status' => 'paid']);
     }
 
 }

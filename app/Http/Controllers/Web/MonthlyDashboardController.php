@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\CategoryBudget;
+use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MonthlyDashboardController extends Controller
 {
@@ -35,6 +38,94 @@ class MonthlyDashboardController extends Controller
             'monthLabel' => $current->format('m/Y'),
             'prev' => ['year' => $prev->year, 'month' => $prev->month],
             'next' => ['year' => $next->year, 'month' => $next->month],
+            'chartData' => $this->getLast6MonthsSummary($year, $month),
+            'budgetAlerts' => $this->getBudgetAlerts($year, $month),
         ]);
+    }
+
+    /**
+     * Cruza orçamentos definidos pelo usuário com as despesas reais do mês.
+     * Retorna apenas as categorias com orçamento que atingiram ≥ 80% do limite.
+     */
+    private function getBudgetAlerts(int $year, int $month): array
+    {
+        $user = Auth::user();
+        $networkIds = $user->networkUsers()->pluck('id')->all();
+
+        $budgets = CategoryBudget::where('user_id', $user->id)
+            ->with('category')
+            ->get();
+
+        if ($budgets->isEmpty()) {
+            return [];
+        }
+
+        $start = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+        $end   = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+
+        $alerts = [];
+
+        foreach ($budgets as $budget) {
+            $spent = Transaction::query()
+                ->whereBetween('due_date', [$start, $end])
+                ->where('category_id', $budget->category_id)
+                ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
+                ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
+                ->sum('amount');
+
+            $spent = round((float) $spent, 2);
+            $limit = round((float) $budget->amount, 2);
+            $percent = $limit > 0 ? round(($spent / $limit) * 100, 1) : 0;
+
+            if ($percent >= 80) {
+                $alerts[] = [
+                    'category' => $budget->category->name,
+                    'spent'    => $spent,
+                    'limit'    => $limit,
+                    'percent'  => $percent,
+                    'over'     => $percent >= 100,
+                ];
+            }
+        }
+
+        return $alerts;
+    }
+
+    /**
+     * Retorna receita e despesa total dos últimos 6 meses (incluindo o mês atual).
+     * Usa somas diretas por tipo (slug 'rc' = receita, 'dc' = despesa).
+     */
+    private function getLast6MonthsSummary(int $year, int $month): array
+    {
+        $user = Auth::user();
+        $networkIds = $user->networkUsers()->pluck('id')->all();
+
+        $result = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $date = Carbon::create($year, $month, 1)->subMonthsNoOverflow($i);
+            $start = $date->copy()->startOfMonth()->toDateString();
+            $end   = $date->copy()->endOfMonth()->toDateString();
+
+            $income = Transaction::query()
+                ->whereBetween('due_date', [$start, $end])
+                ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
+                ->whereHas('type', fn ($q) => $q->where('slug', 'rc'))
+                ->sum('amount');
+
+            $expense = Transaction::query()
+                ->whereBetween('due_date', [$start, $end])
+                ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
+                ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
+                ->sum('amount');
+
+            $result[] = [
+                'label'   => $date->translatedFormat('M/y'),
+                'income'  => round((float) $income, 2),
+                'expense' => round((float) $expense, 2),
+            ];
+        }
+
+        return $result;
     }
 }

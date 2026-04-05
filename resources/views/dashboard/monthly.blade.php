@@ -1,120 +1,215 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">Dashboard mensal</h2>
-                <p class="text-sm text-gray-500">Competência: {{ $monthLabel }}</p>
-            </div>
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
-                <a href="{{ route('dashboard.monthly', ['year' => $prev['year'], 'month' => $prev['month']]) }}"
-                    class="inline-flex items-center px-3 py-2 text-xs border rounded text-gray-700 hover:bg-gray-50">
-                    ← Mês anterior
-                </a>
-                <form method="GET" action="{{ route('dashboard.monthly') }}" class="flex items-end gap-2">
-                    <div>
-                        <label class="text-xs text-gray-500">Mês</label>
-                        <select name="month" class="block w-full mt-1 text-sm border-gray-300 rounded">
-                            @for ($m = 1; $m <= 12; $m++)
-                                <option value="{{ $m }}" @selected($m == $month)>
-                                    {{ str_pad((string) $m, 2, '0', STR_PAD_LEFT) }}
-                                </option>
-                            @endfor
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500">Ano</label>
-                        <input type="number" name="year" value="{{ $year }}" min="2000" max="2100"
-                            class="block w-24 mt-1 text-sm border-gray-300 rounded">
-                    </div>
-                    <button type="submit"
-                        class="px-3 py-2 text-xs text-white bg-indigo-600 rounded hover:bg-indigo-700">
-                        Ir
-                    </button>
-                </form>
-                <a href="{{ route('dashboard.monthly', ['year' => $next['year'], 'month' => $next['month']]) }}"
-                    class="inline-flex items-center px-3 py-2 text-xs border rounded text-gray-700 hover:bg-gray-50">
-                    Próximo mês →
-                </a>
-            </div>
-        </div>
+        <h2 class="text-xl font-semibold leading-tight text-gray-800">Dashboard mensal</h2>
     </x-slot>
 
-    <div class="py-8">
+    <div id="dashboard-wrapper" x-data="{ loading: true }" class="py-8">
         <div class="mx-auto max-w-6xl sm:px-6 lg:px-8 space-y-8">
-            {{-- Cards de resumo --}}
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-                <div class="p-4 bg-white border rounded shadow-sm">
-                    <div class="text-xs text-gray-500">Receitas do mês</div>
-                    <div id="dashboard-income" class="text-lg font-semibold text-emerald-700">Carregando...</div>
-                </div>
-                <div class="p-4 bg-white border rounded shadow-sm">
-                    <div class="text-xs text-gray-500">Despesas do mês</div>
-                    <div id="dashboard-expense" class="text-lg font-semibold text-red-600">Carregando...</div>
-                </div>
-                <div class="p-4 bg-white border rounded shadow-sm">
-                    <div class="text-xs text-gray-500">Saldo do mês</div>
-                    <div id="dashboard-balance" class="text-lg font-semibold text-emerald-700">Carregando...</div>
-                </div>
-                <div class="p-4 bg-white border rounded shadow-sm">
-                    <div class="text-xs text-gray-500">A pagar no mês</div>
-                    <div id="dashboard-payable-total" class="text-lg font-semibold text-gray-800">
-                        Carregando...
-                    </div>
-                    <div id="dashboard-payable-breakdown" class="mt-1 text-xs text-gray-500">
-                        Carregando...
-                    </div>
-                </div>
+
+            {{-- Navegador de mês (sempre visível, independente do loading) --}}
+            <div
+                x-data="{
+                    year: {{ $year }},
+                    month: {{ $month }},
+                    get label() {
+                        return new Date(this.year, this.month - 1)
+                            .toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                    },
+                    prev() {
+                        if (this.month === 1) { this.month = 12; this.year--; }
+                        else { this.month--; }
+                        this.navigate();
+                    },
+                    next() {
+                        if (this.month === 12) { this.month = 1; this.year++; }
+                        else { this.month++; }
+                        this.navigate();
+                    },
+                    navigate() {
+                        window.location.href = `?year=${this.year}&month=${this.month}`;
+                    }
+                }"
+                class="flex items-center justify-center gap-6"
+            >
+                <button @click="prev()"
+                    class="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition">
+                    ←
+                </button>
+                <span x-text="label" class="text-lg font-semibold text-gray-800 capitalize w-52 text-center"></span>
+                <button @click="next()"
+                    class="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition">
+                    →
+                </button>
             </div>
 
-            {{-- A pagar no mês --}}
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {{-- Skeleton: visível enquanto carrega --}}
+            <div x-show="loading" class="space-y-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <div class="h-20 bg-gray-200 rounded animate-pulse"></div>
+                    <div class="h-20 bg-gray-200 rounded animate-pulse"></div>
+                    <div class="h-20 bg-gray-200 rounded animate-pulse"></div>
+                    <div class="h-20 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div class="h-44 bg-gray-200 rounded animate-pulse"></div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div class="h-44 bg-gray-200 rounded animate-pulse"></div>
+                    <div class="h-44 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div class="h-64 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+
+            {{-- Conteúdo real: visível após carregar --}}
+            <div x-show="!loading" style="display:none" class="space-y-8">
+
+                {{-- Cards de resumo --}}
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <div class="p-4 bg-white border rounded shadow-sm">
+                        <div class="text-xs text-gray-500">Receitas do mês</div>
+                        <div id="dashboard-income" class="text-lg font-semibold text-emerald-700"></div>
+                    </div>
+                    <div class="p-4 bg-white border rounded shadow-sm">
+                        <div class="text-xs text-gray-500">Despesas do mês</div>
+                        <div id="dashboard-expense" class="text-lg font-semibold text-red-600"></div>
+                    </div>
+                    <div class="p-4 bg-white border rounded shadow-sm">
+                        <div class="text-xs text-gray-500">Saldo do mês</div>
+                        <div id="dashboard-balance" class="text-lg font-semibold text-emerald-700"></div>
+                    </div>
+                    <div class="p-4 bg-white border rounded shadow-sm">
+                        <div class="text-xs text-gray-500">A pagar no mês</div>
+                        <div id="dashboard-payable-total" class="text-lg font-semibold text-gray-800"></div>
+                        <div id="dashboard-payable-breakdown" class="mt-1 text-xs text-gray-500"></div>
+                    </div>
+                </div>
+
+                {{-- Alertas de orçamento por categoria --}}
+                @if (count($budgetAlerts) > 0)
+                    <div class="space-y-2">
+                        @foreach ($budgetAlerts as $alert)
+                            <div class="flex items-center gap-4 p-3 rounded-lg border
+                                {{ $alert['over'] ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200' }}">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-sm font-medium
+                                            {{ $alert['over'] ? 'text-red-800' : 'text-amber-800' }}">
+                                            {{ $alert['over'] ? '⚠ Limite ultrapassado' : '⚡ Próximo do limite' }}
+                                            — {{ $alert['category'] }}
+                                        </span>
+                                        <span class="text-xs font-semibold
+                                            {{ $alert['over'] ? 'text-red-700' : 'text-amber-700' }}">
+                                            {{ $alert['percent'] }}%
+                                        </span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                        <div class="h-1.5 rounded-full transition-all duration-500
+                                            {{ $alert['over'] ? 'bg-red-500' : 'bg-amber-400' }}"
+                                            style="width: {{ min($alert['percent'], 100) }}%">
+                                        </div>
+                                    </div>
+                                    <div class="mt-1 text-xs {{ $alert['over'] ? 'text-red-600' : 'text-amber-600' }}">
+                                        R$ {{ number_format($alert['spent'], 2, ',', '.') }}
+                                        de R$ {{ number_format($alert['limit'], 2, ',', '.') }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Gráfico Receita × Despesa — últimos 6 meses --}}
+                <script>window._chartData = @json($chartData);</script>
+                <div
+                    x-data="{
+                        months: window._chartData,
+                        get maxVal() {
+                            return Math.max(...this.months.flatMap(m => [m.income, m.expense]), 1);
+                        },
+                        barHeight(val) {
+                            return Math.round((val / this.maxVal) * 120) + 'px';
+                        }
+                    }"
+                    class="bg-white border rounded shadow-sm"
+                >
+                    <div class="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-700">Receita × Despesa — últimos 6 meses</h3>
+                        <div class="flex gap-4">
+                            <span class="flex items-center gap-1 text-xs text-gray-500">
+                                <span class="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> Receita
+                            </span>
+                            <span class="flex items-center gap-1 text-xs text-gray-500">
+                                <span class="inline-block w-3 h-3 rounded-sm bg-red-400"></span> Despesa
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div x-show="months.every(m => m.income === 0 && m.expense === 0)"
+                             class="py-8 text-xs text-center text-gray-500">
+                            Sem movimentações nos últimos 6 meses.
+                        </div>
+                        <div x-show="months.some(m => m.income > 0 || m.expense > 0)"
+                             class="flex items-end justify-around gap-2" style="height: 140px">
+                            <template x-for="m in months" :key="m.label">
+                                <div class="flex flex-col items-center flex-1 min-w-0">
+                                    <div class="flex items-end justify-center gap-0.5" style="height: 120px">
+                                        <div
+                                            class="w-4 rounded-t bg-emerald-500 transition-all duration-500"
+                                            :style="'height: ' + barHeight(m.income)"
+                                            :title="'Receita: R$ ' + m.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })"
+                                        ></div>
+                                        <div
+                                            class="w-4 rounded-t bg-red-400 transition-all duration-500"
+                                            :style="'height: ' + barHeight(m.expense)"
+                                            :title="'Despesa: R$ ' + m.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })"
+                                        ></div>
+                                    </div>
+                                    <span class="mt-1 text-[10px] text-gray-500 text-center leading-tight"
+                                          x-text="m.label"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- A pagar no mês --}}
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div class="bg-white border rounded shadow-sm">
+                        <div class="px-4 py-3 border-b">
+                            <h3 class="text-sm font-semibold text-gray-700">A pagar no mês — Cartões</h3>
+                        </div>
+                        <div id="payables-cards-list" class="p-4 space-y-3 text-sm"></div>
+                    </div>
+
+                    <div class="bg-white border rounded shadow-sm">
+                        <div class="px-4 py-3 border-b">
+                            <h3 class="text-sm font-semibold text-gray-700">A pagar no mês — Empréstimos</h3>
+                        </div>
+                        <div id="payables-loans-list" class="p-4 space-y-3 text-sm"></div>
+                    </div>
+                </div>
+
+                {{-- Movimentações do mês --}}
                 <div class="bg-white border rounded shadow-sm">
-                    <div class="px-4 py-3 border-b">
-                        <h3 class="text-sm font-semibold text-gray-700">A pagar no mês — Cartões</h3>
+                    <div class="px-4 py-3 border-b bg-gray-50">
+                        <h3 class="text-sm font-semibold text-gray-700">Movimentações do mês</h3>
+                        <p class="mt-1 text-xs text-gray-500">Transações à vista e parcelas com vencimento neste mês</p>
                     </div>
-                    <div id="payables-cards-list" class="p-4 space-y-3 text-sm">
-                        <div class="text-xs text-gray-500">Carregando faturas...</div>
+                    <div class="p-4 overflow-x-auto">
+                        <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">Vencimento</th>
+                                    <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">Descrição</th>
+                                    <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">Cartão</th>
+                                    <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider text-right">Valor</th>
+                                    <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cashflow-body" class="divide-y"></tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div class="bg-white border rounded shadow-sm">
-                    <div class="px-4 py-3 border-b">
-                        <h3 class="text-sm font-semibold text-gray-700">A pagar no mês — Empréstimos</h3>
-                    </div>
-                    <div id="payables-loans-list" class="p-4 space-y-3 text-sm">
-                        <div class="text-xs text-gray-500">Carregando parcelas...</div>
-                    </div>
-                </div>
             </div>
-
-            {{-- Movimentações do mês --}}
-            <div class="bg-white border rounded shadow-sm">
-                <div class="px-4 py-3 border-b bg-gray-50">
-                    <h3 class="text-sm font-semibold text-gray-700">Movimentações do mês</h3>
-                    <p class="mt-1 text-xs text-gray-500">Transações à vista e parcelas com vencimento neste mês</p>
-                </div>
-                <div class="p-4 overflow-x-auto">
-                    <table class="min-w-full text-sm text-left divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">Vencimento</th>
-                                <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">Descrição</th>
-                                <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">Cartão</th>
-                                <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider text-right">Valor</th>
-                                <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cashflow-body" class="divide-y">
-                            <tr>
-                                <td colspan="5" class="px-3 py-4 text-xs text-gray-500">
-                                    Carregando movimentações...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
         </div>
     </div>
 
@@ -164,10 +259,7 @@
             payablesCardsListEl.innerHTML = '';
 
             if (!list.length) {
-                const empty = document.createElement('div');
-                empty.className = 'text-xs text-gray-500';
-                empty.textContent = 'Nenhuma fatura encontrada para este mês.';
-                payablesCardsListEl.appendChild(empty);
+                payablesCardsListEl.innerHTML = '<div class="text-xs text-gray-500">Nenhuma fatura encontrada para este mês.</div>';
                 return;
             }
 
@@ -211,10 +303,7 @@
             payablesLoansListEl.innerHTML = '';
 
             if (!list.length) {
-                const empty = document.createElement('div');
-                empty.className = 'text-xs text-gray-500';
-                empty.textContent = 'Nenhuma parcela de empréstimo neste mês.';
-                payablesLoansListEl.appendChild(empty);
+                payablesLoansListEl.innerHTML = '<div class="text-xs text-gray-500">Nenhuma parcela de empréstimo neste mês.</div>';
                 return;
             }
 
@@ -306,8 +395,7 @@
                 amountCell.className = 'px-3 py-2 text-right font-medium';
                 const amount = Number(item?.amount ?? 0);
                 amountCell.textContent = formatMoney(amount);
-                
-                // Cor baseada no tipo (receita = verde, despesa = vermelho)
+
                 const typeSlug = item?.type_slug ?? '';
                 if (typeSlug === 'rc') {
                     amountCell.classList.add('text-emerald-700');
@@ -325,7 +413,7 @@
                 const isInstallment = (item?.source ?? '') === 'installment';
                 const isSpot = item?.is_spot ?? false;
                 const badge = document.createElement('span');
-                
+
                 if (isProjection) {
                     badge.className = 'inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-amber-100 text-amber-700';
                     badge.textContent = 'Previsto';
@@ -361,20 +449,10 @@
             payableTotalEl.textContent = '-';
             payableBreakdownEl.textContent = 'Erro ao carregar dados do dashboard.';
 
-            payablesCardsListEl.innerHTML = '';
-            payablesLoansListEl.innerHTML = '';
+            payablesCardsListEl.innerHTML = '<div class="text-xs text-gray-500">Erro ao carregar cartões.</div>';
+            payablesLoansListEl.innerHTML = '<div class="text-xs text-gray-500">Erro ao carregar empréstimos.</div>';
+
             cashflowBodyEl.innerHTML = '';
-
-            const cardsError = document.createElement('div');
-            cardsError.className = 'text-xs text-gray-500';
-            cardsError.textContent = 'Erro ao carregar cartões.';
-            payablesCardsListEl.appendChild(cardsError);
-
-            const loansError = document.createElement('div');
-            loansError.className = 'text-xs text-gray-500';
-            loansError.textContent = 'Erro ao carregar empréstimos.';
-            payablesLoansListEl.appendChild(loansError);
-
             const row = document.createElement('tr');
             const cell = document.createElement('td');
             cell.colSpan = 5;
@@ -411,6 +489,8 @@
             } catch (error) {
                 console.error(error);
                 renderError();
+            } finally {
+                Alpine.$data(document.getElementById('dashboard-wrapper')).loading = false;
             }
         };
 

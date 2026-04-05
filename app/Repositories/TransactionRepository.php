@@ -215,6 +215,9 @@ class TransactionRepository implements TransactionRepositoryInterface
             return false;
         }
 
+        // Propaga soft delete para as parcelas antes de deletar a transação pai
+        $transaction->installments()->delete();
+
         // Soft delete
         $transaction->delete();
 

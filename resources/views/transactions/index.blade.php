@@ -109,48 +109,64 @@
 
                     </div>
 
-                    {{-- Texto de estado (carregando, erro, vazio etc.) --}}
-                    <div id="transactions-state" class="mb-4 text-sm text-gray-500">
-                        Carregando transações...
-                    </div>
+                    {{-- Wrapper com loading skeleton + conteúdo real --}}
+                    <div id="transactions-table-wrapper" x-data="{ loading: true }">
 
-                    {{-- Cards de resumo da página atual (receitas, despesas, saldo) --}}
-                    <div id="transactions-summary" class="grid grid-cols-1 gap-4 mb-6 text-sm md:grid-cols-3">
-                        {{-- preenchido via JS --}}
-                    </div>
+                        {{-- Skeleton: visível enquanto carrega --}}
+                        <div x-show="loading" class="space-y-3">
+                            <div class="h-10 bg-gray-200 rounded animate-pulse"></div>
+                            <div class="h-10 bg-gray-200 rounded animate-pulse"></div>
+                            <div class="h-10 bg-gray-200 rounded animate-pulse"></div>
+                            <div class="h-10 bg-gray-200 rounded animate-pulse"></div>
+                            <div class="h-10 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
 
-                    {{-- TABELA PRINCIPAL --}}
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm text-left">
-                            <thead class="border-b text-gray-600">
-                                <tr>
-                                    <th class="px-3 py-2">Info</th>
-                                    <th class="px-3 py-2">Data</th>
-                                    <th class="px-3 py-2">Descrição</th>
-                                    <th class="px-3 py-2 text-right">Valor</th>
-                                    <th class="px-3 py-2 text-right">Cota p/ pessoa</th>
-                                    <th class="px-3 py-2">Pessoas</th>
-                                    <th class="px-3 py-2">Parcelas</th>
-                                    <th class="px-3 py-2 text-center">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactions-body" class="divide-y">
-                                {{-- Linhas inseridas dinamicamente via JS a partir da API /api/transactions --}}
-                            </tbody>
-                        </table>
-                    </div>
+                        {{-- Conteúdo real: visível após carregar --}}
+                        <div x-show="!loading" style="display:none">
 
-                    {{-- Controles de PAGINAÇÃO da API (página anterior / próxima) --}}
-                    <div class="flex items-center justify-between mt-4 text-sm text-gray-500">
-                        <button id="prev-page" class="px-3 py-1 border rounded disabled:opacity-50" disabled>
-                            Anterior
-                        </button>
+                            {{-- Texto de estado (erro, vazio etc.) --}}
+                            <div id="transactions-state" class="mb-4"></div>
 
-                        <span id="pagination-info">Página 1 de 1</span>
+                            {{-- Cards de resumo da página atual (receitas, despesas, saldo) --}}
+                            <div id="transactions-summary" class="grid grid-cols-1 gap-4 mb-6 text-sm md:grid-cols-3">
+                                {{-- preenchido via JS --}}
+                            </div>
 
-                        <button id="next-page" class="px-3 py-1 border rounded disabled:opacity-50">
-                            Próxima
-                        </button>
+                            {{-- TABELA PRINCIPAL --}}
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm text-left">
+                                    <thead class="border-b text-gray-600">
+                                        <tr>
+                                            <th class="px-3 py-2">Info</th>
+                                            <th class="px-3 py-2">Data</th>
+                                            <th class="px-3 py-2">Descrição</th>
+                                            <th class="px-3 py-2 text-right">Valor</th>
+                                            <th class="px-3 py-2 text-right">Cota p/ pessoa</th>
+                                            <th class="px-3 py-2">Pessoas</th>
+                                            <th class="px-3 py-2">Parcelas</th>
+                                            <th class="px-3 py-2 text-center">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transactions-body" class="divide-y">
+                                        {{-- Linhas inseridas dinamicamente via JS a partir da API /api/transactions --}}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {{-- Controles de PAGINAÇÃO da API (página anterior / próxima) --}}
+                            <div class="flex items-center justify-between mt-4 text-sm text-gray-500">
+                                <button id="prev-page" class="px-3 py-1 border rounded disabled:opacity-50" disabled>
+                                    Anterior
+                                </button>
+
+                                <span id="pagination-info">Página 1 de 1</span>
+
+                                <button id="next-page" class="px-3 py-1 border rounded disabled:opacity-50">
+                                    Próxima
+                                </button>
+                            </div>
+
+                        </div>
                     </div>
 
                 </div>
@@ -158,10 +174,7 @@
         </div>
     </div>
 
-    {{-- Container de toasts (notificações de feedback visual no canto) --}}
-    <div id="toast-container" class="fixed z-50 flex flex-col gap-2 bottom-4 right-4"></div>
-
-    {{-- Script da página: responsável por buscar API, montar tabela, filtros, paginação, delete, toasts --}}
+    {{-- Script da página: responsável por buscar API, montar tabela, filtros, paginação, delete --}}
     <script type="module">
         // Referências dos elementos de DOM
         const stateEl = document.getElementById('transactions-state');
@@ -192,48 +205,25 @@
 
         /**
          * Função principal de carregamento da listagem.
-         * Ela:
-         *  - monta query string com filtros e paginação
-         *  - chama /api/transactions
-         *  - monta resumo, tabela e controles de paginação
          */
         async function loadTransactions(page = 1, filters = {}) {
-            stateEl.textContent = 'Carregando transações...';
+            Alpine.$data(document.getElementById('transactions-table-wrapper')).loading = true;
 
             try {
                 const params = new URLSearchParams();
                 params.set('per_page', perPage);
                 params.set('page', page);
 
-                // Aplica filtros na query se existirem
-                if (filters.month) {
-                    // espera "YYYY-MM"
-                    params.set('month', filters.month);
-                }
+                if (filters.month)              params.set('month', filters.month);
+                if (filters.user_id)            params.set('user_id', filters.user_id);
+                if (filters.category_id)        params.set('category_id', filters.category_id);
+                if (filters.type_id)            params.set('type_id', filters.type_id);
+                if (filters.payment_method_id)  params.set('payment_method_id', filters.payment_method_id);
 
-                if (filters.user_id) {
-                    params.set('user_id', filters.user_id);
-                }
-
-                if (filters.category_id) {
-                    params.set('category_id', filters.category_id);
-                }
-
-                if (filters.type_id) {
-                    params.set('type_id', filters.type_id);
-                }
-
-                if (filters.payment_method_id) {
-                    params.set('payment_method_id', filters.payment_method_id);
-                }
-
-                // Chamada à API (TransactionController@index)
                 const response = await fetch(`/api/transactions?${params.toString()}`);
 
                 if (!response.ok) throw new Error('Erro ao carregar transações');
 
-                // Padrão de resposta de Resource Collection do Laravel:
-                // { data: [...], meta: {...}, links: {...} }
                 const json = await response.json();
                 const items = json.data ?? [];
                 const meta = json.meta ?? null;
@@ -243,22 +233,35 @@
                 summaryEl.innerHTML = '';
 
                 if (items.length === 0) {
-                    // Nenhum registro para esses filtros
-                    stateEl.textContent = 'Nenhuma transação encontrada.';
+                    stateEl.innerHTML = `
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <h3 class="mt-4 text-sm font-semibold text-gray-900">Nenhuma transação encontrada</h3>
+                            <p class="mt-1 text-sm text-gray-500">Tente ajustar os filtros ou adicione uma nova transação.</p>
+                            <div class="mt-6">
+                                <a href="{{ route('transactions.create') }}"
+                                   class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+                                    + Nova transação
+                                </a>
+                            </div>
+                        </div>
+                    `;
                     paginationInfoEl.textContent = '';
                     prevBtn.disabled = true;
                     nextBtn.disabled = true;
                     return;
                 }
 
-                stateEl.textContent = '';
+                stateEl.innerHTML = '';
 
-                // ===== RESUMO DA PÁGINA (somente da página atual) =====
+                // ===== RESUMO DA PÁGINA =====
                 let totalIncome = 0;
                 let totalExpense = 0;
 
                 items.forEach(tx => {
-                    // signed_amount vem pronto da API (positivo/negativo baseado no tipo)
                     const signed = Number(tx.signed_amount);
                     if (signed > 0) totalIncome += signed;
                     if (signed < 0) totalExpense += signed;
@@ -266,7 +269,6 @@
 
                 const balance = totalIncome + totalExpense;
 
-                // Monta HTML dos cards de resumo rapidão
                 summaryEl.innerHTML = `
                     <div class="px-4 py-3 border rounded-lg bg-green-50">
                         <div class="text-xs text-gray-500">Receitas (página)</div>
@@ -316,25 +318,21 @@
                         }) :
                         '-';
 
-                    // label do dono do cartão (Daniel / Joyce / etc.)
                     const ownerLabel = tx.credit_card?.owner_label || tx.credit_card?.owner_name || '';
 
-                    // Badges de info (categoria, cartão de crédito)
-                    const infoBadges =
-                        `
+                    const infoBadges = `
                         <span class="inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-700">
                             ${tx.category?.name ?? '-'}
                         </span>
                         ${
                             tx.payment_method?.name === 'Credit Card' && tx.credit_card?.name
                                 ? `<span class="inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-purple-100 text-purple-700">
-                                                    ${tx.credit_card.name}${ownerLabel ? ' (' + ownerLabel + ')' : ''}
-                                            </span>`
+                                        ${tx.credit_card.name}${ownerLabel ? ' (' + ownerLabel + ')' : ''}
+                                    </span>`
                                 : ''
                         }
                     `;
 
-                    // Bloco com cada usuário + valor da cota
                     const usersDetailHtml = (tx.users ?? [])
                         .map(u => {
                             const share = Number(u.share_amount ?? 0).toLocaleString('pt-BR', {
@@ -351,7 +349,6 @@
                         })
                         .join('');
 
-                    // Texto de parcelas (ex: "3/10 · faltam 7")
                     const installmentLabel = tx.installments?.is_installment ?
                         `${tx.installments.label} · faltam ${tx.installments.remaining}` :
                         '-';
@@ -370,9 +367,7 @@
                             </span>
                             ${
                                 totalFormatted && tx.installments?.is_installment
-                                    ? `<div class="text-xs text-gray-500">
-                                            Total: ${totalFormatted}
-                                        </div>`
+                                    ? `<div class="text-xs text-gray-500">Total: ${totalFormatted}</div>`
                                     : ''
                             }
                         </td>
@@ -405,11 +400,9 @@
                 if (meta) {
                     currentPage = meta.current_page;
                     paginationInfoEl.textContent = `Página ${meta.current_page} de ${meta.last_page}`;
-                    // Habilita/desabilita botões baseado se existe link prev/next
                     prevBtn.disabled = !(links && links.prev);
                     nextBtn.disabled = !(links && links.next);
                 } else {
-                    // Caso não venha meta/links (pouco provável com paginate)
                     paginationInfoEl.textContent = '';
                     prevBtn.disabled = true;
                     nextBtn.disabled = true;
@@ -423,6 +416,8 @@
                 paginationInfoEl.textContent = '';
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
+            } finally {
+                Alpine.$data(document.getElementById('transactions-table-wrapper')).loading = false;
             }
         }
 
@@ -468,106 +463,46 @@
             loadTransactions(1, currentFilters);
         });
 
-        // ======= DELETE (modal + toast) =======
-        const deleteModal = document.getElementById("delete-modal");
-        const cancelDeleteBtn = document.getElementById("cancel-delete");
-        const confirmDeleteBtn = document.getElementById("confirm-delete");
-        // estado local para guardar qual id está em "espera" pra excluir
-        let idToDelete = null;
-
-        // Delegação de evento: qualquer clique num botão com .delete-btn
-        document.addEventListener("click", (e) => {
-            const btn = e.target.closest(".delete-btn");
+        // ======= DELETE (via modal centralizado + toast) =======
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.delete-btn');
             if (!btn) return;
 
-            idToDelete = btn.dataset.id;
-            deleteModal.classList.remove("hidden");
-        });
+            const id = btn.dataset.id;
 
-        // Cancelar exclusão (fecha modal e limpa id)
-        cancelDeleteBtn.addEventListener("click", () => {
-            deleteModal.classList.add("hidden");
-            idToDelete = null;
-        });
+            window.dispatchEvent(new CustomEvent('request-delete', {
+                detail: {
+                    callback: async () => {
+                        try {
+                            const response = await fetch(`/api/transactions/${id}`, {
+                                method: 'DELETE',
+                                headers: { 'Accept': 'application/json' },
+                            });
 
-        // Clique fora do conteúdo do modal também fecha
-        deleteModal.addEventListener("click", (e) => {
-            if (e.target === deleteModal) {
-                deleteModal.classList.add("hidden");
-                idToDelete = null;
-            }
-        });
+                            if (!response.ok) {
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: { message: 'Erro ao excluir transação.', type: 'error' }
+                                }));
+                                return;
+                            }
 
-        // Confirmar exclusão → faz DELETE na API, recarrega listagem, mostra toast
-        confirmDeleteBtn.addEventListener("click", async () => {
-            if (!idToDelete) return;
-
-            confirmDeleteBtn.disabled = true;
-            confirmDeleteBtn.textContent = "Excluindo...";
-
-            try {
-                const response = await fetch(`/api/transactions/${idToDelete}`, {
-                    method: "DELETE",
-                    headers: {
-                        "Accept": "application/json",
-                    },
-                });
-
-                if (!response.ok) {
-                    alert("Erro ao excluir transação.");
-                    return;
+                            await loadTransactions(currentPage, currentFilters);
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: { message: 'Transação excluída com sucesso!', type: 'success' }
+                            }));
+                        } catch (err) {
+                            console.error(err);
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: { message: 'Erro inesperado ao excluir.', type: 'error' }
+                            }));
+                        }
+                    }
                 }
-
-                deleteModal.classList.add("hidden");
-                await loadTransactions(currentPage, currentFilters);
-                showToast("Transação excluída com sucesso!", "success");
-
-            } catch (err) {
-                console.error(err);
-                alert("Erro inesperado ao excluir.");
-            } finally {
-                confirmDeleteBtn.disabled = false;
-                confirmDeleteBtn.textContent = "Excluir";
-                idToDelete = null;
-            }
+            }));
         });
-
-        // Função genérica de toast (usada para feedback de sucesso/erro)
-        function showToast(message, type = "success") {
-            const container = document.getElementById("toast-container");
-
-            const toast = document.createElement("div");
-
-            const baseClasses =
-                "px-4 py-2 rounded shadow text-sm font-medium flex items-center gap-2 transition-opacity duration-300";
-
-            const typeClasses =
-                type === "success" ?
-                "bg-green-600 text-white" :
-                type === "error" ?
-                "bg-red-600 text-white" :
-                "bg-gray-700 text-white";
-
-            toast.className = `${baseClasses} ${typeClasses}`;
-            toast.innerHTML = `<span>${message}</span>`;
-
-            container.appendChild(toast);
-
-            // animação de fade-in
-            setTimeout(() => (toast.style.opacity = "1"), 10);
-
-            // depois de 3s, some com fade-out e remove do DOM
-            setTimeout(() => {
-                toast.style.opacity = "0";
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
 
         // PRIMEIRA CARGA AO ABRIR A PÁGINA (sem filtros)
         loadTransactions(1, currentFilters);
     </script>
-
-    {{-- include do modal de delete (markup HTML separado) --}}
-    @include('transactions.modals.delete')
 
 </x-app-layout>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -65,5 +66,25 @@ class CreditCardStatement extends Model
             ->where('year', $year)
             ->where('month', $month)
             ->first();
+    }
+
+    /**
+     * Atualiza o status da fatura com base na data atual.
+     *
+     * Regras:
+     *  - paid   → status final; nunca regride
+     *  - closed → o mês da fatura já encerrou
+     *  - open   → fatura do mês atual ou futuro
+     */
+    public function updateStatus(): void
+    {
+        if ($this->status === 'paid') {
+            return;
+        }
+
+        $endOfStatementMonth = Carbon::create($this->year, $this->month)->endOfMonth();
+
+        $this->status = now()->greaterThan($endOfStatementMonth) ? 'closed' : 'open';
+        $this->save();
     }
 }

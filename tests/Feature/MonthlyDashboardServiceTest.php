@@ -157,7 +157,7 @@ it('inclui emprestimo sem parcelas usando fallback', function () {
     $service = new MonthlyDashboardService();
     $data = $service->build($year, $month, $user);
 
-    expect($data['cards']['payable_loans_total'])->toBe(300.0);
+    expect($data['cards']['breakdown']['payable_loans_total'])->toBe(300.0);
     expect(count($data['lists']['payables_loans']))->toBe(1);
     expect($data['lists']['payables_loans'][0]['description'])->toBe('Empréstimo pessoal');
 });

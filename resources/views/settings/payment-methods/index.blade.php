@@ -105,7 +105,7 @@
                                 <td class="px-3 py-2 text-right">
                                     <div class="flex justify-end gap-2">
                                         <a href="${editUrl}" class="text-indigo-600 hover:underline">Editar</a>
-                                        <form method="POST" action="${deleteUrl}" onsubmit="return confirm('Remover esta forma de pagamento?');">
+                                        <form method="POST" action="${deleteUrl}" onsubmit="event.preventDefault(); window.dispatchEvent(new CustomEvent('request-delete', { detail: { form: this } }));">
                                             <input type="hidden" name="_token" value="${csrfToken}">
                                             <input type="hidden" name="_method" value="DELETE">
                                             <button class="text-red-600 hover:underline" type="submit">Excluir</button>

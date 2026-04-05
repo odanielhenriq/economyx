@@ -88,20 +88,27 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <div x-data="{ raw: '', onInput(e) { const d = e.target.value.replace(/\D/g,''); const n = (parseInt(d||'0')/100); this.raw = n.toFixed(2); e.target.value = 'R$ ' + n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); } }">
                             <label class="text-sm text-gray-600">Valor total da compra (R$)</label>
-                            <input type="number" step="0.01" min="0" name="total_amount" id="total_amount"
-                                value="" class="mt-1 w-full rounded border-gray-300 text-sm">
+                            <input type="text" inputmode="numeric"
+                                x-on:input="onInput($event)"
+                                placeholder="R$ 0,00"
+                                class="mt-1 w-full rounded border-gray-300 text-sm">
+                            <input type="hidden" name="total_amount" id="total_amount" x-bind:value="raw">
                             <p class="mt-1 text-xs text-gray-500">
                                 Somatório de todas as parcelas (ex: 10 x 200 = 2.000).
                             </p>
                         </div>
 
                         {{-- Valor da parcela (amount) --}}
-                        <div id="amount-wrapper" style="display: none;">
+                        <div id="amount-wrapper" style="display: none;"
+                             x-data="{ raw: '', onInput(e) { const d = e.target.value.replace(/\D/g,''); const n = (parseInt(d||'0')/100); this.raw = n.toFixed(2); e.target.value = 'R$ ' + n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); } }">
                             <label class="text-sm text-gray-600">Valor da parcela (R$)</label>
-                            <input type="number" step="0.01" min="0" name="amount" id="amount"
-                                value="" class="mt-1 w-full rounded border-gray-300 text-sm">
+                            <input type="text" inputmode="numeric"
+                                x-on:input="onInput($event)"
+                                placeholder="R$ 0,00"
+                                class="mt-1 w-full rounded border-gray-300 text-sm">
+                            <input type="hidden" name="amount" id="amount" x-bind:value="raw">
                             <p class="mt-1 text-xs text-gray-500">
                                 Valor da parcela individual (se houver parcelamento).
                             </p>

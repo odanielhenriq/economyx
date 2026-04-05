@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Web\CategoryBudgetController;
 use App\Http\Controllers\Web\CategoryWebController;
 use App\Http\Controllers\Web\CreditCardWebController;
 use App\Http\Controllers\Web\MonthlyDashboardController;
@@ -71,6 +72,10 @@ Route::middleware(['auth'])->prefix('settings')->group(function () {
     Route::resource('payment-methods', PaymentMethodWebController::class)->except('show');
     Route::resource('credit-cards', CreditCardWebController::class)->except('show');
     Route::resource('recurring-templates', RecurringTemplateWebController::class)->except('show');
+
+    Route::get('budgets', [CategoryBudgetController::class, 'index'])->name('budgets.index');
+    Route::post('budgets', [CategoryBudgetController::class, 'store'])->name('budgets.store');
+    Route::delete('budgets/{budget}', [CategoryBudgetController::class, 'destroy'])->name('budgets.destroy');
 });
 
 

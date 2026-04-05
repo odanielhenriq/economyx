@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Model que representa uma parcela individual de uma transação parcelada.
@@ -24,6 +25,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class TransactionInstallment extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'transaction_id',
         'credit_card_statement_id',
