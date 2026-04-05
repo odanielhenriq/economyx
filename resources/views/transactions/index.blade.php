@@ -1,15 +1,93 @@
 {{-- resources/views/transactions/index.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between" x-data="exportModal()">
             <h1 class="text-lg font-semibold text-slate-900">Transações</h1>
-            <a href="{{ route('transactions.create') }}"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                Nova transação
-            </a>
+            <div class="flex items-center gap-3">
+                {{-- Botão Exportar --}}
+                <button
+                    @click="open = true"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Exportar
+                </button>
+
+                {{-- Botão Nova transação --}}
+                <a href="{{ route('transactions.create') }}"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Nova transação
+                </a>
+            </div>
+
+            {{-- Modal de exportação --}}
+            <div
+                x-show="open"
+                x-on:keydown.escape.window="open = false"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                style="display:none">
+                <div class="absolute inset-0 bg-black/50" @click="open = false"></div>
+                <div class="relative bg-white rounded-xl shadow-sm border border-slate-200 w-full max-w-md p-6" @click.stop>
+
+                    <h2 class="text-base font-semibold text-slate-900 mb-1">Exportar transações</h2>
+                    <p class="text-sm text-slate-500 mb-5">Escolha o período e baixe um arquivo CSV.</p>
+
+                    {{-- Presets --}}
+                    <div class="flex flex-wrap gap-2 mb-5">
+                        <template x-for="preset in presets" :key="preset.label">
+                            <button
+                                type="button"
+                                @click="applyPreset(preset)"
+                                :class="startDate === preset.start && endDate === preset.end
+                                    ? 'bg-green-600 text-white border-green-600'
+                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                                class="px-3 py-1.5 text-xs font-medium rounded-lg border transition"
+                                x-text="preset.label">
+                            </button>
+                        </template>
+                    </div>
+
+                    {{-- Inputs de data --}}
+                    <div class="grid grid-cols-2 gap-3 mb-6">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">De</label>
+                            <input type="date" x-model="startDate"
+                                   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Até</label>
+                            <input type="date" x-model="endDate"
+                                   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                        </div>
+                    </div>
+
+                    {{-- Ações --}}
+                    <div class="flex justify-end gap-3">
+                        <button type="button"
+                                @click="open = false"
+                                class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                            Cancelar
+                        </button>
+                        <button type="button"
+                                @click="exportar()"
+                                :disabled="!startDate || !endDate || loading"
+                                :class="(!startDate || !endDate || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'"
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg transition">
+                            <svg x-show="loading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                            </svg>
+                            <span x-text="loading ? 'Gerando...' : 'Baixar CSV'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </x-slot>
 
@@ -319,7 +397,14 @@
                         .join('');
 
                     const installmentLabel = tx.installments?.is_installment
-                        ? `${tx.installments.label} · faltam ${tx.installments.remaining}`
+                        ? `<button
+                              data-installment-id="${tx.id}"
+                              class="installment-btn inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs
+                                     font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition cursor-pointer"
+                              title="Ver todas as parcelas">
+                              ${tx.installments.label}
+                           </button>
+                           <div class="text-xs text-slate-400 mt-0.5">faltam ${tx.installments.remaining}</div>`
                         : '-';
 
                     tr.innerHTML = `
@@ -422,6 +507,15 @@
         });
 
         document.addEventListener('click', (e) => {
+            const installBtn = e.target.closest('.installment-btn');
+            if (installBtn) {
+                const id = installBtn.dataset.installmentId;
+                window.dispatchEvent(new CustomEvent('open-installments', { detail: { id } }));
+                return;
+            }
+        });
+
+        document.addEventListener('click', (e) => {
             const btn = e.target.closest('.delete-btn');
             if (!btn) return;
 
@@ -458,6 +552,162 @@
         });
 
         loadTransactions(1, currentFilters);
+    </script>
+
+    {{-- Modal de parcelas --}}
+    <div
+        x-data="{
+            open: false,
+            loading: false,
+            description: '',
+            installments: [],
+            init() {
+                window.addEventListener('open-installments', async (e) => {
+                    this.open = true;
+                    this.loading = true;
+                    this.installments = [];
+                    this.description = '';
+                    try {
+                        const res = await fetch('/api/transactions/' + e.detail.id + '/installments');
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        const data = await res.json();
+                        this.description  = data.description ?? '';
+                        this.installments = Array.isArray(data.installments) ? data.installments : [];
+                    } catch {
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { message: 'Erro ao carregar parcelas.', type: 'error' }
+                        }));
+                        this.open = false;
+                    } finally {
+                        this.loading = false;
+                    }
+                });
+            }
+        }"
+        x-show="open"
+        x-on:keydown.escape.window="open = false"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style="display:none">
+
+        <div class="absolute inset-0 bg-black/50" @click="open = false"></div>
+
+        <div class="relative bg-white rounded-xl border border-slate-200 shadow-sm w-full max-w-lg p-6" @click.stop>
+
+            {{-- Header --}}
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h2 class="text-base font-semibold text-slate-900" x-text="description"></h2>
+                    <p class="text-sm text-slate-500 mt-0.5" x-text="installments.length + ' parcelas no total'"></p>
+                </div>
+                <button @click="open = false" class="text-slate-400 hover:text-slate-600 transition">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Skeleton --}}
+            <div x-show="loading" class="space-y-3">
+                <template x-for="i in 4">
+                    <div class="h-12 bg-slate-100 rounded-lg animate-pulse"></div>
+                </template>
+            </div>
+
+            {{-- Lista de parcelas --}}
+            <div x-show="!loading" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+                <template x-for="inst in installments" :key="inst.id">
+                    <div
+                        :class="{
+                            'bg-green-50 border-green-200': inst.is_past && !inst.is_current,
+                            'bg-indigo-50 border-indigo-300 ring-1 ring-indigo-300': inst.is_current,
+                            'bg-white border-slate-200': !inst.is_past && !inst.is_current,
+                        }"
+                        class="flex items-center justify-between px-4 py-3 rounded-lg border transition">
+
+                        <div class="flex items-center gap-3">
+                            <div
+                                :class="{
+                                    'bg-green-500': inst.is_past && !inst.is_current,
+                                    'bg-indigo-500': inst.is_current,
+                                    'bg-slate-200': !inst.is_past && !inst.is_current,
+                                }"
+                                class="w-2 h-2 rounded-full flex-shrink-0"></div>
+                            <div>
+                                <p class="text-sm font-medium text-slate-900"
+                                   x-text="'Parcela ' + inst.installment_number + ' de ' + inst.total"></p>
+                                <p class="text-xs text-slate-400"
+                                   x-text="inst.due_date
+                                       ? new Date(inst.due_date + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                                       : '-'"></p>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                            <p class="text-sm font-semibold tabular-nums"
+                               :class="{
+                                   'text-green-700': inst.is_past && !inst.is_current,
+                                   'text-indigo-700': inst.is_current,
+                                   'text-slate-500': !inst.is_past && !inst.is_current,
+                               }"
+                               x-text="'R$ ' + Number(inst.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })"></p>
+                            <p class="text-xs mt-0.5"
+                               :class="{
+                                   'text-green-500': inst.is_past && !inst.is_current,
+                                   'text-indigo-500': inst.is_current,
+                                   'text-slate-400': !inst.is_past && !inst.is_current,
+                               }"
+                               x-text="inst.is_current ? 'Mês atual' : inst.is_past ? 'Pago' : 'Futuro'"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function exportModal() {
+            return {
+                open: false,
+                startDate: '',
+                endDate: '',
+                loading: false,
+                presets: [
+                    {
+                        label: 'Este mês',
+                        start: '{{ now()->startOfMonth()->format('Y-m-d') }}',
+                        end:   '{{ now()->endOfMonth()->format('Y-m-d') }}',
+                    },
+                    {
+                        label: 'Mês passado',
+                        start: '{{ now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d') }}',
+                        end:   '{{ now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d') }}',
+                    },
+                    {
+                        label: 'Últimos 3 meses',
+                        start: '{{ now()->subMonths(3)->startOfMonth()->format('Y-m-d') }}',
+                        end:   '{{ now()->format('Y-m-d') }}',
+                    },
+                    {
+                        label: 'Este ano',
+                        start: '{{ now()->startOfYear()->format('Y-m-d') }}',
+                        end:   '{{ now()->format('Y-m-d') }}',
+                    },
+                ],
+                applyPreset(preset) {
+                    this.startDate = preset.start;
+                    this.endDate   = preset.end;
+                },
+                exportar() {
+                    if (!this.startDate || !this.endDate) return;
+                    this.loading = true;
+                    const url = '{{ route('transactions.export') }}'
+                        + '?start_date=' + this.startDate
+                        + '&end_date='   + this.endDate;
+                    window.location.href = url;
+                    setTimeout(() => { this.loading = false; }, 1500);
+                },
+            };
+        }
     </script>
 
 </x-app-layout>

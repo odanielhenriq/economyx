@@ -40,6 +40,8 @@ class MonthlyDashboardController extends Controller
             'next' => ['year' => $next->year, 'month' => $next->month],
             'chartData' => $this->getLast6MonthsSummary($year, $month),
             'budgetAlerts' => $this->getBudgetAlerts($year, $month),
+            'spendingByCategory' => $this->getSpendingByCategory($year, $month),
+            'upcomingDues' => $this->getUpcomingDues(),
         ]);
     }
 
@@ -89,6 +91,66 @@ class MonthlyDashboardController extends Controller
         }
 
         return $alerts;
+    }
+
+    /**
+     * Retorna os top 6 gastos por categoria no mês, com percentual proporcional ao maior.
+     */
+    private function getSpendingByCategory(int $year, int $month): array
+    {
+        $user       = Auth::user();
+        $networkIds = $user->networkUsers()->pluck('id')->all();
+
+        $start = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+        $end   = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+
+        $spending = Transaction::with('category')
+            ->whereBetween('due_date', [$start, $end])
+            ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
+            ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
+            ->whereNotNull('category_id')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn ($group) => [
+                'category' => $group->first()->category?->name ?? 'Sem categoria',
+                'total'    => round((float) $group->sum('amount'), 2),
+            ])
+            ->sortByDesc('total')
+            ->take(6)
+            ->values();
+
+        $max = $spending->max('total') ?: 1;
+
+        return $spending->map(fn ($item) => [
+            ...$item,
+            'percentage' => round(($item['total'] / $max) * 100),
+        ])->toArray();
+    }
+
+    /**
+     * Retorna despesas com due_date nos próximos 7 dias.
+     */
+    private function getUpcomingDues(): array
+    {
+        $user       = Auth::user();
+        $networkIds = $user->networkUsers()->pluck('id')->all();
+
+        $hoje   = now()->startOfDay();
+        $limite = now()->addDays(7)->endOfDay();
+
+        return Transaction::with('category')
+            ->whereBetween('due_date', [$hoje, $limite])
+            ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
+            ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
+            ->orderBy('due_date')
+            ->get()
+            ->map(fn ($t) => [
+                'description' => $t->description,
+                'due_date'    => $t->due_date?->format('Y-m-d'),
+                'amount'      => round((float) $t->amount, 2),
+                'days_left'   => (int) $hoje->diffInDays(Carbon::parse($t->due_date), false),
+            ])
+            ->toArray();
     }
 
     /**

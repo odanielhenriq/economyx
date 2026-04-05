@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\PaymentMethodWebController;
 use App\Http\Controllers\Web\RecurringTemplateWebController;
 use App\Http\Controllers\Web\RecurringTransactionWebController;
 use App\Http\Controllers\Web\CardStatementWebController;
+use App\Http\Controllers\Web\ExportController;
 use App\Http\Controllers\Web\TransactionWebController;
 use App\Http\Controllers\Web\TypeWebController;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +60,10 @@ Route::middleware('auth')->group(function () {
     Route::redirect('/recurring-transactions', '/settings/recurring-templates', 301)->name('recurring-transactions.index');
     Route::redirect('/recurring-transactions/create', '/settings/recurring-templates/create', 301)->name('recurring-transactions.create');
     Route::get('/recurring-transactions/{id}/edit', fn ($id) => redirect(route('recurring-templates.edit', ['recurring_template' => $id]), 301))->name('recurring-transactions.edit');
+
+    // Exportação CSV de transações
+    Route::get('/transactions/export', [ExportController::class, 'transactions'])
+        ->name('transactions.export');
 
     // Tela web do extrato de cartão (usa CardStatementWebController pra montar Blade cards/statement)
     Route::get('/cards/statement', [CardStatementWebController::class, 'index'])

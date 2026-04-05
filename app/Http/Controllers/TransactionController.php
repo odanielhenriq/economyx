@@ -209,6 +209,43 @@ class TransactionController extends Controller
     }
 
     /**
+     * Retorna todas as parcelas de uma transação parcelada.
+     */
+    public function installments(string $id)
+    {
+        try {
+            $transaction = $this->transactions->findTransactionById((int) $id);
+
+            if (!$transaction) {
+                return response()->json(['error' => 'Transaction not found'], 404);
+            }
+
+            $installments = $transaction->installments()
+                ->orderBy('installment_number')
+                ->get()
+                ->map(fn($i) => [
+                    'id'                 => $i->id,
+                    'installment_number' => $i->installment_number,
+                    'total'              => $i->installment_total,
+                    'due_date'           => $i->due_date?->format('Y-m-d'),
+                    'amount'             => $i->amount,
+                    'is_past'            => $i->due_date && $i->due_date->isPast() && !$i->due_date->isCurrentMonth(),
+                    'is_current'         => $i->due_date && $i->due_date->isCurrentMonth(),
+                ]);
+
+            return response()->json([
+                'description'  => $transaction->description,
+                'installments' => $installments,
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error'   => 'Failed to retrieve installments',
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Remove (soft delete) uma transação.
      */
     public function destroy(string $id)

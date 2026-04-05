@@ -117,6 +117,46 @@
                     </div>
                 </div>
 
+                {{-- Painel de vencimentos próximos --}}
+                @if(count($upcomingDues) > 0)
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="text-sm font-semibold text-amber-800">
+                            {{ count($upcomingDues) }}
+                            {{ count($upcomingDues) === 1 ? 'conta vence' : 'contas vencem' }}
+                            nos próximos 7 dias
+                        </h3>
+                    </div>
+                    <div class="space-y-2">
+                        @foreach($upcomingDues as $due)
+                            <div class="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border border-amber-100">
+                                <div>
+                                    <p class="text-sm font-medium text-slate-900">{{ $due['description'] }}</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">
+                                        @if($due['days_left'] === 0)
+                                            Vence hoje
+                                        @elseif($due['days_left'] === 1)
+                                            Vence amanhã
+                                        @else
+                                            Vence em {{ $due['days_left'] }} dias
+                                            ({{ \Carbon\Carbon::parse($due['due_date'])->format('d/m') }})
+                                        @endif
+                                    </p>
+                                </div>
+                                <span class="text-sm font-semibold text-slate-900 tabular-nums">
+                                    R$ {{ number_format($due['amount'], 2, ',', '.') }}
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
                 {{-- Alertas de orçamento por categoria --}}
                 @if (count($budgetAlerts) > 0)
                     <div class="space-y-2">
@@ -203,6 +243,43 @@
                             </template>
                         </div>
                     </div>
+                </div>
+
+                {{-- Gastos por categoria --}}
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                    <h3 class="text-sm font-semibold text-slate-700 mb-5">Onde o dinheiro foi</h3>
+
+                    @if(count($spendingByCategory) === 0)
+                        <p class="text-sm text-slate-400 text-center py-6">
+                            Nenhuma despesa registrada neste mês.
+                        </p>
+                    @else
+                        @php
+                            $categoryColors = [
+                                'bg-green-500', 'bg-blue-500', 'bg-amber-500',
+                                'bg-purple-500', 'bg-red-500', 'bg-slate-400'
+                            ];
+                        @endphp
+                        <div class="space-y-4">
+                            @foreach($spendingByCategory as $index => $item)
+                                <div>
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-2.5 h-2.5 rounded-full {{ $categoryColors[$index % count($categoryColors)] }}"></div>
+                                            <span class="text-sm font-medium text-slate-700">{{ $item['category'] }}</span>
+                                        </div>
+                                        <span class="text-sm font-semibold text-slate-900 tabular-nums">
+                                            R$ {{ number_format($item['total'], 2, ',', '.') }}
+                                        </span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 rounded-full h-2">
+                                        <div class="h-2 rounded-full transition-all duration-500 {{ $categoryColors[$index % count($categoryColors)] }}"
+                                             style="width: {{ $item['percentage'] }}%"></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
                 {{-- A pagar no mês --}}
