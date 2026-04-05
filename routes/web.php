@@ -55,8 +55,10 @@ Route::middleware('auth')->group(function () {
     // Exclui transação via POST/DELETE (aqui você usa mais a API pra deletar, mas deixou a rota pronta)
     Route::delete('/transactions/{transaction}', [TransactionWebController::class, 'destroy'])->name('transactions.destroy');
 
-    // Contas fixas (templates recorrentes)
-    Route::resource('recurring-transactions', RecurringTransactionWebController::class)->except('show');
+    // Contas fixas — rotas legadas redirecionam para /settings/recurring-templates
+    Route::redirect('/recurring-transactions', '/settings/recurring-templates', 301)->name('recurring-transactions.index');
+    Route::redirect('/recurring-transactions/create', '/settings/recurring-templates/create', 301)->name('recurring-transactions.create');
+    Route::get('/recurring-transactions/{id}/edit', fn ($id) => redirect(route('recurring-templates.edit', ['recurring_template' => $id]), 301))->name('recurring-transactions.edit');
 
     // Tela web do extrato de cartão (usa CardStatementWebController pra montar Blade cards/statement)
     Route::get('/cards/statement', [CardStatementWebController::class, 'index'])

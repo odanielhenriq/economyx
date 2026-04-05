@@ -126,11 +126,11 @@
                         <table class="min-w-full text-sm text-left divide-y divide-slate-100">
                             <thead class="bg-slate-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Info</th>
+                                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Categoria</th>
                                     <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Data</th>
                                     <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Descrição</th>
                                     <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Valor</th>
-                                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Cota</th>
+                                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Minha parte</th>
                                     <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Pessoas</th>
                                     <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Parcelas</th>
                                     <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Ações</th>
@@ -247,19 +247,19 @@
 
                 summaryEl.innerHTML = `
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-                        <div class="text-xs font-medium text-slate-500 mb-1">Receitas (página)</div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Receitas</div>
                         <div class="text-xl font-bold text-emerald-700 tabular-nums">
                             ${totalIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </div>
                     </div>
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-                        <div class="text-xs font-medium text-slate-500 mb-1">Despesas (página)</div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Despesas</div>
                         <div class="text-xl font-bold text-red-600 tabular-nums">
                             ${totalExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </div>
                     </div>
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-                        <div class="text-xs font-medium text-slate-500 mb-1">Saldo (página)</div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Saldo</div>
                         <div class="text-xl font-bold tabular-nums ${balance >= 0 ? 'text-emerald-700' : 'text-red-600'}">
                             ${balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </div>
@@ -315,7 +315,10 @@
                         </td>
                         <td class="px-4 py-3 text-slate-500 align-top whitespace-nowrap">${tx.date}</td>
                         <td class="px-4 py-3 align-top">
-                            <div class="font-medium text-slate-800">${tx.description ?? '(sem descrição)'}</div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-medium text-slate-800">${tx.description ?? '(sem descrição)'}</span>
+                                ${tx.recurring_transaction_id ? '<span class="text-xs text-slate-400" title="Conta fixa">🔁</span>' : ''}
+                            </div>
                         </td>
                         <td class="px-4 py-3 text-right align-top">
                             <span class="font-semibold tabular-nums ${isNegative ? 'text-red-600' : 'text-emerald-700'}">

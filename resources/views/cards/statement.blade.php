@@ -185,10 +185,11 @@
                         </div>
                     </div>
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-                        <div class="text-xs font-medium text-slate-500 mb-1">Líquido</div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Saldo do cartão</div>
                         <div class="text-xl font-bold tabular-nums ${data.summary.net < 0 ? 'text-red-600' : 'text-emerald-700'}">
                             R$ ${data.summary.net.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
+                        <div class="text-xs text-slate-400 mt-1">Valor da fatura descontando pagamentos registrados</div>
                     </div>
                 `;
 

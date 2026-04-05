@@ -80,9 +80,9 @@
             </a>
 
             {{-- Contas fixas --}}
-            <a href="{{ route('recurring-transactions.index') }}"
+            <a href="{{ route('recurring-templates.index') }}"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
-                      {{ request()->routeIs('recurring-transactions*')
+                      {{ request()->routeIs('recurring-templates*')
                          ? 'bg-green-600 text-white'
                          : 'text-green-100/70 hover:bg-white/5 hover:text-white' }}">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
@@ -105,7 +105,6 @@
                     || request()->routeIs('types.*')
                     || request()->routeIs('payment-methods.*')
                     || request()->routeIs('credit-cards.*')
-                    || request()->routeIs('recurring-templates.*')
                     || request()->routeIs('budgets.*');
             @endphp
             <div x-data="{ open: {{ $inSettings ? 'true' : 'false' }} }">
@@ -164,11 +163,6 @@
                        class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors
                               {{ request()->routeIs('credit-cards.*') ? 'bg-green-600/20 text-green-300' : 'text-green-100/50 hover:bg-white/5 hover:text-white' }}">
                         Cartões
-                    </a>
-                    <a href="{{ route('recurring-templates.index') }}"
-                       class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors
-                              {{ request()->routeIs('recurring-templates.*') ? 'bg-green-600/20 text-green-300' : 'text-green-100/50 hover:bg-white/5 hover:text-white' }}">
-                        Recorrências
                     </a>
                     <a href="{{ route('budgets.index') }}"
                        class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors

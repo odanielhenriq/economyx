@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h1 class="text-lg font-semibold text-slate-900">Editar template recorrente</h1>
+            <h1 class="text-lg font-semibold text-slate-900">Editar conta fixa</h1>
             <a href="{{ route('recurring-templates.index') }}"
                 class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
                 ← Voltar
@@ -43,12 +43,13 @@
                         <input type="number" step="0.01" name="total_amount"
                             value="{{ old('total_amount', $recurringTemplate->total_amount) }}"
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <p class="mt-1 text-xs text-slate-400">Se este gasto tem um valor total definido (ex: financiamento de R$ 10.000), informe aqui. Caso contrário, deixe em branco.</p>
                     </div>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Recorrência</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Com que frequência?</label>
                         <select name="frequency"
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                             <option value="monthly" @selected(old('frequency', $recurringTemplate->frequency) === 'monthly')>Mensal</option>
@@ -145,7 +146,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Usuários</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Quem divide esse gasto?</label>
                     @php
                         $selectedUsers = collect(old('user_ids', $recurringTemplate->users->pluck('id')->all()));
                     @endphp

@@ -1,13 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h1 class="text-lg font-semibold text-slate-900">Templates recorrentes</h1>
+            <h1 class="text-lg font-semibold text-slate-900">Contas fixas</h1>
             <a href="{{ route('recurring-templates.create') }}"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-                Novo template
+                Nova conta fixa
             </a>
         </div>
     </x-slot>
@@ -45,7 +45,7 @@
                     </thead>
                     <tbody id="recurring-templates-table" class="divide-y divide-slate-100">
                         <tr>
-                            <td class="px-4 py-6 text-center text-slate-400" colspan="8">Carregando templates...</td>
+                            <td class="px-4 py-6 text-center text-slate-400" colspan="8">Carregando...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -57,8 +57,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const tableBody = document.getElementById('recurring-templates-table');
-            const emptyRow = `<tr><td class="px-4 py-8 text-center text-slate-400" colspan="8">Nenhum template cadastrado.</td></tr>`;
-            const errorRow = `<tr><td class="px-4 py-8 text-center text-red-500" colspan="8">Erro ao carregar templates.</td></tr>`;
+            const emptyRow = `<tr><td class="px-4 py-8 text-center text-slate-400" colspan="8">Nenhuma conta fixa cadastrada.</td></tr>`;
+            const errorRow = `<tr><td class="px-4 py-8 text-center text-red-500" colspan="8">Erro ao carregar contas fixas.</td></tr>`;
             const editUrlTemplate = @json(route('recurring-templates.edit', ['recurring_template' => '__ID__']));
             const deleteUrlTemplate = @json(route('recurring-templates.destroy', ['recurring_template' => '__ID__']));
             const csrfToken = @json(csrf_token());

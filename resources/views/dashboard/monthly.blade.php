@@ -216,7 +216,7 @@
 
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
                         <div class="px-5 py-4 border-b border-slate-200">
-                            <h3 class="text-sm font-semibold text-slate-700">A pagar no mês — Empréstimos</h3>
+                            <h3 class="text-sm font-semibold text-slate-700">A pagar no mês — Parcelas de compras</h3>
                         </div>
                         <div id="payables-loans-list" class="p-5 space-y-3 text-sm"></div>
                     </div>
@@ -460,7 +460,7 @@
                     badge.textContent = 'À vista';
                 } else {
                     badge.className = 'inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-emerald-100 text-emerald-700';
-                    badge.textContent = 'Real';
+                    badge.textContent = 'Registrado';
                 }
 
                 statusCell.appendChild(badge);

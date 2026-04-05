@@ -11,7 +11,7 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="mx-auto max-w-4xl sm:px-6 lg:px-8 space-y-6">
+        <div class="sm:px-6 lg:px-8 space-y-6">
 
             <div id="transaction-success"
                 class="hidden p-3 text-sm text-green-800 bg-green-100 border border-green-200 rounded">
@@ -27,23 +27,24 @@
 
                 <div id="edit-scope-card" class="p-6 bg-white rounded shadow-sm border space-y-4"
                     style="display: none;">
-                    <h3 class="font-semibold text-gray-700 mb-2">Atualização da recorrência</h3>
+                    <h3 class="font-semibold text-gray-700 mb-1">Esta é uma conta fixa</h3>
+                    <p class="text-sm text-gray-500 mb-3">O que você quer alterar?</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
                         <label class="flex items-start gap-2">
                             <input type="radio" name="edit_scope" value="single" class="mt-1" checked>
                             <span>
-                                <strong>Alterar só este mês</strong>
+                                <strong>Só este mês</strong>
                                 <span class="block text-xs text-gray-500">
-                                    Mantém a conta fixa como está e quebra o vínculo desta transação.
+                                    Apenas o lançamento deste mês será alterado.
                                 </span>
                             </span>
                         </label>
                         <label class="flex items-start gap-2">
                             <input type="radio" name="edit_scope" value="template" class="mt-1">
                             <span>
-                                <strong>Alterar conta fixa</strong>
+                                <strong>Todos os meses seguintes</strong>
                                 <span class="block text-xs text-gray-500">
-                                    Atualiza o template e alinha esta transação do mês atual.
+                                    O novo valor vai valer para todos os meses futuros.
                                 </span>
                             </span>
                         </label>
@@ -65,7 +66,7 @@
 
                         {{-- Tipo --}}
                         <div>
-                            <label class="text-sm text-gray-600">Tipo</label>
+                            <label class="text-sm text-gray-600">Tipo de lançamento</label>
                             <select name="type_id" class="mt-1 w-full rounded border-gray-300 text-sm">
                                 <option value="">...</option>
                             </select>
@@ -164,18 +165,13 @@
 
                 {{-- CARD 4 — PARTICIPANTES --}}
                 <div class="p-6 bg-white rounded shadow-sm border space-y-3">
-                    <h3 class="font-semibold text-gray-700">Participantes</h3>
+                    <h3 class="font-semibold text-gray-700">Quem divide esse gasto?</h3>
 
                     <div id="users-grid" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
                 </div>
 
                 {{-- BOTÕES --}}
-                <div class="flex justify-between gap-3 items-center">
-                    <a href="{{ route('recurring-transactions.create') }}" id="create-recurring-template"
-                        class="text-sm text-indigo-600 hover:underline">
-                        Criar template de conta fixa
-                    </a>
-
+                <div class="flex justify-end gap-3 items-center">
                     <div class="flex gap-3">
                         <a href="{{ route('transactions.index') }}"
                             class="px-4 py-2 text-sm border rounded text-gray-700 hover:bg-gray-50">
@@ -216,7 +212,6 @@
             const typeSelect = document.querySelector('select[name="type_id"]');
             const categorySelect = document.querySelector('select[name="category_id"]');
             const usersGrid = document.getElementById('users-grid');
-            const recurringLink = document.getElementById('create-recurring-template');
             const descriptionInput = document.querySelector('input[name="description"]');
             const amountInput = document.querySelector('input[name="amount"]');
             const totalAmountInput = document.querySelector('input[name="total_amount"]');
@@ -305,30 +300,6 @@
                 } else {
                     creditCardWrapper.style.display = 'none';
                 }
-            };
-
-            const buildRecurringQuery = () => {
-                const params = new URLSearchParams();
-                const descriptionValue = descriptionInput?.value?.trim();
-                const totalAmountValue = totalAmountInput?.value;
-                const amountValue = amountInput?.value || totalAmountValue;
-
-                if (descriptionValue) params.set('description', descriptionValue);
-                if (amountValue) params.set('amount', amountValue);
-                if (totalAmountValue) params.set('total_amount', totalAmountValue);
-                if (categorySelect?.value) params.set('category_id', categorySelect.value);
-                if (typeSelect?.value) params.set('type_id', typeSelect.value);
-                if (paymentSelect?.value) params.set('payment_method_id', paymentSelect.value);
-                if (creditCardSelect?.value) params.set('credit_card_id', creditCardSelect.value);
-                if (dateInput?.value) params.set('transaction_date', dateInput.value);
-
-                document.querySelectorAll('input[name="user_ids[]"]').forEach((checkbox) => {
-                    if (checkbox.checked) {
-                        params.append('user_ids[]', checkbox.value);
-                    }
-                });
-
-                return params.toString();
             };
 
             const clearErrors = () => {
@@ -504,11 +475,6 @@
                         }
                     }
                 }));
-            });
-
-            recurringLink.addEventListener('click', (event) => {
-                const query = buildRecurringQuery();
-                recurringLink.href = query ? `${recurringLink.href.split('?')[0]}?${query}` : recurringLink.href;
             });
 
             Promise.all([loadTransaction(), loadOptions()])
