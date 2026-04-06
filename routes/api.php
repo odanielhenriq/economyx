@@ -31,6 +31,7 @@ Route::get('/transactions', [TransactionController::class, 'index']);
 Route::post('/transactions', [TransactionController::class, 'store']);
 Route::get('/transactions/{id}', [TransactionController::class, 'show']);
 Route::get('/transactions/{id}/installments', [TransactionController::class, 'installments']);
+Route::post('/transactions/{id}/duplicate', [TransactionController::class, 'duplicate']);
 Route::put('/transactions/{id}', [TransactionController::class, 'update']);
 Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
 

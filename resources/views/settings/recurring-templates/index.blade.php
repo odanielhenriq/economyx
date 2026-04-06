@@ -75,9 +75,11 @@
                     tableBody.innerHTML = items.map((template) => {
                         const editUrl = editUrlTemplate.replace('__ID__', template.id);
                         const deleteUrl = deleteUrlTemplate.replace('__ID__', template.id);
-                        const frequencyLabel = template.frequency === 'yearly'
-                            ? `Anual (dia ${template.day_of_month ?? '-'})`
-                            : `Mensal (dia ${template.day_of_month ?? '-'})`;
+                        const frequencia = template.frequency === 'yearly' ? 'Anual' : 'Mensal';
+                        const frequencyLabel = `${frequencia} (dia ${template.day_of_month ?? '-'})`;
+                        const proximaOcorrencia = template.next_occurrence
+                            ? `<span class="block text-xs text-slate-400 mt-0.5">Próxima: ${template.next_occurrence}</span>`
+                            : '';
                         const statusLabel = template.is_active
                             ? '<span class="inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-emerald-100 text-emerald-700">Ativo</span>'
                             : '<span class="inline-flex items-center px-2 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-500">Inativo</span>';
@@ -97,7 +99,10 @@
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-slate-700 tabular-nums">R$ ${amountLabel}</td>
-                                <td class="px-4 py-3 text-slate-600">${escapeHtml(frequencyLabel)}</td>
+                                <td class="px-4 py-3 text-slate-600">
+                                    <span class="text-sm">${escapeHtml(frequencyLabel)}</span>
+                                    ${proximaOcorrencia}
+                                </td>
                                 <td class="px-4 py-3 text-slate-600">${escapeHtml(template.category?.name ?? '-')}</td>
                                 <td class="px-4 py-3 text-slate-600">${escapeHtml(template.type?.name ?? '-')}</td>
                                 <td class="px-4 py-3 text-slate-600">${escapeHtml(template.payment_method?.name ?? '-')}</td>

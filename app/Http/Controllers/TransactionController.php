@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Resources\TransactionResource;
 use App\Models\RecurringTransaction;
+use App\Models\Transaction;
 use App\Repositories\TransactionRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -59,6 +60,7 @@ class TransactionController extends Controller
                 'category_id'       => $request->query('category_id'),
                 'type_id'           => $request->query('type_id'),
                 'payment_method_id' => $request->query('payment_method_id'),
+                'search'            => $request->query('search'),
             ];
 
             // Pede pro repository fazer a query filtrada e paginada
@@ -246,6 +248,43 @@ class TransactionController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'error'   => 'Failed to retrieve installments',
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Duplica uma transação existente como uma transação avulsa com data de hoje.
+     */
+    public function duplicate(string $id)
+    {
+        try {
+            $transaction = Transaction::with(['users', 'category', 'type', 'paymentMethod'])->find($id);
+
+            if (!$transaction) {
+                return response()->json(['error' => 'Transaction not found'], 404);
+            }
+
+            $nova = $transaction->replicate();
+            $nova->due_date                 = now()->format('Y-m-d');
+            $nova->transaction_date         = now()->format('Y-m-d');
+            $nova->recurring_transaction_id = null;
+            $nova->installment_number       = null;
+            $nova->installment_total        = null;
+            $nova->total_amount             = $transaction->amount;
+            $nova->save();
+
+            $nova->users()->sync($transaction->users->pluck('id')->all());
+
+            return response()->json([
+                'message'     => 'Transação duplicada com sucesso.',
+                'transaction' => new TransactionResource(
+                    $nova->load(['category', 'type', 'paymentMethod', 'users'])
+                ),
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error'   => 'Failed to duplicate transaction',
                 'message' => $th->getMessage(),
             ], 500);
         }

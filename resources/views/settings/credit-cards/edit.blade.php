@@ -46,12 +46,14 @@
                         <input type="number" min="1" max="31" name="closing_day"
                             value="{{ old('closing_day', $creditCard->closing_day) }}"
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <p class="text-xs text-slate-400 mt-1.5">Dia em que a fatura fecha e para de aceitar novas compras</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Dia de vencimento</label>
                         <input type="number" min="1" max="31" name="due_day"
                             value="{{ old('due_day', $creditCard->due_day) }}"
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <p class="text-xs text-slate-400 mt-1.5">Dia em que a fatura precisa ser paga</p>
                     </div>
                     @php
                         $limitVal = (float) old('limit', $creditCard->limit ?? 0);

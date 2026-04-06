@@ -42,6 +42,28 @@ class RecurringTransactionResource extends JsonResource
                 'id' => $user->id,
                 'name' => $user->name,
             ]),
+            'next_occurrence' => $this->computeNextOccurrence(),
         ];
+    }
+
+    private function computeNextOccurrence(): ?string
+    {
+        if (!$this->day_of_month || !$this->is_active) {
+            return null;
+        }
+
+        $hoje      = now();
+        $candidate = \Carbon\Carbon::create(
+            $hoje->year,
+            $hoje->month,
+            min($this->day_of_month, $hoje->daysInMonth)
+        );
+
+        if ($candidate->isPast() && !$candidate->isToday()) {
+            $candidate->addMonthNoOverflow();
+            $candidate->day = min($this->day_of_month, $candidate->daysInMonth);
+        }
+
+        return $candidate->format('d/m/Y');
     }
 }

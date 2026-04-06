@@ -114,6 +114,20 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
             <div class="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
 
+                <div class="md:w-52">
+                    <label for="filter-search" class="block text-xs font-medium text-slate-500 mb-1">Pesquisar</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <input type="text" id="filter-search"
+                            placeholder="Buscar por descrição..."
+                            class="w-full pl-9 pr-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder:text-slate-400">
+                    </div>
+                </div>
+
                 <div>
                     <label for="filter-month" class="block text-xs font-medium text-slate-500 mb-1">Mês</label>
                     <input type="month" id="filter-month"
@@ -275,6 +289,7 @@
         const paginationInfoEl = document.getElementById('pagination-info');
         const summaryEl = document.getElementById('transactions-summary');
 
+        const filterSearchEl = document.getElementById('filter-search');
         const filterMonthEl = document.getElementById('filter-month');
         const filterUserEl = document.getElementById('filter-user');
         const filterCategoryEl = document.getElementById('filter-category');
@@ -286,12 +301,39 @@
         let currentPage = 1;
         const perPage = 10;
         let currentFilters = {
+            search: '',
             month: '',
             user_id: '',
             category_id: '',
             type_id: '',
             payment_method_id: '',
         };
+
+        function syncFiltersToUrl(filters) {
+            const params = new URLSearchParams();
+            if (filters.search)            params.set('search', filters.search);
+            if (filters.month)             params.set('month', filters.month);
+            if (filters.user_id)           params.set('user_id', filters.user_id);
+            if (filters.category_id)       params.set('category_id', filters.category_id);
+            if (filters.type_id)           params.set('type_id', filters.type_id);
+            if (filters.payment_method_id) params.set('payment_method_id', filters.payment_method_id);
+
+            const newUrl = params.toString()
+                ? `${window.location.pathname}?${params.toString()}`
+                : window.location.pathname;
+
+            window.history.replaceState({}, '', newUrl);
+        }
+
+        function initFiltersFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('search'))            { currentFilters.search = params.get('search'); filterSearchEl.value = currentFilters.search; }
+            if (params.get('month'))             { currentFilters.month = params.get('month'); filterMonthEl.value = currentFilters.month; }
+            if (params.get('user_id'))           { currentFilters.user_id = params.get('user_id'); filterUserEl.value = currentFilters.user_id; }
+            if (params.get('category_id'))       { currentFilters.category_id = params.get('category_id'); filterCategoryEl.value = currentFilters.category_id; }
+            if (params.get('type_id'))           { currentFilters.type_id = params.get('type_id'); filterTypeEl.value = currentFilters.type_id; }
+            if (params.get('payment_method_id')) { currentFilters.payment_method_id = params.get('payment_method_id'); filterPaymentMethodEl.value = currentFilters.payment_method_id; }
+        }
 
         async function loadTransactions(page = 1, filters = {}) {
             Alpine.$data(document.getElementById('transactions-table-wrapper')).loading = true;
@@ -301,6 +343,7 @@
                 params.set('per_page', perPage);
                 params.set('page', page);
 
+                if (filters.search)            params.set('search', filters.search);
                 if (filters.month)             params.set('month', filters.month);
                 if (filters.user_id)           params.set('user_id', filters.user_id);
                 if (filters.category_id)       params.set('category_id', filters.category_id);
@@ -451,6 +494,13 @@
                                     </svg>
                                 </a>
                                 <button data-id="${tx.id}"
+                                    class="duplicate-btn inline-flex items-center p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition"
+                                    title="Duplicar transação">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 4h8a2 2 0 012 2v8a2 2 0 01-2 2H10a2 2 0 01-2-2v-8a2 2 0 012-2z"/>
+                                    </svg>
+                                </button>
+                                <button data-id="${tx.id}"
                                     class="delete-btn inline-flex items-center p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                                     title="Excluir">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -476,6 +526,8 @@
                     nextBtn.disabled = true;
                 }
 
+                syncFiltersToUrl(filters);
+
             } catch (error) {
                 console.error(error);
                 stateEl.innerHTML = '<div class="text-sm text-slate-500">Erro ao carregar transações.</div>';
@@ -499,6 +551,7 @@
 
         filterApplyBtn.addEventListener('click', () => {
             currentFilters = {
+                search: filterSearchEl.value || '',
                 month: filterMonthEl.value || '',
                 user_id: filterUserEl.value || '',
                 category_id: filterCategoryEl.value || '',
@@ -509,13 +562,40 @@
         });
 
         filterClearBtn.addEventListener('click', () => {
+            filterSearchEl.value = '';
             filterMonthEl.value = '';
             filterUserEl.value = '';
             filterCategoryEl.value = '';
             filterTypeEl.value = '';
             filterPaymentMethodEl.value = '';
-            currentFilters = { month: '', user_id: '', category_id: '', type_id: '', payment_method_id: '' };
+            currentFilters = { search: '', month: '', user_id: '', category_id: '', type_id: '', payment_method_id: '' };
             loadTransactions(1, currentFilters);
+        });
+
+        document.addEventListener('click', async (e) => {
+            const dupBtn = e.target.closest('.duplicate-btn');
+            if (dupBtn) {
+                const id = dupBtn.dataset.id;
+                try {
+                    const res = await fetch(`/api/transactions/${id}/duplicate`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                        },
+                    });
+                    if (!res.ok) throw new Error();
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'Transação duplicada! Aparece com data de hoje.', type: 'success' }
+                    }));
+                    await loadTransactions(currentPage, currentFilters);
+                } catch {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'Erro ao duplicar transação.', type: 'error' }
+                    }));
+                }
+                return;
+            }
         });
 
         document.addEventListener('click', (e) => {
@@ -563,6 +643,7 @@
             }));
         });
 
+        initFiltersFromUrl();
         loadTransactions(1, currentFilters);
     </script>
 

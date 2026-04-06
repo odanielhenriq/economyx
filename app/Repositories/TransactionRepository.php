@@ -82,6 +82,10 @@ class TransactionRepository implements TransactionRepositoryInterface
             $query->where('payment_method_id', $filters['payment_method_id']);
         }
 
+        if (!empty($filters['search'])) {
+            $query->where('description', 'like', '%' . $filters['search'] . '%');
+        }
+
         return $query->paginate($perPage);
     }
 
@@ -233,6 +237,10 @@ class TransactionRepository implements TransactionRepositoryInterface
         }
         if (!empty($filters['payment_method_id'])) {
             $baseQuery->where('payment_method_id', $filters['payment_method_id']);
+        }
+
+        if (!empty($filters['search'])) {
+            $baseQuery->where('description', 'like', '%' . $filters['search'] . '%');
         }
 
         $income  = round((float) (clone $baseQuery)
