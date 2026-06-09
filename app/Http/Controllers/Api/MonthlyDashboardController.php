@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Services\MonthlyDashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -49,14 +48,7 @@ class MonthlyDashboardController extends Controller
         $user = $request->user();
 
         if (! $user) {
-            $userId = $request->query('user_id');
-            $user = $userId ? User::find($userId) : User::query()->orderBy('id')->first();
-        }
-
-        if (! $user) {
-            return response()->json([
-                'message' => 'Nenhum usuário disponível para gerar o dashboard.',
-            ], 422);
+            return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
         $payload = $service->build($year, $month, $user);

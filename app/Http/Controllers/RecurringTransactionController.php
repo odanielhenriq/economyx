@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\RecurringTransactionRequest;
 use App\Http\Resources\RecurringTransactionResource;
 use App\Repositories\RecurringTransactionRepositoryInterface;
+use App\Support\NetworkScope;
 use Illuminate\Http\Request;
 
 class RecurringTransactionController extends Controller
@@ -16,7 +17,7 @@ class RecurringTransactionController extends Controller
     public function index(Request $request)
     {
         try {
-            $templates = $this->recurringTransactions->getAll();
+            $templates = $this->recurringTransactions->getForUser($request->user());
 
             return RecurringTransactionResource::collection($templates);
         } catch (\Throwable $th) {
@@ -32,7 +33,10 @@ class RecurringTransactionController extends Controller
         try {
             $data = $request->validated();
 
-            $userIds = $data['user_ids'];
+            $userIds = NetworkScope::filterUserIds($request->user(), $data['user_ids']);
+            if ($userIds === []) {
+                return response()->json(['error' => 'Forbidden'], 403);
+            }
             unset($data['user_ids']);
 
             $template = $this->recurringTransactions->create($data, $userIds);
@@ -48,10 +52,10 @@ class RecurringTransactionController extends Controller
         }
     }
 
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         try {
-            $template = $this->recurringTransactions->findById((int) $id);
+            $template = $this->recurringTransactions->findForUser((int) $id, $request->user());
 
             if (! $template) {
                 return response()->json([
@@ -73,18 +77,26 @@ class RecurringTransactionController extends Controller
     public function update(RecurringTransactionRequest $request, string $id)
     {
         try {
-            $data = $request->validated();
+            $existing = $this->recurringTransactions->findForUser((int) $id, $request->user());
 
-            $userIds = $data['user_ids'] ?? null;
-            unset($data['user_ids']);
-
-            $template = $this->recurringTransactions->update((int) $id, $data, $userIds);
-
-            if (! $template) {
+            if (! $existing) {
                 return response()->json([
                     'error' => 'Recurring template not found',
                 ], 404);
             }
+
+            $data = $request->validated();
+
+            $userIds = null;
+            if (array_key_exists('user_ids', $data)) {
+                $userIds = NetworkScope::filterUserIds($request->user(), $data['user_ids']);
+                if ($userIds === []) {
+                    return response()->json(['error' => 'Forbidden'], 403);
+                }
+            }
+            unset($data['user_ids']);
+
+            $template = $this->recurringTransactions->update((int) $id, $data, $userIds);
 
             return (new RecurringTransactionResource($template))
                 ->response()
@@ -97,16 +109,18 @@ class RecurringTransactionController extends Controller
         }
     }
 
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         try {
-            $deleted = $this->recurringTransactions->delete((int) $id);
+            $existing = $this->recurringTransactions->findForUser((int) $id, $request->user());
 
-            if (! $deleted) {
+            if (! $existing) {
                 return response()->json([
                     'error' => 'Recurring template not found',
                 ], 404);
             }
+
+            $this->recurringTransactions->delete((int) $id);
 
             return response()->json(null, 204);
         } catch (\Throwable $th) {

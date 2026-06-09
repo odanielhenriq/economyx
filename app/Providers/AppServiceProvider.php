@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\CreditCard;
+use App\Models\Transaction;
+use App\Policies\CreditCardPolicy;
+use App\Policies\TransactionPolicy;
 use App\Repositories\CategoryRepository;
 use App\Repositories\CategoryRepositoryInterface;
 use App\Repositories\CreditCardRepository;
@@ -14,6 +18,7 @@ use App\Repositories\TransactionRepository;
 use App\Repositories\TransactionRepositoryInterface;
 use App\Repositories\TypeRepository;
 use App\Repositories\TypeRepositoryInterface;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -59,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::policy(Transaction::class, TransactionPolicy::class);
+        Gate::policy(CreditCard::class, CreditCardPolicy::class);
     }
 }

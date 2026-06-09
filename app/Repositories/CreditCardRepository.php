@@ -3,10 +3,22 @@
 namespace App\Repositories;
 
 use App\Models\CreditCard;
+use App\Models\User;
 use Illuminate\Support\Collection;
 
 class CreditCardRepository implements CreditCardRepositoryInterface
 {
+    public function getForUser(User $user): Collection
+    {
+        return CreditCard::with(['owner', 'users'])
+            ->where(function ($q) use ($user) {
+                $q->where('owner_user_id', $user->id)
+                    ->orWhereHas('users', fn ($sub) => $sub->where('users.id', $user->id));
+            })
+            ->orderBy('name')
+            ->get();
+    }
+
     public function getAll(): Collection
     {
         return CreditCard::with(['owner', 'users'])

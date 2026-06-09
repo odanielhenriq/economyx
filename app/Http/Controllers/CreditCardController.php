@@ -16,7 +16,7 @@ class CreditCardController extends Controller
     public function index()
     {
         try {
-            $creditCards = $this->creditCards->getAll();
+            $creditCards = $this->creditCards->getForUser(auth()->user());
 
             return CreditCardResource::collection($creditCards);
         } catch (\Throwable $th) {
@@ -72,6 +72,8 @@ class CreditCardController extends Controller
                 ], 404);
             }
 
+            $this->authorize('view', $creditCard);
+
             return (new CreditCardResource($creditCard))
                 ->response()
                 ->setStatusCode(200);
@@ -86,6 +88,16 @@ class CreditCardController extends Controller
     public function update(CreditCardRequest $request, string $id)
     {
         try {
+            $creditCard = $this->creditCards->findById((int) $id);
+
+            if (! $creditCard) {
+                return response()->json([
+                    'error' => 'Credit card not found',
+                ], 404);
+            }
+
+            $this->authorize('update', $creditCard);
+
             $data = $request->validated();
 
             $data['is_shared'] = $request->boolean('is_shared');
@@ -126,6 +138,16 @@ class CreditCardController extends Controller
     public function destroy(string $id)
     {
         try {
+            $creditCard = $this->creditCards->findById((int) $id);
+
+            if (! $creditCard) {
+                return response()->json([
+                    'error' => 'Credit card not found',
+                ], 404);
+            }
+
+            $this->authorize('delete', $creditCard);
+
             $deleted = $this->creditCards->delete((int) $id);
 
             if (! $deleted) {

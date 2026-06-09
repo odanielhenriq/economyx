@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'onboarding_step',
+        'onboarding_completed_at',
     ];
 
     /**
@@ -42,6 +44,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'onboarding_completed_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -61,6 +64,11 @@ class User extends Authenticatable
         );
     }
 
+
+    public function networkIds(): array
+    {
+        return $this->networkUsers()->pluck('id')->all();
+    }
 
     public function relatedUsers()
     {

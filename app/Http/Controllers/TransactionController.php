@@ -7,6 +7,7 @@ use App\Http\Resources\TransactionResource;
 use App\Models\RecurringTransaction;
 use App\Models\Transaction;
 use App\Repositories\TransactionRepositoryInterface;
+use App\Support\NetworkScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
@@ -52,16 +53,7 @@ class TransactionController extends Controller
             // Limita o per_page a no máximo 100
             $perPage = min($request->integer('per_page', default: 15), 100);
 
-            // Monta array de filtros a partir da query string
-            $filters = [
-                'month'             => $request->query('month'),
-                'year'              => $request->query('year'),
-                'user_id'           => $request->query('user_id'),
-                'category_id'       => $request->query('category_id'),
-                'type_id'           => $request->query('type_id'),
-                'payment_method_id' => $request->query('payment_method_id'),
-                'search'            => $request->query('search'),
-            ];
+            $filters = $this->buildFilters($request);
 
             // Pede pro repository fazer a query filtrada e paginada
             $transactions = $this->transactions->getPaginatedTransactions($perPage, $filters);
@@ -96,8 +88,10 @@ class TransactionController extends Controller
                 $data['credit_card_id'] = null;
             }
 
-            // Separa os usuários que vão dividir a transação
-            $userIds = $data['user_ids'];
+            $userIds = NetworkScope::filterUserIds($request->user(), $data['user_ids']);
+            if (empty($userIds)) {
+                $userIds = [$request->user()->id];
+            }
             unset($data['user_ids']);
 
             // Cria a transação via repository
@@ -125,11 +119,13 @@ class TransactionController extends Controller
         try {
             $transaction = $this->transactions->findTransactionById($id);
 
-            if (!$transaction) {
+            if (! $transaction) {
                 return response()->json([
                     'error' => 'Transaction not found'
                 ], 404);
             }
+
+            $this->authorize('view', $transaction);
 
             return (new TransactionResource($transaction))
                 ->response()
@@ -163,6 +159,12 @@ class TransactionController extends Controller
                 return response()->json([
                     'error' => 'Transaction not found',
                 ], 404);
+            }
+
+            $this->authorize('update', $transactionModel);
+
+            if ($userIds !== null) {
+                $userIds = NetworkScope::filterUserIds($request->user(), $userIds);
             }
 
             if ($transactionModel->recurring_transaction_id) {
@@ -224,9 +226,11 @@ class TransactionController extends Controller
         try {
             $transaction = $this->transactions->findTransactionById((int) $id);
 
-            if (!$transaction) {
+            if (! $transaction) {
                 return response()->json(['error' => 'Transaction not found'], 404);
             }
+
+            $this->authorize('view', $transaction);
 
             $installments = $transaction->installments()
                 ->orderBy('installment_number')
@@ -261,9 +265,11 @@ class TransactionController extends Controller
         try {
             $transaction = Transaction::with(['users', 'category', 'type', 'paymentMethod'])->find($id);
 
-            if (!$transaction) {
+            if (! $transaction) {
                 return response()->json(['error' => 'Transaction not found'], 404);
             }
+
+            $this->authorize('view', $transaction);
 
             $nova = $transaction->replicate();
             $nova->due_date                 = now()->format('Y-m-d');
@@ -296,6 +302,16 @@ class TransactionController extends Controller
     public function destroy(string $id)
     {
         try {
+            $transaction = $this->transactions->findTransactionById((int) $id);
+
+            if (! $transaction) {
+                return response()->json([
+                    'error' => 'Transaction not found'
+                ], 404);
+            }
+
+            $this->authorize('delete', $transaction);
+
             $deleted = $this->transactions->deleteTransaction($id);
 
             if (! $deleted) {
@@ -312,5 +328,28 @@ class TransactionController extends Controller
                 'message' => $th->getMessage()
             ], 500);
         }
+    }
+
+    private function buildFilters(Request $request): array
+    {
+        $user = $request->user();
+        $networkIds = NetworkScope::ids($user);
+
+        $filters = [
+            'network_user_ids'  => $networkIds,
+            'month'             => $request->query('month'),
+            'year'              => $request->query('year'),
+            'category_id'       => $request->query('category_id'),
+            'type_id'           => $request->query('type_id'),
+            'payment_method_id' => $request->query('payment_method_id'),
+            'search'            => $request->query('search'),
+        ];
+
+        $userId = $request->query('user_id');
+        if ($userId && NetworkScope::contains($user, (int) $userId)) {
+            $filters['user_id'] = $userId;
+        }
+
+        return $filters;
     }
 }

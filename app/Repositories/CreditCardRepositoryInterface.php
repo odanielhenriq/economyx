@@ -7,6 +7,8 @@ use Illuminate\Support\Collection;
 
 interface CreditCardRepositoryInterface
 {
+    public function getForUser(\App\Models\User $user): Collection;
+
     public function getAll(): Collection;
 
     public function findById(int $id): ?CreditCard;

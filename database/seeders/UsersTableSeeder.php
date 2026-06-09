@@ -16,16 +16,22 @@ class UsersTableSeeder extends Seeder
      */
     public function run(): void
     {
+        $now = now();
+
         DB::table('users')->insert([
             [
                 'name' => 'Daniel',
-                'email' => 'daniel.henrique00@hotmail.com',
+                'email' => 'daniel@example.com',
                 'password' => Hash::make('password'),
+                'onboarding_completed_at' => $now,
+                'onboarding_step' => 'done',
             ],
             [
                 'name' => 'Joyce',
-                'email' => 'joycebvb@gmail.com',
+                'email' => 'joyce@example.com',
                 'password' => Hash::make('password'),
+                'onboarding_completed_at' => $now,
+                'onboarding_step' => 'done',
             ],
         ]);
     }

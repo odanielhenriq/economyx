@@ -10,12 +10,19 @@ use App\Http\Controllers\Web\RecurringTemplateWebController;
 use App\Http\Controllers\Web\RecurringTransactionWebController;
 use App\Http\Controllers\Web\CardStatementWebController;
 use App\Http\Controllers\Web\ExportController;
+use App\Http\Controllers\Web\ExportDataController;
+use App\Http\Controllers\Web\ImportController;
+use App\Http\Controllers\Web\PartnerInvitationWebController;
 use App\Http\Controllers\Web\TransactionWebController;
 use App\Http\Controllers\Web\TypeWebController;
 use Illuminate\Support\Facades\Route;
 
-// Página inicial (welcome) — ainda não integrada com Economyx de fato
+// Página inicial
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+
     return view('welcome');
 });
 
@@ -27,12 +34,15 @@ Route::get('/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::get('/invite/partner/{token}', [PartnerInvitationWebController::class, 'accept'])
+    ->name('partners.accept');
+
 Route::get('/dashboard/monthly', [MonthlyDashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard.monthly');
 
 // Rotas de perfil (nome, senha, etc.), protegidas por auth
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -49,7 +59,6 @@ Route::middleware('auth')->group(function () {
     // Processa o form de criação e redireciona
     Route::post('/transactions', [TransactionWebController::class, 'store'])->name('transactions.store');
 
-    // Tela de editar transação (ainda não construída de verdade, hoje aponta pra view "edit" que é clone da index)
     Route::get('/transactions/{transaction}/edit', [TransactionWebController::class, 'edit'])->name('transactions.edit');
     // Processa o form de edição
     Route::put('/transactions/{transaction}', [TransactionWebController::class, 'update'])->name('transactions.update');
@@ -65,6 +74,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/transactions/export', [ExportController::class, 'transactions'])
         ->name('transactions.export');
 
+    // Exportação JSON para análise em IA
+    Route::get('/export/json', [ExportDataController::class, 'json'])
+        ->name('export.json');
+
+    // Importação de extrato via IA
+    Route::post('/import/analyze', [ImportController::class, 'analyze'])->name('import.analyze');
+    Route::post('/import/store', [ImportController::class, 'store'])->name('import.store');
+
     // Tela web do extrato de cartão (usa CardStatementWebController pra montar Blade cards/statement)
     Route::get('/cards/statement', [CardStatementWebController::class, 'index'])
         ->name('cards.statement.index');
@@ -74,6 +91,9 @@ Route::middleware('auth')->group(function () {
 
 // routes/web.php
 Route::middleware(['auth'])->prefix('settings')->group(function () {
+    Route::get('partners', [PartnerInvitationWebController::class, 'index'])->name('partners.index');
+    Route::post('partners/invite', [PartnerInvitationWebController::class, 'invite'])->name('partners.invite');
+
     Route::resource('categories', CategoryWebController::class)->except('show');
     Route::resource('types', TypeWebController::class)->except('show');
     Route::resource('payment-methods', PaymentMethodWebController::class)->except('show');

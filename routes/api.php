@@ -12,13 +12,7 @@ use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// endpoint padrão de user do Laravel Sanctum (não está sendo usado aqui ainda)
-Route::get('/user', function (Request $request) {
-    return $request->user();
-});
-
-// endpoint simples de teste de "saúde" da API
-Route::get('/ping', function (Request $request) {
+Route::get('/ping', function () {
     return response()->json([
         'status' => 'ok',
         'app' => config('app.name'),
@@ -26,57 +20,51 @@ Route::get('/ping', function (Request $request) {
     ]);
 });
 
-// CRUD de transações em formato JSON (usado pelo front da index)
-Route::get('/transactions', [TransactionController::class, 'index']);
-Route::post('/transactions', [TransactionController::class, 'store']);
-Route::get('/transactions/{id}', [TransactionController::class, 'show']);
-Route::get('/transactions/{id}/installments', [TransactionController::class, 'installments']);
-Route::post('/transactions/{id}/duplicate', [TransactionController::class, 'duplicate']);
-Route::put('/transactions/{id}', [TransactionController::class, 'update']);
-Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/user', fn (Request $request) => $request->user());
 
-// CRUD de categorias
-Route::get('/categories', [CategoryController::class, 'index']);
-Route::post('/categories', [CategoryController::class, 'store']);
-Route::get('/categories/{id}', [CategoryController::class, 'show']);
-Route::put('/categories/{id}', [CategoryController::class, 'update']);
-Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+    Route::get('/transactions', [TransactionController::class, 'index']);
+    Route::post('/transactions', [TransactionController::class, 'store']);
+    Route::get('/transactions/{id}', [TransactionController::class, 'show']);
+    Route::get('/transactions/{id}/installments', [TransactionController::class, 'installments']);
+    Route::post('/transactions/{id}/duplicate', [TransactionController::class, 'duplicate']);
+    Route::put('/transactions/{id}', [TransactionController::class, 'update']);
+    Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
 
-// CRUD de tipos
-Route::get('/types', [TypeController::class, 'index']);
-Route::post('/types', [TypeController::class, 'store']);
-Route::get('/types/{id}', [TypeController::class, 'show']);
-Route::put('/types/{id}', [TypeController::class, 'update']);
-Route::delete('/types/{id}', [TypeController::class, 'destroy']);
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::get('/categories/{id}', [CategoryController::class, 'show']);
+    Route::put('/categories/{id}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
-// Listagem de usuários (opcionalmente filtrando rede via user_id)
-Route::get('/users', [UserController::class, 'index']);
+    Route::get('/types', [TypeController::class, 'index']);
+    Route::post('/types', [TypeController::class, 'store']);
+    Route::get('/types/{id}', [TypeController::class, 'show']);
+    Route::put('/types/{id}', [TypeController::class, 'update']);
+    Route::delete('/types/{id}', [TypeController::class, 'destroy']);
 
-// CRUD de formas de pagamento
-Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
-Route::post('/payment-methods', [PaymentMethodController::class, 'store']);
-Route::get('/payment-methods/{id}', [PaymentMethodController::class, 'show']);
-Route::put('/payment-methods/{id}', [PaymentMethodController::class, 'update']);
-Route::delete('/payment-methods/{id}', [PaymentMethodController::class, 'destroy']);
+    Route::get('/users', [UserController::class, 'index']);
 
-// CRUD de cartoes
-Route::get('/credit-cards', [CreditCardController::class, 'index']);
-Route::post('/credit-cards', [CreditCardController::class, 'store']);
-Route::get('/credit-cards/{id}', [CreditCardController::class, 'show']);
-Route::put('/credit-cards/{id}', [CreditCardController::class, 'update']);
-Route::delete('/credit-cards/{id}', [CreditCardController::class, 'destroy']);
+    Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+    Route::post('/payment-methods', [PaymentMethodController::class, 'store']);
+    Route::get('/payment-methods/{id}', [PaymentMethodController::class, 'show']);
+    Route::put('/payment-methods/{id}', [PaymentMethodController::class, 'update']);
+    Route::delete('/payment-methods/{id}', [PaymentMethodController::class, 'destroy']);
 
-// CRUD de templates recorrentes
-Route::get('/recurring-templates', [RecurringTransactionController::class, 'index']);
-Route::post('/recurring-templates', [RecurringTransactionController::class, 'store']);
-Route::get('/recurring-templates/{id}', [RecurringTransactionController::class, 'show']);
-Route::put('/recurring-templates/{id}', [RecurringTransactionController::class, 'update']);
-Route::delete('/recurring-templates/{id}', [RecurringTransactionController::class, 'destroy']);
+    Route::get('/credit-cards', [CreditCardController::class, 'index']);
+    Route::post('/credit-cards', [CreditCardController::class, 'store']);
+    Route::get('/credit-cards/{id}', [CreditCardController::class, 'show']);
+    Route::put('/credit-cards/{id}', [CreditCardController::class, 'update']);
+    Route::delete('/credit-cards/{id}', [CreditCardController::class, 'destroy']);
 
-// API de extrato de cartão: /api/cards/{card}/statement?year=2025&month=12
-Route::get('cards/{card}/statement', [CardStatementController::class, 'statement']);
-// Marca fatura como paga
-Route::middleware('auth')->patch('cards/statements/{statement}/pay', [CardStatementController::class, 'markAsPaid']);
+    Route::get('/recurring-templates', [RecurringTransactionController::class, 'index']);
+    Route::post('/recurring-templates', [RecurringTransactionController::class, 'store']);
+    Route::get('/recurring-templates/{id}', [RecurringTransactionController::class, 'show']);
+    Route::put('/recurring-templates/{id}', [RecurringTransactionController::class, 'update']);
+    Route::delete('/recurring-templates/{id}', [RecurringTransactionController::class, 'destroy']);
 
-// Dashboard mensal em JSON (usado pela tela web via fetch)
-Route::middleware(['web'])->get('/dashboard/monthly', [MonthlyDashboardApiController::class, 'index']);
+    Route::get('cards/{card}/statement', [CardStatementController::class, 'statement']);
+    Route::patch('cards/statements/{statement}/pay', [CardStatementController::class, 'markAsPaid']);
+
+    Route::get('/dashboard/monthly', [MonthlyDashboardApiController::class, 'index']);
+});

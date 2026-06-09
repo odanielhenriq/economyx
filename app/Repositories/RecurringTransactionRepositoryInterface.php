@@ -7,9 +7,13 @@ use Illuminate\Support\Collection;
 
 interface RecurringTransactionRepositoryInterface
 {
+    public function getForUser(\App\Models\User $user): Collection;
+
     public function getAll(): Collection;
 
     public function findById(int $id): ?RecurringTransaction;
+
+    public function findForUser(int $id, \App\Models\User $user): ?RecurringTransaction;
 
     public function create(array $data, array $userIds): RecurringTransaction;
 

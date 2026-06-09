@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(php artisan:*)",
-      "Bash(git stash:*)",
-      "Bash(npm install:*)"
-    ]
-  }
-}

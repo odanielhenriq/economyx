@@ -4,7 +4,19 @@
         <div class="flex items-center justify-between" x-data="exportModal()">
             <h1 class="text-lg font-semibold text-slate-900">Transações</h1>
             <div class="flex items-center gap-3">
-                {{-- Botão Exportar --}}
+                {{-- Exportar JSON para análise em IA --}}
+                <a href="{{ route('export.json') }}"
+                    download
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Exportar JSON
+                </a>
+
+                {{-- Botão Exportar CSV --}}
                 <button
                     @click="open = true"
                     class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
@@ -14,6 +26,18 @@
                               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                     Exportar
+                </button>
+
+                {{-- Botão Importar --}}
+                <button
+                    @click="window.dispatchEvent(new CustomEvent('open-import'))"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                    Importar
                 </button>
 
                 {{-- Botão Nova transação --}}
@@ -577,13 +601,7 @@
             if (dupBtn) {
                 const id = dupBtn.dataset.id;
                 try {
-                    const res = await fetch(`/api/transactions/${id}/duplicate`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            'Accept': 'application/json',
-                        },
-                    });
+                    const res = await apiFetch(`/api/transactions/${id}/duplicate`, { method: 'POST' });
                     if (!res.ok) throw new Error();
                     window.dispatchEvent(new CustomEvent('toast', {
                         detail: { message: 'Transação duplicada! Aparece com data de hoje.', type: 'success' }
@@ -616,10 +634,7 @@
                 detail: {
                     callback: async () => {
                         try {
-                            const response = await fetch(`/api/transactions/${id}`, {
-                                method: 'DELETE',
-                                headers: { 'Accept': 'application/json' },
-                            });
+                            const response = await apiFetch(`/api/transactions/${id}`, { method: 'DELETE' });
 
                             if (!response.ok) {
                                 window.dispatchEvent(new CustomEvent('toast', {
@@ -802,5 +817,7 @@
             };
         }
     </script>
+
+    @include('transactions._import_modal')
 
 </x-app-layout>

@@ -5,12 +5,18 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\CategoryBudget;
 use App\Models\Transaction;
+use App\Models\TransactionInstallment;
+use App\Services\MonthlyDashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class MonthlyDashboardController extends Controller
 {
+    public function __construct(
+        private MonthlyDashboardService $dashboardService
+    ) {}
+
     public function index(Request $request)
     {
         // Define o mês alvo (fallback para mês/ano atuais)
@@ -73,14 +79,7 @@ class MonthlyDashboardController extends Controller
         $alerts = [];
 
         foreach ($budgets as $budget) {
-            $spent = Transaction::query()
-                ->whereBetween('due_date', [$start, $end])
-                ->where('category_id', $budget->category_id)
-                ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
-                ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
-                ->sum('amount');
-
-            $spent = round((float) $spent, 2);
+            $spent = $this->categorySpentInMonth($budget->category_id, $start, $end, $networkIds);
             $limit = round((float) $budget->amount, 2);
             $percent = $limit > 0 ? round(($spent / $limit) * 100, 1) : 0;
 
@@ -109,16 +108,48 @@ class MonthlyDashboardController extends Controller
         $start = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
         $end   = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
 
-        $spending = Transaction::with('category')
+        $direct = Transaction::with('category')
             ->whereBetween('due_date', [$start, $end])
             ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
             ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
             ->whereNotNull('category_id')
-            ->get()
-            ->groupBy('category_id')
+            ->whereNull('installment_total')
+            ->get();
+
+        $installmentRows = TransactionInstallment::with('transaction.category')
+            ->whereBetween('due_date', [$start, $end])
+            ->whereHas('transaction', function ($q) use ($networkIds) {
+                $q->whereHas('users', fn ($sub) => $sub->whereIn('users.id', $networkIds))
+                    ->whereHas('type', fn ($sub) => $sub->where('slug', 'dc'));
+            })
+            ->get();
+
+        $items = collect();
+
+        foreach ($direct as $tx) {
+            $items->push([
+                'category_id' => $tx->category_id,
+                'category' => $tx->category?->name ?? 'Sem categoria',
+                'amount' => (float) $tx->amount,
+            ]);
+        }
+
+        foreach ($installmentRows as $inst) {
+            $tx = $inst->transaction;
+            if (! $tx?->category_id) {
+                continue;
+            }
+            $items->push([
+                'category_id' => $tx->category_id,
+                'category' => $tx->category?->name ?? 'Sem categoria',
+                'amount' => (float) $inst->amount,
+            ]);
+        }
+
+        $spending = $items->groupBy('category_id')
             ->map(fn ($group) => [
-                'category' => $group->first()->category?->name ?? 'Sem categoria',
-                'total'    => round((float) $group->sum('amount'), 2),
+                'category' => $group->first()['category'],
+                'total' => round((float) $group->sum('amount'), 2),
             ])
             ->sortByDesc('total')
             ->take(6)
@@ -165,34 +196,41 @@ class MonthlyDashboardController extends Controller
     private function getLast6MonthsSummary(int $year, int $month): array
     {
         $user = Auth::user();
-        $networkIds = $user->networkUsers()->pluck('id')->all();
-
         $result = [];
 
         for ($i = 5; $i >= 0; $i--) {
             $date = Carbon::create($year, $month, 1)->subMonthsNoOverflow($i);
-            $start = $date->copy()->startOfMonth()->toDateString();
-            $end   = $date->copy()->endOfMonth()->toDateString();
-
-            $income = Transaction::query()
-                ->whereBetween('due_date', [$start, $end])
-                ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
-                ->whereHas('type', fn ($q) => $q->where('slug', 'rc'))
-                ->sum('amount');
-
-            $expense = Transaction::query()
-                ->whereBetween('due_date', [$start, $end])
-                ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
-                ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
-                ->sum('amount');
+            $summary = $this->dashboardService->summaryForMonth($date->year, $date->month, $user);
 
             $result[] = [
-                'label'   => $date->translatedFormat('M/y'),
-                'income'  => round((float) $income, 2),
-                'expense' => round((float) $expense, 2),
+                'label' => $date->translatedFormat('M/y'),
+                'income' => $summary['income'],
+                'expense' => $summary['expense'],
             ];
         }
 
         return $result;
+    }
+
+    private function categorySpentInMonth(int $categoryId, string $start, string $end, array $networkIds): float
+    {
+        $direct = (float) Transaction::query()
+            ->whereBetween('due_date', [$start, $end])
+            ->where('category_id', $categoryId)
+            ->whereNull('installment_total')
+            ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
+            ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
+            ->sum('amount');
+
+        $installments = (float) TransactionInstallment::query()
+            ->whereBetween('due_date', [$start, $end])
+            ->whereHas('transaction', function ($q) use ($categoryId, $networkIds) {
+                $q->where('category_id', $categoryId)
+                    ->whereHas('users', fn ($sub) => $sub->whereIn('users.id', $networkIds))
+                    ->whereHas('type', fn ($sub) => $sub->where('slug', 'dc'));
+            })
+            ->sum('amount');
+
+        return round($direct + $installments, 2);
     }
 }

@@ -12,7 +12,7 @@ interface TransactionRepositoryInterface
 
     public function getPaginatedTransactions(int $perPage = 15, array $filters = []): LengthAwarePaginator;
 
-    public function createTransaction(array $data, array $userIds): Transaction;
+    public function createTransaction(array $data, array $userIds, bool $generateInstallments = true): Transaction;
 
     public function findTransactionById(int $id): ?Transaction;
 

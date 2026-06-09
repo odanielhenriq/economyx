@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Models\Category;
+use App\Models\CreditCard;
 use App\Models\Type;
 use App\Models\PaymentMethod;
 use App\Models\RecurringTransaction;
@@ -27,15 +28,18 @@ class TransactionWebController extends Controller
         // só carrega os dados necessários para a tela de listagem.
         // As transações em si serão carregadas via JS (API).
         $users          = User::orderBy('name')->get();
-        $categories     = Category::orderBy('name')->get();
+        $categories     = Category::orderBy('name')->get(['id', 'name']);
         $types          = Type::orderBy('name')->get();
-        $paymentMethods = PaymentMethod::orderBy('name')->get();
+        $paymentMethods = PaymentMethod::orderBy('name')->get(['id', 'name']);
+        $creditCards    = CreditCard::whereHas('users', fn ($q) => $q->where('user_id', auth()->id()))
+                            ->orderBy('name')->get(['id', 'name', 'alias']);
 
         return view('transactions.index', compact(
             'users',
             'categories',
             'types',
-            'paymentMethods'
+            'paymentMethods',
+            'creditCards'
         ));
     }
 

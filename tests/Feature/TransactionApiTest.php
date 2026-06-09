@@ -2,8 +2,6 @@
 
 use function Pest\Laravel\getJson;
 
-it('returns a successfull response on /api/transactions', function () {
-    $response = getJson('/api/transactions');
-
-    $response->assertOk();
+it('returns unauthorized without authentication', function () {
+    getJson('/api/transactions')->assertUnauthorized();
 });

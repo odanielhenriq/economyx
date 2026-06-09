@@ -56,7 +56,7 @@ class CategoriesTableSeeder extends Seeder
             ],
             [
                 'name' => 'Casamento',
-                'slug' => 'cm'
+                'slug' => 'cs'
             ],
             [
                 'name' => 'Ferramentas',

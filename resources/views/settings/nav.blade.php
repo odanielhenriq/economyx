@@ -1,4 +1,8 @@
 <div class="flex flex-wrap gap-2 text-sm">
+    <a href="{{ route('partners.index') }}"
+        class="px-3 py-1 rounded border {{ request()->routeIs('partners.*') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700' }}">
+        Parceiros
+    </a>
     <a href="{{ route('categories.index') }}"
         class="px-3 py-1 rounded border {{ request()->routeIs('categories.*') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700' }}">
         Categorias

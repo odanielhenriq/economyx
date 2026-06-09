@@ -265,6 +265,19 @@ class MonthlyDashboardService
         ];
     }
 
+    /**
+     * Resumo mensal alinhado com os cards do dashboard (receita/despesa totais).
+     */
+    public function summaryForMonth(int $year, int $month, User $user): array
+    {
+        $data = $this->build($year, $month, $user);
+
+        return [
+            'income' => round((float) $data['cards']['income_total_month'], 2),
+            'expense' => round((float) $data['cards']['expense_total_month'], 2),
+        ];
+    }
+
     private function statementDueDate(int $year, int $month, ?int $dueDay): Carbon
     {
         $day = $dueDay ?: 1;

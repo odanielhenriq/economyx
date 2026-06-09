@@ -483,9 +483,8 @@
                 submitBtn.textContent = 'Salvando...';
 
                 try {
-                    const response = await fetch(`/api/transactions/${transactionId}`, {
+                    const response = await apiFetch(`/api/transactions/${transactionId}`, {
                         method: 'PUT',
-                        headers: { Accept: 'application/json' },
                         body: formData,
                     });
 
@@ -514,10 +513,7 @@
                             deleteBtn.disabled = true;
                             deleteBtn.textContent = 'Excluindo...';
                             try {
-                                const response = await fetch(`/api/transactions/${transactionId}`, {
-                                    method: 'DELETE',
-                                    headers: { Accept: 'application/json' },
-                                });
+                                const response = await apiFetch(`/api/transactions/${transactionId}`, { method: 'DELETE' });
                                 if (!response.ok) throw new Error('Erro ao excluir transação.');
                                 window.location.href = "{{ route('transactions.index') }}";
                             } catch (error) {

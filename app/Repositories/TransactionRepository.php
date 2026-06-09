@@ -4,6 +4,8 @@ namespace App\Repositories;
 
 use App\Models\Transaction;
 use App\Models\CreditCard;
+use App\Models\PaymentMethod;
+use App\Support\ReferenceSlugs;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -50,15 +52,29 @@ class TransactionRepository implements TransactionRepositoryInterface
             'users'
         ])->orderByDesc('due_date');
 
+        $query = $this->applyFilters($query, $filters);
+
+        return $query->paginate($perPage);
+    }
+
+    private function applyFilters($query, array $filters)
+    {
+        if (! empty($filters['network_user_ids'])) {
+            $networkIds = $filters['network_user_ids'];
+            $query->whereHas('users', function ($q) use ($networkIds) {
+                $q->whereIn('users.id', $networkIds);
+            });
+        }
+
         // Filtro por usuário (relacionamento N:N)
-        if (!empty($filters['user_id'])) {
+        if (! empty($filters['user_id'])) {
             $query->whereHas('users', function ($q) use ($filters) {
                 $q->where('users.id', $filters['user_id']);
             });
         }
 
         // Filtro por mês no formato "YYYY-MM"
-        if (!empty($filters['month'])) {
+        if (! empty($filters['month'])) {
             [$year, $month] = explode('-', $filters['month']);
 
             $query
@@ -66,54 +82,59 @@ class TransactionRepository implements TransactionRepositoryInterface
                 ->whereMonth('due_date', $month);
         }
 
-        if (!empty($filters['year'])) {
+        if (! empty($filters['year'])) {
             $query->whereYear('due_date', $filters['year']);
         }
 
-        if (!empty($filters['category_id'])) {
+        if (! empty($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
         }
 
-        if (!empty($filters['type_id'])) {
+        if (! empty($filters['type_id'])) {
             $query->where('type_id', $filters['type_id']);
         }
 
-        if (!empty($filters['payment_method_id'])) {
+        if (! empty($filters['payment_method_id'])) {
             $query->where('payment_method_id', $filters['payment_method_id']);
         }
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->where('description', 'like', '%' . $filters['search'] . '%');
         }
 
-        return $query->paginate($perPage);
+        return $query;
     }
 
     /**
      * Cria transação e relaciona com usuários.
      */
-    public function createTransaction(array $data, array $userIds): Transaction
+    public function createTransaction(array $data, array $userIds, bool $generateInstallments = true): Transaction
     {
         // Calcula due_date se não foi fornecido
         if (empty($data['due_date']) && !empty($data['transaction_date'])) {
             $data['due_date'] = $this->calculateDueDate($data);
         }
 
-        // Se o método de pagamento NÃO é cartão de crédito (ID 1), remove credit_card_id
-        // Mas só remove se realmente não for cartão (não remove se vier vazio mas for cartão)
-        if (!empty($data['payment_method_id']) && $data['payment_method_id'] != 1) {
+        $creditCardMethodId = ReferenceSlugs::creditCardPaymentMethodId();
+
+        if (! empty($data['payment_method_id']) && $creditCardMethodId && (int) $data['payment_method_id'] !== $creditCardMethodId) {
             $data['credit_card_id'] = null;
         }
-        
-        // Se é cartão de crédito (ID 1) mas credit_card_id está vazio, garante que seja null
-        // (não deixa string vazia)
-        if (!empty($data['payment_method_id']) && $data['payment_method_id'] == 1) {
+
+        if (! empty($data['payment_method_id']) && $creditCardMethodId && (int) $data['payment_method_id'] === $creditCardMethodId) {
             if (empty($data['credit_card_id']) || $data['credit_card_id'] === '') {
                 $data['credit_card_id'] = null;
             }
         }
 
-        $transaction = Transaction::create($data);
+        // $generateInstallments = false suprime o evento Transaction::created que dispara
+        // o GenerateInstallmentsService. Usado na importação de extrato, onde cada linha
+        // já representa uma parcela individual — não devem ser geradas parcelas futuras.
+        if ($generateInstallments) {
+            $transaction = Transaction::create($data);
+        } else {
+            $transaction = Transaction::withoutEvents(fn () => Transaction::create($data));
+        }
 
         // Relaciona usuários
         $transaction->users()->sync($userIds);
@@ -218,30 +239,7 @@ class TransactionRepository implements TransactionRepositoryInterface
     public function getPeriodTotals(array $filters = []): array
     {
         $baseQuery = Transaction::query();
-
-        if (!empty($filters['user_id'])) {
-            $baseQuery->whereHas('users', fn($q) => $q->where('users.id', $filters['user_id']));
-        }
-        if (!empty($filters['month'])) {
-            [$year, $month] = explode('-', $filters['month']);
-            $baseQuery->whereYear('due_date', $year)->whereMonth('due_date', $month);
-        }
-        if (!empty($filters['year'])) {
-            $baseQuery->whereYear('due_date', $filters['year']);
-        }
-        if (!empty($filters['category_id'])) {
-            $baseQuery->where('category_id', $filters['category_id']);
-        }
-        if (!empty($filters['type_id'])) {
-            $baseQuery->where('type_id', $filters['type_id']);
-        }
-        if (!empty($filters['payment_method_id'])) {
-            $baseQuery->where('payment_method_id', $filters['payment_method_id']);
-        }
-
-        if (!empty($filters['search'])) {
-            $baseQuery->where('description', 'like', '%' . $filters['search'] . '%');
-        }
+        $baseQuery = $this->applyFilters($baseQuery, $filters);
 
         $income  = round((float) (clone $baseQuery)
             ->whereHas('type', fn($q) => $q->where('slug', 'rc'))

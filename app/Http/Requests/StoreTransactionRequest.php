@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Support\ReferenceSlugs;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Request de validação para criação/atualização de transações.
@@ -52,6 +54,8 @@ class StoreTransactionRequest extends FormRequest
      */
     public function rules(): array
     {
+        $creditCardMethodId = ReferenceSlugs::creditCardPaymentMethodId();
+
         return [
             'description'           => 'nullable|string',
             'amount'                => 'required|numeric',
@@ -60,7 +64,11 @@ class StoreTransactionRequest extends FormRequest
             'category_id'           => 'required|exists:categories,id',
             'type_id'               => 'required|exists:types,id',
             'payment_method_id'     => 'required|exists:payment_methods,id',
-            'credit_card_id'        => 'nullable|exists:credit_cards,id|required_if:payment_method_id,1',
+            'credit_card_id'        => [
+                'nullable',
+                'exists:credit_cards,id',
+                Rule::requiredIf(fn () => $creditCardMethodId && (int) $this->input('payment_method_id') === $creditCardMethodId),
+            ],
             'installment_number'    => 'nullable|integer|min:1',
             'installment_total'     => 'nullable|integer|min:1',
             'user_ids'              => 'required|array|min:1',

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CreditCard;
 use App\Models\CreditCardStatement;
 use App\Models\Transaction;
+use App\Support\NetworkScope;
 use Illuminate\Http\Request;
 
 class CardStatementController extends Controller
@@ -14,8 +15,11 @@ class CardStatementController extends Controller
         $year  = (int)($request->query('year')  ?? now()->year);
         $month = (int)($request->query('month') ?? now()->month);
 
-        // 1) Busca o cartão direto (SEM user)
+        // 1) Busca o cartão
         $card = CreditCard::with('owner')->findOrFail($cardId);
+
+        $user = auth()->user();
+        abort_unless($user && NetworkScope::userCanAccessCreditCard($user, (int) $cardId), 403);
 
         if (!$card->closing_day) {
             return response()->json(['message' => 'Cartão sem closing_day configurado.'], 422);

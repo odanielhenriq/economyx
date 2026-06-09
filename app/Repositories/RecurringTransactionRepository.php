@@ -3,10 +3,26 @@
 namespace App\Repositories;
 
 use App\Models\RecurringTransaction;
+use App\Models\User;
+use App\Support\NetworkScope;
 use Illuminate\Support\Collection;
 
 class RecurringTransactionRepository implements RecurringTransactionRepositoryInterface
 {
+    public function getForUser(User $user): Collection
+    {
+        return NetworkScope::applyRecurringScope(
+            RecurringTransaction::with([
+                'category',
+                'type',
+                'paymentMethod',
+                'creditCard.owner',
+                'users',
+            ])->orderBy('description'),
+            $user
+        )->get();
+    }
+
     public function getAll(): Collection
     {
         return RecurringTransaction::with([
@@ -29,6 +45,20 @@ class RecurringTransactionRepository implements RecurringTransactionRepositoryIn
             'creditCard.owner',
             'users',
         ])->find($id);
+    }
+
+    public function findForUser(int $id, User $user): ?RecurringTransaction
+    {
+        return NetworkScope::applyRecurringScope(
+            RecurringTransaction::with([
+                'category',
+                'type',
+                'paymentMethod',
+                'creditCard.owner',
+                'users',
+            ])->where('id', $id),
+            $user
+        )->first();
     }
 
     public function create(array $data, array $userIds): RecurringTransaction
