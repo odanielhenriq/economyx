@@ -58,6 +58,45 @@ npm run dev
 3. Opcional: convidar parceiro em **Cadastros → Parceiros**
 4. Acompanhar no **Dashboard** e em **Cartões**
 
+## Deploy (Render + Neon)
+
+### 1. Banco no Neon
+
+1. Crie um projeto em [console.neon.tech](https://console.neon.tech)
+2. Copie a connection string PostgreSQL
+
+### 2. App no Render
+
+1. **New Web Service** → repositório `economyx`
+2. **Runtime:** Docker
+3. **Instance type:** Free
+4. Variáveis de ambiente:
+
+| Variável | Valor |
+|----------|-------|
+| `APP_NAME` | `Economyx` |
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_KEY` | Gerar com `php artisan key:generate --show` |
+| `APP_URL` | URL do Render (ex.: `https://economyx.onrender.com`) |
+| `DB_CONNECTION` | `pgsql` |
+| `DB_URL` | Connection string do Neon |
+| `SESSION_DRIVER` | `database` |
+| `SESSION_SECURE_COOKIE` | `true` |
+| `CACHE_STORE` | `database` |
+| `QUEUE_CONNECTION` | `database` |
+| `ANTHROPIC_API_KEY` | Opcional |
+
+5. **Health Check Path:** `/up`
+6. Deploy — migrations rodam automaticamente no container
+
+### Build local (opcional)
+
+```bash
+docker build -t economyx .
+docker run --rm -p 8080:8080 --env-file .env economyx
+```
+
 ## Testes
 
 ```bash
