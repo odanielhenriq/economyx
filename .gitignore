@@ -26,3 +26,4 @@ Thumbs.db
 
 # Scripts de checagem e diagnóstico (não necessários no repositório)
 /scripts/
+/.cursor
