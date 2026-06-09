@@ -13,6 +13,7 @@
     </x-slot>
 
     <div class="space-y-4">
+        @include('settings.nav')
 
         @if (session('success'))
             <div class="px-4 py-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl">
@@ -28,67 +29,79 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <x-list-search id="payment-methods-search" placeholder="Buscar forma de pagamento..." />
+
+        <div class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm text-left divide-y divide-slate-100">
                     <thead class="bg-slate-50">
                         <tr>
                             <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nome</th>
-                            <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Slug</th>
                             <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="payment-methods-table" class="divide-y divide-slate-100">
                         <tr>
-                            <td class="px-4 py-6 text-center text-slate-400" colspan="3">Carregando formas de pagamento...</td>
+                            <td class="px-4 py-6 text-center text-slate-400" colspan="2">Carregando formas de pagamento...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
+        <div id="payment-methods-mobile" class="md:hidden space-y-3">
+            <div class="text-center text-sm text-slate-400 py-8">Carregando formas de pagamento...</div>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const tableBody = document.getElementById('payment-methods-table');
-            const emptyRow = `<tr><td class="px-4 py-8 text-center text-slate-400" colspan="3">Nenhuma forma de pagamento cadastrada.</td></tr>`;
-            const errorRow = `<tr><td class="px-4 py-8 text-center text-red-500" colspan="3">Erro ao carregar formas de pagamento.</td></tr>`;
-            const editUrlTemplate = @json(route('payment-methods.edit', ['payment_method' => '__ID__']));
-            const deleteUrlTemplate = @json(route('payment-methods.destroy', ['payment_method' => '__ID__']));
-            const csrfToken = @json(csrf_token());
-            const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-            }[char]));
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+        }[char]));
 
-            fetch('/api/payment-methods', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
-                .then((response) => response.ok ? response.json() : Promise.reject(response))
-                .then((payload) => {
-                    const items = payload.data ?? [];
-                    if (!items.length) { tableBody.innerHTML = emptyRow; return; }
+        const editUrlTemplate = @json(route('payment-methods.edit', ['payment_method' => '__ID__']));
+        const deleteUrlTemplate = @json(route('payment-methods.destroy', ['payment_method' => '__ID__']));
+        const csrfToken = @json(csrf_token());
 
-                    tableBody.innerHTML = items.map((pm) => {
-                        const editUrl = editUrlTemplate.replace('__ID__', pm.id);
-                        const deleteUrl = deleteUrlTemplate.replace('__ID__', pm.id);
-                        return `
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 font-medium text-slate-800">${escapeHtml(pm.name)}</td>
-                                <td class="px-4 py-3 text-slate-500">${escapeHtml(pm.slug)}</td>
-                                <td class="px-4 py-3 text-right">
-                                    <div class="flex justify-end gap-3">
-                                        <a href="${editUrl}" class="text-sm font-medium text-blue-600 hover:text-blue-800">Editar</a>
-                                        <form method="POST" action="${deleteUrl}" onsubmit="event.preventDefault(); window.dispatchEvent(new CustomEvent('request-delete', { detail: { form: this } }));">
-                                            <input type="hidden" name="_token" value="${csrfToken}">
-                                            <input type="hidden" name="_method" value="DELETE">
-                                            <button class="text-sm font-medium text-red-600 hover:text-red-800" type="submit">Excluir</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
-                })
-                .catch(() => { tableBody.innerHTML = errorRow; });
+        const actionsHtml = (editUrl, deleteUrl) => `
+            <div class="flex justify-end gap-3">
+                <a href="${editUrl}" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800">Editar</a>
+                <form method="POST" action="${deleteUrl}" onsubmit="event.preventDefault(); window.dispatchEvent(new CustomEvent('request-delete', { detail: { form: this } }));">
+                    <input type="hidden" name="_token" value="${csrfToken}">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button class="text-sm font-medium text-red-600 hover:text-red-800" type="submit">Excluir</button>
+                </form>
+            </div>`;
+
+        window.initSearchableList({
+            apiUrl: '/api/payment-methods',
+            tableBody: document.getElementById('payment-methods-table'),
+            mobileList: document.getElementById('payment-methods-mobile'),
+            searchInput: document.getElementById('payment-methods-search'),
+            emptyDesktopHtml: '<tr><td class="px-4 py-8 text-center text-slate-400" colspan="2">Nenhuma forma encontrada.</td></tr>',
+            emptyMobileHtml: '<div class="text-center text-sm text-slate-400 py-8">Nenhuma forma encontrada.</div>',
+            errorHtml: '<tr><td class="px-4 py-8 text-center text-red-500" colspan="2">Erro ao carregar formas de pagamento.</td></tr>',
+            errorMobileHtml: '<div class="text-center text-sm text-red-500 py-8">Erro ao carregar formas de pagamento.</div>',
+            renderTableRow: (pm) => {
+                const editUrl = editUrlTemplate.replace('__ID__', pm.id);
+                const deleteUrl = deleteUrlTemplate.replace('__ID__', pm.id);
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-800">${escapeHtml(pm.name)}</td>
+                        <td class="px-4 py-3 text-right">${actionsHtml(editUrl, deleteUrl)}</td>
+                    </tr>`;
+            },
+            renderMobileCard: (pm) => {
+                const editUrl = editUrlTemplate.replace('__ID__', pm.id);
+                const deleteUrl = deleteUrlTemplate.replace('__ID__', pm.id);
+                return `
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                        <p class="font-medium text-slate-900 mb-3">${escapeHtml(pm.name)}</p>
+                        ${actionsHtml(editUrl, deleteUrl)}
+                    </div>`;
+            },
+        });
         });
     </script>
 </x-app-layout>

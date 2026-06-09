@@ -41,7 +41,10 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <h2 class="text-sm font-semibold text-slate-700 mb-3">Sua rede</h2>
             @if ($partners->isEmpty())
-                <p class="text-sm text-slate-400">Nenhum parceiro vinculado ainda.</p>
+                <x-empty-state
+                    title="Nenhum parceiro vinculado"
+                    description="Convide alguém da sua casa para compartilhar transações e cartões."
+                />
             @else
                 <ul class="divide-y divide-slate-100">
                     @foreach ($partners as $partner)

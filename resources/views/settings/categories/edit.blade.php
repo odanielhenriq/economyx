@@ -28,13 +28,7 @@
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Nome</label>
-                    <input type="text" name="name" value="{{ old('name', $category->name) }}"
-                        class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Slug (opcional)</label>
-                    <input type="text" name="slug" value="{{ old('slug', $category->slug) }}"
+                    <input type="text" name="name" value="{{ old('name', $category->name) }}" required
                         class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 </div>
 

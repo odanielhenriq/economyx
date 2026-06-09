@@ -6,6 +6,12 @@
     <div id="dashboard-wrapper" x-data="{ loading: true }">
         <div class="space-y-6">
 
+            <x-first-use-checklist
+                :has-transactions="$hasTransactions"
+                :has-credit-cards="$hasCreditCards"
+                :has-budgets="$hasBudgets"
+            />
+
             {{-- Navegador de mês --}}
             <div
                 x-data="{
@@ -240,29 +246,52 @@
                         </p>
                     @else
                         @php
-                            $categoryColors = [
-                                'bg-green-500', 'bg-blue-500', 'bg-amber-500',
-                                'bg-purple-500', 'bg-red-500', 'bg-slate-400'
-                            ];
+                            $categoryHexColors = ['#16a34a', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444', '#94a3b8'];
+                            $spendingTotal = collect($spendingByCategory)->sum('total');
+                            $conicStops = [];
+                            $cursor = 0;
+                            foreach ($spendingByCategory as $i => $item) {
+                                $share = $spendingTotal > 0 ? ($item['total'] / $spendingTotal) * 100 : 0;
+                                $next = min($cursor + $share, 100);
+                                $color = $categoryHexColors[$i % count($categoryHexColors)];
+                                if ($share > 0) {
+                                    $conicStops[] = "{$color} {$cursor}% {$next}%";
+                                }
+                                $cursor = $next;
+                            }
+                            $conicStyle = count($conicStops)
+                                ? 'conic-gradient('.implode(', ', $conicStops).')'
+                                : 'conic-gradient(#e2e8f0 0% 100%)';
                         @endphp
-                        <div class="space-y-4">
-                            @foreach($spendingByCategory as $index => $item)
-                                <div>
-                                    <div class="flex items-center justify-between mb-1.5">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-2.5 h-2.5 rounded-full {{ $categoryColors[$index % count($categoryColors)] }}"></div>
-                                            <span class="text-sm font-medium text-slate-700">{{ $item['category'] }}</span>
-                                        </div>
-                                        <span class="text-sm font-semibold text-slate-900 tabular-nums">
-                                            R$ {{ number_format($item['total'], 2, ',', '.') }}
-                                        </span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 rounded-full h-2">
-                                        <div class="h-2 rounded-full transition-all duration-500 {{ $categoryColors[$index % count($categoryColors)] }}"
-                                             style="width: {{ $item['percentage'] }}%"></div>
-                                    </div>
+                        <div class="flex flex-col sm:flex-row items-center gap-8">
+                            <div class="relative w-44 h-44 rounded-full shrink-0" style="background: {{ $conicStyle }}">
+                                <div class="absolute inset-5 bg-white rounded-full flex flex-col items-center justify-center text-center shadow-sm">
+                                    <span class="text-[10px] uppercase tracking-wide text-slate-400 font-medium">Total</span>
+                                    <span class="text-sm font-bold text-slate-900 tabular-nums leading-tight mt-0.5">
+                                        R$ {{ number_format($spendingTotal, 0, ',', '.') }}
+                                    </span>
                                 </div>
-                            @endforeach
+                            </div>
+                            <div class="flex-1 w-full space-y-3">
+                                @foreach($spendingByCategory as $index => $item)
+                                    @php
+                                        $share = $spendingTotal > 0 ? round(($item['total'] / $spendingTotal) * 100, 1) : 0;
+                                        $hex = $categoryHexColors[$index % count($categoryHexColors)];
+                                    @endphp
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ $hex }}"></span>
+                                            <span class="text-sm font-medium text-slate-700 truncate">{{ $item['category'] }}</span>
+                                        </div>
+                                        <div class="text-right shrink-0">
+                                            <span class="text-sm font-semibold text-slate-900 tabular-nums">
+                                                R$ {{ number_format($item['total'], 2, ',', '.') }}
+                                            </span>
+                                            <span class="text-xs text-slate-400 ml-1 tabular-nums">({{ $share }}%)</span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
                     @endif
                 </div>

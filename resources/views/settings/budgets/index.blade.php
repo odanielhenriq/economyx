@@ -4,6 +4,7 @@
     </x-slot>
 
     <div class="space-y-6">
+        @include('settings.nav')
 
         @if (session('success'))
             <div class="px-4 py-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl">
@@ -49,6 +50,12 @@
         </div>
 
         {{-- Tabela de orçamentos existentes --}}
+        @if ($budgets->isEmpty())
+            <x-empty-state
+                title="Nenhum orçamento definido"
+                description="Defina limites mensais por categoria para receber alertas no dashboard."
+            />
+        @else
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left divide-y divide-slate-100 min-w-[640px]">
@@ -95,18 +102,11 @@
                                 </td>
                             </tr>
                         @endforelse
-
-                        @if ($budgets->isEmpty())
-                            <tr>
-                                <td colspan="3" class="px-4 py-4 text-center text-slate-400 text-xs">
-                                    Nenhum orçamento definido ainda.
-                                </td>
-                            </tr>
-                        @endif
                     </tbody>
                 </table>
             </div>
         </div>
+        @endif
 
     </div>
 </x-app-layout>

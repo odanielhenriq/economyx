@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\CategoryBudget;
+use App\Models\CreditCard;
 use App\Models\Transaction;
 use App\Models\TransactionInstallment;
 use App\Services\MonthlyDashboardService;
@@ -41,6 +42,9 @@ class MonthlyDashboardController extends Controller
         // Índice 4 = mês anterior (índice 5 = mês atual)
         $previousMonthData = $chartData[count($chartData) - 2] ?? null;
 
+        $user = Auth::user();
+        $networkIds = $user->networkUsers()->pluck('id')->all();
+
         // Envia tudo para a view mensal
         return view('dashboard.monthly', [
             'year' => $year,
@@ -53,6 +57,12 @@ class MonthlyDashboardController extends Controller
             'budgetAlerts' => $this->getBudgetAlerts($year, $month),
             'spendingByCategory' => $this->getSpendingByCategory($year, $month),
             'upcomingDues' => $this->getUpcomingDues(),
+            'hasTransactions' => Transaction::whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))->exists(),
+            'hasCreditCards' => CreditCard::query()
+                ->where(fn ($q) => $q->where('owner_user_id', $user->id)
+                    ->orWhereHas('users', fn ($sub) => $sub->where('users.id', $user->id)))
+                ->exists(),
+            'hasBudgets' => CategoryBudget::where('user_id', $user->id)->exists(),
         ]);
     }
 

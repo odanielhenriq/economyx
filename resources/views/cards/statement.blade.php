@@ -1,11 +1,23 @@
 <x-app-layout>
     <x-slot name="header">
-        <h1 class="text-lg font-semibold text-slate-900">Extrato de Cartão</h1>
+        <h1 class="text-lg font-semibold text-slate-900">Faturas do cartão</h1>
     </x-slot>
 
     <div class="space-y-6">
 
-        {{-- Filtros --}}
+        @if ($cards->isEmpty())
+            <x-empty-state
+                title="Nenhum cartão cadastrado"
+                description="Cadastre seu primeiro cartão para acompanhar faturas e compras parceladas."
+            >
+                <x-slot:actions>
+                    <a href="{{ route('credit-cards.create') }}"
+                       class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                        Cadastrar cartão
+                    </a>
+                </x-slot:actions>
+            </x-empty-state>
+        @else
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
             <div class="flex flex-col gap-3 md:flex-row md:items-end">
                 <div class="flex-1">
@@ -133,9 +145,11 @@
 
             </div>
         </div>
+        @endif
 
     </div>
 
+    @if ($cards->isNotEmpty())
     <script type="module">
         const cardSelect = document.getElementById('filter-card');
         const monthInput = document.getElementById('filter-month');
@@ -314,5 +328,9 @@
         }
 
         loadBtn.addEventListener('click', handleLoadClick);
+        cardSelect.addEventListener('change', handleLoadClick);
+        monthInput.addEventListener('change', handleLoadClick);
+        handleLoadClick();
     </script>
+    @endif
 </x-app-layout>

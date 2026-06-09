@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="pt-BR">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,10 +32,7 @@
 
         {{-- Logo --}}
         <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 flex-shrink-0">
-            <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                <span class="text-white font-bold text-sm leading-none">E$</span>
-            </div>
-            <span class="text-white font-semibold text-lg tracking-tight">Economyx</span>
+            <x-brand-logo size="sm" />
         </div>
 
         {{-- Navegação principal --}}
@@ -76,7 +73,7 @@
                 Transações
             </a>
 
-            {{-- Cartões --}}
+            {{-- Faturas do cartão --}}
             <a href="{{ route('cards.statement.index') }}"
                @click="sidebarOpen = false"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -87,7 +84,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
-                Cartões
+                Faturas do cartão
             </a>
 
             {{-- Contas fixas --}}
@@ -113,7 +110,8 @@
 
             {{-- Configurações colapsável --}}
             @php
-                $inSettings = request()->routeIs('categories.*')
+                $inSettings = request()->routeIs('partners.*')
+                    || request()->routeIs('categories.*')
                     || request()->routeIs('types.*')
                     || request()->routeIs('payment-methods.*')
                     || request()->routeIs('credit-cards.*')
@@ -146,6 +144,12 @@
                      class="mt-0.5 space-y-0.5 pl-7"
                      style="display:none">
 
+                    <a href="{{ route('partners.index') }}"
+                       @click="sidebarOpen = false"
+                       class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors
+                              {{ request()->routeIs('partners.*') ? 'bg-green-600/20 text-green-300' : 'text-green-100/50 hover:bg-white/5 hover:text-white' }}">
+                        Parceiros
+                    </a>
                     <a href="{{ route('categories.index') }}"
                        @click="sidebarOpen = false"
                        class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors
@@ -168,7 +172,7 @@
                        @click="sidebarOpen = false"
                        class="flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors
                               {{ request()->routeIs('credit-cards.*') ? 'bg-green-600/20 text-green-300' : 'text-green-100/50 hover:bg-white/5 hover:text-white' }}">
-                        Cartões
+                        Meus cartões
                     </a>
                     <a href="{{ route('budgets.index') }}"
                        @click="sidebarOpen = false"
@@ -188,9 +192,9 @@
                             text-white text-xs font-semibold flex-shrink-0">
                     {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
                 </div>
-                <div class="flex-1 min-w-0">
+                <div class="flex-1 min-w-0" title="{{ auth()->user()->name ?? '' }}">
                     <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name ?? '' }}</p>
-                    <p class="text-xs truncate" style="color: rgba(209,250,229,0.5);">
+                    <p class="text-xs truncate" style="color: rgba(209,250,229,0.5);" title="{{ auth()->user()->email ?? '' }}">
                         {{ auth()->user()->email ?? '' }}
                     </p>
                 </div>

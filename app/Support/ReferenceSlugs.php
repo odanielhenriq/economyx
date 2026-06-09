@@ -39,4 +39,17 @@ class ReferenceSlugs
 
         return $id ? (int) $id : null;
     }
+
+    /**
+     * @return list<string>
+     */
+    public static function systemTypeSlugs(): array
+    {
+        return ['rc', 'dc'];
+    }
+
+    public static function isSystemTypeSlug(?string $slug): bool
+    {
+        return $slug !== null && in_array($slug, self::systemTypeSlugs(), true);
+    }
 }

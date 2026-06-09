@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\TypeRequest;
 use App\Http\Resources\TypeResource;
 use App\Repositories\TypeRepositoryInterface;
+use App\Support\ReferenceSlugs;
 
 class TypeController extends Controller
 {
@@ -69,6 +70,16 @@ class TypeController extends Controller
     public function update(TypeRequest $request, string $id)
     {
         try {
+            $existing = $this->types->findById((int) $id);
+
+            if (! $existing) {
+                return response()->json(['error' => 'Type not found'], 404);
+            }
+
+            if (ReferenceSlugs::isSystemTypeSlug($existing->slug)) {
+                return response()->json(['error' => 'Este tipo é usado pelo sistema e não pode ser alterado.'], 403);
+            }
+
             $data = $request->validated();
 
             $type = $this->types->update((int) $id, $data);
@@ -93,6 +104,16 @@ class TypeController extends Controller
     public function destroy(string $id)
     {
         try {
+            $existing = $this->types->findById((int) $id);
+
+            if (! $existing) {
+                return response()->json(['error' => 'Type not found'], 404);
+            }
+
+            if (ReferenceSlugs::isSystemTypeSlug($existing->slug)) {
+                return response()->json(['error' => 'Este tipo é usado pelo sistema e não pode ser excluído.'], 403);
+            }
+
             $deleted = $this->types->delete((int) $id);
 
             if (! $deleted) {

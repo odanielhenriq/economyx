@@ -13,6 +13,7 @@
     </x-slot>
 
     <div class="space-y-4">
+        @include('settings.nav')
 
         @if (session('success'))
             <div class="px-4 py-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl">
@@ -28,7 +29,7 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div id="recurring-container" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left divide-y divide-slate-100 min-w-[640px]">
                     <thead class="bg-slate-50">
@@ -57,7 +58,13 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const tableBody = document.getElementById('recurring-templates-table');
-            const emptyRow = `<tr><td class="px-4 py-8 text-center text-slate-400" colspan="8">Nenhuma conta fixa cadastrada.</td></tr>`;
+            const container = document.getElementById('recurring-container');
+            const emptyHtml = `
+                <div class="px-6 py-14 text-center">
+                    <h3 class="text-base font-semibold text-slate-900">Nenhuma conta fixa cadastrada</h3>
+                    <p class="mt-2 text-sm text-slate-500">Cadastre aluguel, assinaturas e outras despesas que se repetem todo mês.</p>
+                    <a href="{{ route('recurring-templates.create') }}" class="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">Nova conta fixa</a>
+                </div>`;
             const errorRow = `<tr><td class="px-4 py-8 text-center text-red-500" colspan="8">Erro ao carregar contas fixas.</td></tr>`;
             const editUrlTemplate = @json(route('recurring-templates.edit', ['recurring_template' => '__ID__']));
             const deleteUrlTemplate = @json(route('recurring-templates.destroy', ['recurring_template' => '__ID__']));
@@ -70,7 +77,7 @@
                 .then((response) => response.ok ? response.json() : Promise.reject(response))
                 .then((payload) => {
                     const items = payload.data ?? [];
-                    if (!items.length) { tableBody.innerHTML = emptyRow; return; }
+                    if (!items.length) { container.innerHTML = emptyHtml; return; }
 
                     tableBody.innerHTML = items.map((template) => {
                         const editUrl = editUrlTemplate.replace('__ID__', template.id);

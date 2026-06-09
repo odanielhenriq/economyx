@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h1 class="text-lg font-semibold text-slate-900">Cartões</h1>
+            <h1 class="text-lg font-semibold text-slate-900">Meus cartões</h1>
             <a href="{{ route('credit-cards.create') }}"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -13,6 +13,7 @@
     </x-slot>
 
     <div class="space-y-4">
+        @include('settings.nav')
 
         @if (session('success'))
             <div class="px-4 py-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl">
@@ -28,7 +29,7 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div id="credit-cards-container" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left divide-y divide-slate-100 min-w-[640px]">
                     <thead class="bg-slate-50">
@@ -57,7 +58,14 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const tableBody = document.getElementById('credit-cards-table');
-            const emptyRow = `<tr><td class="px-4 py-8 text-center text-slate-400" colspan="8">Nenhum cartão cadastrado.</td></tr>`;
+            const container = document.getElementById('credit-cards-container');
+            const emptyHtml = `
+                <div class="px-6 py-14 text-center">
+                    <svg class="mx-auto h-10 w-10 text-slate-300 mb-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                    <h3 class="text-base font-semibold text-slate-900">Nenhum cartão cadastrado</h3>
+                    <p class="mt-2 text-sm text-slate-500">Cadastre seu primeiro cartão para acompanhar faturas e compras parceladas.</p>
+                    <a href="{{ route('credit-cards.create') }}" class="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">Cadastrar cartão</a>
+                </div>`;
             const errorRow = `<tr><td class="px-4 py-8 text-center text-red-500" colspan="8">Erro ao carregar cartões.</td></tr>`;
             const editUrlTemplate = @json(route('credit-cards.edit', ['credit_card' => '__ID__']));
             const deleteUrlTemplate = @json(route('credit-cards.destroy', ['credit_card' => '__ID__']));
@@ -70,7 +78,7 @@
                 .then((response) => response.ok ? response.json() : Promise.reject(response))
                 .then((payload) => {
                     const items = payload.data ?? [];
-                    if (!items.length) { tableBody.innerHTML = emptyRow; return; }
+                    if (!items.length) { container.innerHTML = emptyHtml; return; }
 
                     tableBody.innerHTML = items.map((card) => {
                         const editUrl = editUrlTemplate.replace('__ID__', card.id);

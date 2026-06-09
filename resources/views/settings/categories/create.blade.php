@@ -29,14 +29,7 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">Nome</label>
                     <input type="text" name="name" value="{{ old('name') }}"
                         class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Ex: Alimentação">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Slug (opcional)</label>
-                    <input type="text" name="slug" value="{{ old('slug') }}"
-                        class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="ex: alimentacao">
+                        placeholder="Ex: Alimentação" required>
                 </div>
 
                 <div>

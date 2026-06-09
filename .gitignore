@@ -27,3 +27,8 @@ Thumbs.db
 # Scripts de checagem e diagnóstico (não necessários no repositório)
 /scripts/
 /.cursor
+
+# Agentes, skills e documentação local (Cursor / dev)
+/.agents
+/docs
+/skills-lock.json

@@ -262,6 +262,10 @@
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                             <option value="">Selecione o cartão</option>
                         </select>
+                        <p id="no-cards-warning" class="hidden mt-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                            Você ainda não cadastrou nenhum cartão.
+                            <a href="{{ route('credit-cards.create') }}" class="font-medium text-green-700 hover:text-green-900 underline">Cadastrar cartão</a>
+                        </p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Em quantas parcelas?</label>
@@ -289,8 +293,8 @@
                 <div id="users-grid" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
             </div>
 
-            {{-- Ações --}}
-            <div class="flex justify-end gap-3">
+            {{-- Ações — sticky no rodapé em telas longas --}}
+            <div class="sticky bottom-0 z-10 -mx-4 px-4 py-4 lg:-mx-8 lg:px-8 bg-slate-50/95 backdrop-blur border-t border-slate-200 mt-6 flex justify-end gap-3">
                 <a href="{{ route('transactions.index') }}"
                     class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg border border-slate-200 transition">
                     Cancelar
@@ -424,6 +428,11 @@
                 [creditCardPontualSelect, creditCardParceladoSelect, creditCardFixaSelect].forEach(sel => {
                     fillSelect(sel, cardList, cardLabel);
                 });
+
+                const noCardsWarning = document.getElementById('no-cards-warning');
+                if (noCardsWarning) {
+                    noCardsWarning.classList.toggle('hidden', cardList.length > 0);
+                }
 
                 renderUsers(userList);
             };
