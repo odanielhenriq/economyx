@@ -59,6 +59,7 @@
                     <div class="h-24 bg-slate-200 rounded-xl animate-pulse"></div>
                     <div class="h-24 bg-slate-200 rounded-xl animate-pulse"></div>
                 </div>
+                <div class="h-28 bg-slate-200 rounded-xl animate-pulse"></div>
                 <div class="h-44 bg-slate-200 rounded-xl animate-pulse"></div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div class="h-44 bg-slate-200 rounded-xl animate-pulse"></div>
@@ -152,6 +153,60 @@
                     </div>
                 </div>
 
+                {{-- Saldo projetado --}}
+                <div id="projected-balance-card"
+                     class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm font-medium text-slate-500">Saldo projetado</span>
+                                <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <p id="dashboard-projected-balance"
+                               class="text-2xl sm:text-3xl font-bold tabular-nums text-slate-900"></p>
+                            <p id="dashboard-projected-hint" class="text-xs text-slate-500 mt-1"></p>
+                            <p class="text-xs text-slate-400 mt-2 max-w-xl">
+                                Estimativa considerando lançamentos do mês, faturas, parcelas e contas fixas previstas.
+                                Não considera gastos futuros que ainda não foram cadastrados.
+                            </p>
+                        </div>
+
+                        <div x-data="{ breakdownOpen: false }" class="lg:max-w-sm w-full shrink-0">
+                            <button type="button" @click="breakdownOpen = !breakdownOpen"
+                                class="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2">
+                                <span x-text="breakdownOpen ? 'Ocultar cálculo' : 'Como calculamos?'"></span>
+                            </button>
+                            <div x-show="breakdownOpen" x-cloak
+                                class="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600 space-y-1.5 tabular-nums">
+                                <div class="flex justify-between gap-4">
+                                    <span>Receitas do mês</span>
+                                    <span id="projected-breakdown-income" class="font-medium text-emerald-700"></span>
+                                </div>
+                                <div class="flex justify-between gap-4">
+                                    <span>Despesas já lançadas</span>
+                                    <span id="projected-breakdown-expenses" class="font-medium text-red-600"></span>
+                                </div>
+                                <div class="flex justify-between gap-4">
+                                    <span>A pagar no mês</span>
+                                    <span id="projected-breakdown-payable" class="font-medium text-red-600"></span>
+                                </div>
+                                <div class="flex justify-between gap-4">
+                                    <span>Contas fixas previstas</span>
+                                    <span id="projected-breakdown-recurring" class="font-medium text-red-600"></span>
+                                </div>
+                                <div class="border-t border-slate-200 pt-2 flex justify-between gap-4 font-semibold text-slate-800">
+                                    <span>Saldo projetado</span>
+                                    <span id="projected-breakdown-total"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Como interpretar os números (colapsável — não ocupa espaço até o usuário pedir) --}}
                 <div x-data="{ metricsHelpOpen: false }" class="text-center px-2">
                     <button type="button" @click="metricsHelpOpen = !metricsHelpOpen"
@@ -163,49 +218,10 @@
                         <p class="text-slate-700 font-medium">Os valores podem ser diferentes — e isso é esperado.</p>
                         <p><strong class="text-slate-700">Despesas do mês</strong> — pagamentos à vista e contas fixas. Não inclui fatura de cartão.</p>
                         <p><strong class="text-slate-700">A pagar no mês</strong> — faturas de cartão e parcelas com vencimento neste mês.</p>
+                        <p><strong class="text-slate-700">Saldo projetado</strong> — estimativa do que sobra ou falta até o fim do mês, incluindo faturas e contas fixas previstas.</p>
                         <p><strong class="text-slate-700">Onde o dinheiro foi</strong> — gráfico por categoria (compras à vista + parcelas).</p>
                     </div>
                 </div>
-
-                {{-- Painel de vencimentos próximos --}}
-                @if(count($upcomingDues) > 0)
-                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                    <div class="flex items-center gap-2 mb-3">
-                        <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24"
-                             stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <h3 class="text-sm font-semibold text-amber-800">
-                            {{ count($upcomingDues) }}
-                            {{ count($upcomingDues) === 1 ? 'conta vence' : 'contas vencem' }}
-                            nos próximos 7 dias
-                        </h3>
-                    </div>
-                    <div class="space-y-2">
-                        @foreach($upcomingDues as $due)
-                            <div class="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border border-amber-100">
-                                <div>
-                                    <p class="text-sm font-medium text-slate-900">{{ $due['description'] }}</p>
-                                    <p class="text-xs text-slate-400 mt-0.5">
-                                        @if($due['days_left'] === 0)
-                                            Vence hoje
-                                        @elseif($due['days_left'] === 1)
-                                            Vence amanhã
-                                        @else
-                                            Vence em {{ $due['days_left'] }} dias
-                                            ({{ \Carbon\Carbon::parse($due['due_date'])->format('d/m') }})
-                                        @endif
-                                    </p>
-                                </div>
-                                <span class="text-sm font-semibold text-slate-900 tabular-nums">
-                                    R$ {{ number_format($due['amount'], 2, ',', '.') }}
-                                </span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
 
                 {{-- A pagar no mês — Cartões / Parcelas --}}
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -225,40 +241,6 @@
                         <div id="payables-loans-list" class="p-5 space-y-3 text-sm"></div>
                     </div>
                 </div>
-
-                {{-- Alertas de orçamento por categoria --}}
-                @if (count($budgetAlerts) > 0)
-                    <div class="space-y-2">
-                        @foreach ($budgetAlerts as $alert)
-                            <div class="flex items-center gap-4 p-3 rounded-xl border
-                                {{ $alert['over'] ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200' }}">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <span class="text-sm font-medium
-                                            {{ $alert['over'] ? 'text-red-800' : 'text-amber-800' }}">
-                                            {{ $alert['over'] ? '⚠ Limite ultrapassado' : '⚡ Próximo do limite' }}
-                                            — {{ $alert['category'] }}
-                                        </span>
-                                        <span class="text-xs font-semibold tabular-nums
-                                            {{ $alert['over'] ? 'text-red-700' : 'text-amber-700' }}">
-                                            {{ $alert['percent'] }}%
-                                        </span>
-                                    </div>
-                                    <div class="w-full bg-slate-200 rounded-full h-1.5">
-                                        <div class="h-1.5 rounded-full transition-all duration-500
-                                            {{ $alert['over'] ? 'bg-red-500' : 'bg-amber-400' }}"
-                                            style="width: {{ min($alert['percent'], 100) }}%">
-                                        </div>
-                                    </div>
-                                    <div class="mt-1 text-xs tabular-nums {{ $alert['over'] ? 'text-red-600' : 'text-amber-600' }}">
-                                        R$ {{ number_format($alert['spent'], 2, ',', '.') }}
-                                        de R$ {{ number_format($alert['limit'], 2, ',', '.') }}
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
 
                 {{-- Gastos por categoria --}}
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -415,6 +397,13 @@
         const balanceEl = document.getElementById('dashboard-balance');
         const payableTotalEl = document.getElementById('dashboard-payable-total');
         const payableBreakdownEl = document.getElementById('dashboard-payable-breakdown');
+        const projectedBalanceEl = document.getElementById('dashboard-projected-balance');
+        const projectedHintEl = document.getElementById('dashboard-projected-hint');
+        const projectedBreakdownIncomeEl = document.getElementById('projected-breakdown-income');
+        const projectedBreakdownExpensesEl = document.getElementById('projected-breakdown-expenses');
+        const projectedBreakdownPayableEl = document.getElementById('projected-breakdown-payable');
+        const projectedBreakdownRecurringEl = document.getElementById('projected-breakdown-recurring');
+        const projectedBreakdownTotalEl = document.getElementById('projected-breakdown-total');
         const payablesCardsListEl = document.getElementById('payables-cards-list');
         const payablesLoansListEl = document.getElementById('payables-loans-list');
         const cashflowBodyEl = document.getElementById('cashflow-body');
@@ -446,6 +435,40 @@
             const loansTotal = breakdown.payable_loans_total ?? 0;
             payableBreakdownEl.textContent =
                 `Cartões: ${formatMoney(cardsTotal)} · Empréstimos: ${formatMoney(loansTotal)}`;
+
+            renderProjectedBalance(cards.projected_balance ?? {});
+        };
+
+        const formatBreakdownDeduction = (value) => {
+            const amount = Number(value ?? 0);
+            if (!Number.isFinite(amount) || amount === 0) {
+                return formatMoney(0);
+            }
+            return `− ${formatMoney(amount)}`;
+        };
+
+        const renderProjectedBalance = (projected = {}) => {
+            const amount = Number(projected.amount ?? 0);
+            const isNegative = projected.is_negative ?? amount < 0;
+
+            projectedBalanceEl.textContent = formatMoney(amount);
+            projectedBalanceEl.classList.remove('text-emerald-700', 'text-red-600', 'text-slate-900');
+            projectedBalanceEl.classList.add(isNegative ? 'text-red-600' : 'text-emerald-700');
+
+            projectedHintEl.textContent = isNegative
+                ? 'Atenção: sua projeção indica falta de saldo até o fim do mês.'
+                : 'Estimativa do que pode sobrar até o fim do mês.';
+
+            projectedHintEl.classList.remove('text-red-600', 'text-slate-500');
+            projectedHintEl.classList.add(isNegative ? 'text-red-600' : 'text-slate-500');
+
+            projectedBreakdownIncomeEl.textContent = formatMoney(projected.income ?? 0);
+            projectedBreakdownExpensesEl.textContent = formatBreakdownDeduction(projected.expenses_recorded ?? 0);
+            projectedBreakdownPayableEl.textContent = formatBreakdownDeduction(projected.payable ?? 0);
+            projectedBreakdownRecurringEl.textContent = formatBreakdownDeduction(projected.recurring_projection ?? 0);
+            projectedBreakdownTotalEl.textContent = formatMoney(amount);
+            projectedBreakdownTotalEl.classList.remove('text-emerald-700', 'text-red-600');
+            projectedBreakdownTotalEl.classList.add(isNegative ? 'text-red-600' : 'text-emerald-700');
         };
 
         const renderPayablesCards = (list = []) => {
@@ -642,6 +665,8 @@
             balanceEl.classList.add('text-slate-500');
             payableTotalEl.textContent = '-';
             payableBreakdownEl.textContent = 'Erro ao carregar dados do dashboard.';
+            if (projectedBalanceEl) projectedBalanceEl.textContent = '-';
+            if (projectedHintEl) projectedHintEl.textContent = 'Não foi possível calcular a projeção.';
 
             payablesCardsListEl.innerHTML = '<div class="text-xs text-slate-400">Erro ao carregar cartões.</div>';
             payablesLoansListEl.innerHTML = '<div class="text-xs text-slate-400">Erro ao carregar empréstimos.</div>';

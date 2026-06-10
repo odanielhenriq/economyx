@@ -96,6 +96,9 @@ class MonthlyDashboardService
             })
             ->get();
 
+        $incomeMaterialized = (float) $incomeTotal;
+        $expensesRecorded = (float) $directExpenseTotal;
+
         $projectedIncome = 0.0;
         $projectedExpense = 0.0;
 
@@ -243,6 +246,9 @@ class MonthlyDashboardService
         $balanceTotal = (float) $incomeTotal - $expenseTotal;
         $payableTotal = $payablesCardsTotal + $payablesLoansTotal;
 
+        $incomeForProjection = $incomeMaterialized + $projectedIncome;
+        $projectedBalanceAmount = $incomeForProjection - $expensesRecorded - $payableTotal - $projectedExpense;
+
         $cashflowItems = app(CashflowService::class)
             ->forMonth($year, $month, true, $user);
 
@@ -252,6 +258,15 @@ class MonthlyDashboardService
                 'expense_total_month' => (float) $expenseTotal,
                 'balance_month' => (float) $balanceTotal,
                 'payable_total_month' => (float) $payableTotal,
+                'projected_balance' => [
+                    'amount' => (float) $projectedBalanceAmount,
+                    'income' => (float) $incomeForProjection,
+                    'expenses_recorded' => (float) $expensesRecorded,
+                    'payable' => (float) $payableTotal,
+                    'recurring_projection' => (float) $projectedExpense,
+                    'recurring_income_projection' => (float) $projectedIncome,
+                    'is_negative' => $projectedBalanceAmount < 0,
+                ],
                 'breakdown' => [
                     'payable_cards_total' => (float) $payablesCardsTotal,
                     'payable_loans_total' => (float) $payablesLoansTotal,
