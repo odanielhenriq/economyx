@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Web\CategoryBudgetController;
 use App\Http\Controllers\Web\CategoryWebController;
 use App\Http\Controllers\Web\CreditCardWebController;
+use App\Http\Controllers\Web\ImpersonationController;
 use App\Http\Controllers\Web\MonthlyDashboardController;
 use App\Http\Controllers\Web\PaymentMethodWebController;
 use App\Http\Controllers\Web\RecurringTemplateWebController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Web\ImportController;
 use App\Http\Controllers\Web\PartnerInvitationWebController;
 use App\Http\Controllers\Web\TransactionWebController;
 use App\Http\Controllers\Web\TypeWebController;
+use App\Http\Controllers\Web\UserWebController;
 use Illuminate\Support\Facades\Route;
 
 // Página inicial
@@ -86,7 +88,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cards/statement', [CardStatementWebController::class, 'index'])
         ->name('cards.statement.index');
 
+    Route::middleware('dev')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/users', [UserWebController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}/edit', [UserWebController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserWebController::class, 'update'])->name('users.update');
+        Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('users.impersonate');
+    });
 
+    Route::post('/admin/leave-impersonation', [ImpersonationController::class, 'destroy'])
+        ->name('admin.leave-impersonation');
 });
 
 // routes/web.php

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,6 +12,15 @@ class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (! isset($user->role)) {
+                $user->role = UserRole::User;
+            }
+        });
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -46,7 +56,18 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'onboarding_completed_at' => 'datetime',
             'password' => 'hashed',
+            'role' => UserRole::class,
         ];
+    }
+
+    public function isDev(): bool
+    {
+        return $this->role === UserRole::Dev;
+    }
+
+    public function isUser(): bool
+    {
+        return $this->role === UserRole::User;
     }
 
     public function transactions()
