@@ -1,13 +1,12 @@
 <x-app-layout>
 
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h1 data-page-title class="text-lg font-semibold text-slate-900">Editar transação</h1>
-            <a href="{{ route('transactions.index') }}"
-               class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
-                ← Voltar para lista
-            </a>
-        </div>
+        <x-page-header
+            title="Editar transação"
+            subtitle="Altere os dados abaixo e clique em Salvar. Para descartar, volte sem salvar."
+            back-href="{{ route('transactions.index') }}"
+            back-label="Voltar para transações"
+        />
     </x-slot>
 
     <div id="edit-wrapper"

@@ -31,7 +31,7 @@ class PaymentMethodWebController extends Controller
 
         return redirect()
             ->route('payment-methods.index')
-            ->with('success', 'Forma de pagamento criada com sucesso!');
+            ->with('success', 'Forma de pagamento cadastrada.');
     }
 
     public function edit(PaymentMethod $paymentMethod)
@@ -47,7 +47,7 @@ class PaymentMethodWebController extends Controller
 
         return redirect()
             ->route('payment-methods.index')
-            ->with('success', 'Forma de pagamento atualizada com sucesso!');
+            ->with('success', 'Forma de pagamento atualizada.');
     }
 
     public function destroy(PaymentMethod $paymentMethod)
@@ -56,7 +56,7 @@ class PaymentMethodWebController extends Controller
 
         return redirect()
             ->route('payment-methods.index')
-            ->with('success', 'Forma de pagamento removida com sucesso!');
+            ->with('success', 'Forma de pagamento removida.');
     }
 
 }

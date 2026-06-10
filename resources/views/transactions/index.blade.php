@@ -1,9 +1,12 @@
 {{-- resources/views/transactions/index.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" x-data="exportModal()">
-            <h1 class="text-lg font-semibold text-slate-900">Transações</h1>
-            <div class="flex flex-wrap items-center gap-2">
+        <x-page-header
+            title="Transações"
+            subtitle="Consulte, filtre e gerencie todas as suas receitas e despesas."
+        >
+            <x-slot:actions>
+                <div class="flex flex-wrap items-center gap-2" x-data="exportModal()">
                 {{-- Menu Exportar --}}
                 <div class="relative" @click.outside="exportOpen = false">
                     <button type="button" @click="exportOpen = !exportOpen"
@@ -15,14 +18,18 @@
                         <svg class="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
                     </button>
                     <div x-show="exportOpen" x-transition style="display:none"
-                        class="absolute right-0 mt-1 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg z-20">
+                        class="absolute right-0 mt-1 w-56 rounded-lg border border-slate-200 bg-white py-1 shadow-lg z-20">
                         <button type="button" @click="open = true; exportOpen = false"
-                            class="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                            class="block w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">
                             Exportar CSV
                         </button>
-                        <a href="{{ route('export.json') }}" download @click="exportOpen = false"
-                            class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
-                            Exportar JSON (técnico)
+                        <div class="border-t border-slate-100 mx-2 my-1"></div>
+                        <p class="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Mais opções</p>
+                        <a href="{{ route('export.json') }}" download="economyx-{{ now()->format('Y-m') }}.json" @click="exportOpen = false"
+                            class="block px-4 py-2.5 text-left hover:bg-slate-50"
+                            title="Backup completo dos seus dados financeiros">
+                            <span class="block text-xs font-medium text-slate-500">Exportar JSON</span>
+                            <span class="block text-[11px] text-slate-400 mt-0.5">Avançado — backup ou integração externa</span>
                         </a>
                     </div>
                 </div>
@@ -106,34 +113,21 @@
                     </div>
                 </div>
             </div>
-        </div>
+            </x-slot:actions>
+        </x-page-header>
     </x-slot>
 
     <div class="space-y-6">
 
-        {{-- Alertas de sessão --}}
-        @if (session('success'))
-            <div class="px-4 py-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if ($errors->any())
-            <div class="px-4 py-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl">
-                <ul class="list-disc list-inside space-y-0.5">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+        <x-flash-messages />
 
         {{-- Filtros --}}
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <div class="flex items-center justify-between gap-3 mb-4">
+            <div class="flex items-center justify-between gap-3 mb-1">
                 <h2 class="text-sm font-semibold text-slate-700">Filtros</h2>
                 <span id="filter-active-badge" class="hidden text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-full"></span>
             </div>
+            <p class="text-xs text-slate-400 mb-4">Refine a lista por mês, categoria ou pessoa. Clique em <strong class="font-medium text-slate-600">Filtrar</strong> para aplicar ou <strong class="font-medium text-slate-600">Limpar</strong> para ver tudo.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 
                 <div class="md:w-52">
@@ -152,8 +146,14 @@
 
                 <div>
                     <label for="filter-month" class="block text-xs font-medium text-slate-500 mb-1">Mês</label>
-                    <input type="month" id="filter-month" title="Selecione o mês"
-                        class="min-w-[10.5rem] px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent [color-scheme:light]">
+                    <div class="relative">
+                        <input type="month" id="filter-month" title="Selecione o mês"
+                            class="month-empty w-full min-w-[10.5rem] px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent [color-scheme:light]">
+                        <span id="filter-month-placeholder"
+                            class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-sm text-slate-400">
+                            Selecione o mês
+                        </span>
+                    </div>
                 </div>
 
                 <div>
@@ -321,6 +321,7 @@
 
         const filterSearchEl = document.getElementById('filter-search');
         const filterMonthEl = document.getElementById('filter-month');
+        const filterMonthPlaceholder = document.getElementById('filter-month-placeholder');
         const filterUserEl = document.getElementById('filter-user');
         const filterCategoryEl = document.getElementById('filter-category');
         const filterTypeEl = document.getElementById('filter-type');
@@ -355,6 +356,12 @@
             window.history.replaceState({}, '', newUrl);
         }
 
+        function syncMonthPlaceholder() {
+            const hasValue = !!filterMonthEl.value;
+            filterMonthEl.classList.toggle('text-transparent', !hasValue);
+            filterMonthPlaceholder?.classList.toggle('hidden', hasValue);
+        }
+
         function initFiltersFromUrl() {
             const params = new URLSearchParams(window.location.search);
             if (params.get('search'))            { currentFilters.search = params.get('search'); filterSearchEl.value = currentFilters.search; }
@@ -363,6 +370,7 @@
             if (params.get('category_id'))       { currentFilters.category_id = params.get('category_id'); filterCategoryEl.value = currentFilters.category_id; }
             if (params.get('type_id'))           { currentFilters.type_id = params.get('type_id'); filterTypeEl.value = currentFilters.type_id; }
             if (params.get('payment_method_id')) { currentFilters.payment_method_id = params.get('payment_method_id'); filterPaymentMethodEl.value = currentFilters.payment_method_id; }
+            syncMonthPlaceholder();
         }
 
         function updateFilterBadge(filters) {
@@ -374,6 +382,55 @@
             }
             filterBadgeEl.textContent = count === 1 ? '1 filtro ativo' : `${count} filtros ativos`;
             filterBadgeEl.classList.remove('hidden');
+        }
+
+        function hasActiveFilters(filters) {
+            return Object.values(filters).some(Boolean);
+        }
+
+        function buildEmptyStateHtml(filters) {
+            const filtered = hasActiveFilters(filters);
+            const title = filtered
+                ? 'Nenhum resultado para os filtros escolhidos'
+                : 'Você ainda não tem transações';
+            const description = filtered
+                ? 'Tente outro mês, categoria ou termo de busca — ou limpe os filtros para ver tudo.'
+                : 'Adicione uma receita, despesa ou compra parcelada para começar a acompanhar suas finanças.';
+            const showClear = filtered;
+
+            return `
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-14 text-center">
+                    <svg class="mx-auto h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3 class="mt-4 text-base font-semibold text-slate-900">${title}</h3>
+                    <p class="mt-2 text-sm text-slate-500 max-w-md mx-auto">${description}</p>
+                    <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <a href="{{ route('transactions.create') }}"
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                            + Nova transação
+                        </a>
+                        ${showClear ? `
+                        <button type="button" id="empty-clear-filters"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
+                            Limpar filtros
+                        </button>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildErrorStateHtml() {
+            return `
+                <div class="bg-white rounded-xl border border-red-200 shadow-sm px-6 py-10 text-center">
+                    <p class="text-sm font-medium text-slate-900">Não foi possível carregar as transações</p>
+                    <p class="mt-1 text-sm text-slate-500">Verifique sua conexão e tente novamente.</p>
+                    <button type="button" id="transactions-retry-btn"
+                        class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
+                        Tentar novamente
+                    </button>
+                </div>
+            `;
         }
 
         function buildActionsHtml(txId) {
@@ -401,8 +458,15 @@
                 </button>`;
         }
 
+        function setTableLoading(value) {
+            const wrapper = document.getElementById('transactions-table-wrapper');
+            if (!wrapper || typeof Alpine === 'undefined') return;
+            const data = Alpine.$data(wrapper);
+            if (data) data.loading = value;
+        }
+
         async function loadTransactions(page = 1, filters = {}) {
-            Alpine.$data(document.getElementById('transactions-table-wrapper')).loading = true;
+            setTableLoading(true);
 
             try {
                 const params = new URLSearchParams();
@@ -430,25 +494,7 @@
 
                 if (items.length === 0) {
                     if (dataEl) dataEl.classList.add('hidden');
-                    stateEl.innerHTML = `
-                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-14 text-center">
-                            <svg class="mx-auto h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <h3 class="mt-4 text-base font-semibold text-slate-900">Nenhuma transação encontrada</h3>
-                            <p class="mt-2 text-sm text-slate-500 max-w-md mx-auto">Adicione uma receita, despesa ou compra parcelada para começar — ou ajuste os filtros.</p>
-                            <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-                                <a href="{{ route('transactions.create') }}"
-                                   class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
-                                    + Nova transação
-                                </a>
-                                <button type="button" id="empty-clear-filters"
-                                    class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
-                                    Limpar filtros
-                                </button>
-                            </div>
-                        </div>
-                    `;
+                    stateEl.innerHTML = buildEmptyStateHtml(filters);
                     document.getElementById('empty-clear-filters')?.addEventListener('click', () => filterClearBtn.click());
                     paginationInfoEl.textContent = '';
                     prevBtn.disabled = true;
@@ -618,7 +664,9 @@
 
             } catch (error) {
                 console.error(error);
-                stateEl.innerHTML = '<div class="text-sm text-slate-500">Erro ao carregar transações.</div>';
+                if (dataEl) dataEl.classList.add('hidden');
+                stateEl.innerHTML = buildErrorStateHtml();
+                document.getElementById('transactions-retry-btn')?.addEventListener('click', () => loadTransactions(currentPage, currentFilters));
                 bodyEl.innerHTML = '';
                 if (mobileEl) mobileEl.innerHTML = '';
                 summaryEl.innerHTML = '';
@@ -626,7 +674,7 @@
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
             } finally {
-                Alpine.$data(document.getElementById('transactions-table-wrapper')).loading = false;
+                setTableLoading(false);
             }
         }
 
@@ -653,6 +701,7 @@
         filterClearBtn.addEventListener('click', () => {
             filterSearchEl.value = '';
             filterMonthEl.value = '';
+            syncMonthPlaceholder();
             filterUserEl.value = '';
             filterCategoryEl.value = '';
             filterTypeEl.value = '';
@@ -675,7 +724,7 @@
                     await loadTransactions(currentPage, currentFilters);
                 } catch {
                     window.dispatchEvent(new CustomEvent('toast', {
-                        detail: { message: 'Erro ao duplicar transação.', type: 'error' }
+                        detail: { message: 'Não foi possível duplicar a transação. Tente novamente.', type: 'error' }
                     }));
                 }
                 return;
@@ -698,20 +747,23 @@
             const id = btn.dataset.id;
             window.dispatchEvent(new CustomEvent('request-delete', {
                 detail: {
+                    title: 'Excluir transação?',
+                    message: 'Essa ação não pode ser desfeita. A transação será removida permanentemente.',
+                    confirmLabel: 'Excluir transação',
                     callback: async () => {
                         try {
                             const response = await apiFetch(`/api/transactions/${id}`, { method: 'DELETE' });
 
                             if (!response.ok) {
                                 window.dispatchEvent(new CustomEvent('toast', {
-                                    detail: { message: 'Erro ao excluir transação.', type: 'error' }
+                                    detail: { message: 'Não foi possível excluir a transação. Tente novamente.', type: 'error' }
                                 }));
                                 return;
                             }
 
                             await loadTransactions(currentPage, currentFilters);
                             window.dispatchEvent(new CustomEvent('toast', {
-                                detail: { message: 'Transação excluída com sucesso!', type: 'success' }
+                                detail: { message: 'Transação excluída.', type: 'success' }
                             }));
                         } catch (err) {
                             console.error(err);
@@ -724,9 +776,20 @@
             }));
         });
 
-        initFiltersFromUrl();
-        updateFilterBadge(currentFilters);
-        loadTransactions(1, currentFilters);
+        function bootTransactionsList() {
+            initFiltersFromUrl();
+            updateFilterBadge(currentFilters);
+            loadTransactions(1, currentFilters);
+        }
+
+        filterMonthEl.addEventListener('change', syncMonthPlaceholder);
+        filterMonthEl.addEventListener('input', syncMonthPlaceholder);
+
+        if (typeof Alpine !== 'undefined') {
+            bootTransactionsList();
+        } else {
+            document.addEventListener('alpine:init', bootTransactionsList, { once: true });
+        }
     </script>
 
     {{-- Modal de parcelas --}}
@@ -750,7 +813,7 @@
                         this.installments = Array.isArray(data.installments) ? data.installments : [];
                     } catch {
                         window.dispatchEvent(new CustomEvent('toast', {
-                            detail: { message: 'Erro ao carregar parcelas.', type: 'error' }
+                            detail: { message: 'Não foi possível carregar as parcelas. Tente novamente.', type: 'error' }
                         }));
                         this.open = false;
                     } finally {

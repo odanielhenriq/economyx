@@ -2,26 +2,18 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Database\Seeders\Concerns\SeedsReferenceRows;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class TypesTableSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+    use SeedsReferenceRows;
+
     public function run(): void
     {
-        DB::table('types')->insert([
-            [
-                'name' => 'Receita',
-                'slug' => 'rc',
-            ],
-            [
-                'name' => 'Despesa',
-                'slug' => 'dc',
-            ],
+        $this->seedRowsBySlug('types', [
+            ['name' => 'Receita', 'slug' => 'rc'],
+            ['name' => 'Despesa', 'slug' => 'dc'],
         ]);
     }
 }

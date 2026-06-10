@@ -15,25 +15,47 @@ class TransactionResource extends JsonResource
         // Quantas pessoas estão associadas à transação
         $usersCount = $this->users->count();
 
-        // Quanto cada um paga (divisão igualitária)
-        $share = $usersCount > 0 ? round($this->amount / $usersCount, 2) : null;
-
         // Regras pra entender se é parcela (tem número E total)
-        $hasNumberAndTotal = !is_null($this->installment_number) && !is_null($this->installment_total);
-        $isInstallment  = $hasNumberAndTotal;
-        $remaining      = $isInstallment ? max($this->installment_total - $this->installment_number, 0) : null;
-        $installmentLabel = $isInstallment ? "{$this->installment_number}/{$this->installment_total}" : null;
+        $hasNumberAndTotal = ! is_null($this->installment_number) && ! is_null($this->installment_total);
+        $isInstallment = $hasNumberAndTotal;
+        $installmentNumber = $this->installment_number;
+        $remaining = $isInstallment ? max($this->installment_total - $installmentNumber, 0) : null;
+        $installmentLabel = $isInstallment ? "{$installmentNumber}/{$this->installment_total}" : null;
+
+        $displayAmount = (float) $this->amount;
+        $baseDate = $this->due_date ?? $this->transaction_date;
+
+        $monthFilter = $request->query('month');
+        if ($monthFilter && $isInstallment && $this->relationLoaded('installments')) {
+            [$filterYear, $filterMonth] = array_map('intval', explode('-', $monthFilter, 2));
+            $matchingInstallment = $this->installments->first(function ($installment) use ($filterYear, $filterMonth) {
+                $dueDate = $installment->due_date;
+
+                return $dueDate
+                    && (int) $dueDate->year === $filterYear
+                    && (int) $dueDate->month === $filterMonth;
+            });
+
+            if ($matchingInstallment) {
+                $baseDate = $matchingInstallment->due_date ?? $baseDate;
+                $displayAmount = (float) $matchingInstallment->amount;
+                $installmentNumber = $matchingInstallment->installment_number ?? $installmentNumber;
+                $remaining = max($this->installment_total - $installmentNumber, 0);
+                $installmentLabel = "{$installmentNumber}/{$this->installment_total}";
+            }
+        }
 
         // Considera despesa se o slug do type for "dc"
         $isExpense = $this->type?->slug === 'dc';
 
-        $baseDate = $this->due_date ?? $this->transaction_date;
+        // Quanto cada um paga (divisão igualitária)
+        $share = $usersCount > 0 ? round($displayAmount / $usersCount, 2) : null;
 
         return [
             'id'            => $this->id,
             'description'   => $this->description,
             'total_amount'  => $this->total_amount,
-            'amount'        => $this->amount,
+            'amount'        => $displayAmount,
             'category_id'   => $this->category_id,
             'type_id'       => $this->type_id,
             'payment_method_id' => $this->payment_method_id,
@@ -41,7 +63,7 @@ class TransactionResource extends JsonResource
             'recurring_transaction_id' => $this->recurring_transaction_id,
 
             // signed_amount já traz sinal (+/-) baseado no tipo
-            'signed_amount' => $isExpense ? -1 * $this->amount : $this->amount,
+            'signed_amount' => $isExpense ? -1 * $displayAmount : $displayAmount,
 
             // Data base do calendário (due_date) com fallback
             'date'          => $baseDate?->format('Y-m-d'),
@@ -49,7 +71,7 @@ class TransactionResource extends JsonResource
             'transaction_date' => $this->transaction_date?->format('Y-m-d'),
 
             'installments' => [
-                'number'        => $this->installment_number,
+                'number'        => $installmentNumber,
                 'total'         => $this->installment_total,
                 'is_installment' => $isInstallment,
                 'label'         => $installmentLabel,

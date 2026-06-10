@@ -1,6 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <h1 class="text-lg font-semibold text-slate-900">Dashboard</h1>
+        <x-page-header
+            title="Dashboard"
+            subtitle="Resumo do mês selecionado: quanto entrou, quanto saiu, o que vence e onde você gastou."
+        />
     </x-slot>
 
     <div id="dashboard-wrapper" x-data="{ loading: true }">
@@ -37,12 +40,12 @@
                 }"
                 class="flex items-center justify-center gap-6"
             >
-                <button @click="prev()"
+                <button @click="prev()" aria-label="Mês anterior"
                     class="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition">
                     ←
                 </button>
-                <span x-text="label" class="text-lg font-semibold text-slate-800 capitalize w-52 text-center"></span>
-                <button @click="next()"
+                <span x-text="label" class="text-lg font-semibold text-slate-800 capitalize w-52 text-center" aria-live="polite"></span>
+                <button @click="next()" aria-label="Próximo mês"
                     class="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition">
                     →
                 </button>
@@ -90,7 +93,8 @@
                                 </svg>
                             </div>
                         </div>
-                        <p id="dashboard-income" class="text-2xl font-bold text-slate-900 tabular-nums"></p>
+                        <p id="dashboard-income" class="text-2xl sm:text-3xl font-bold text-emerald-700 tabular-nums"></p>
+                        <p class="text-xs text-slate-400 mt-1">Salários, recebimentos e entradas registradas no mês</p>
                         @if($incomeVar !== null)
                             <p class="text-xs mt-1 font-medium {{ $incomeVar >= 0 ? 'text-green-600' : 'text-red-500' }}">
                                 {{ $incomeVar >= 0 ? '↑' : '↓' }} {{ number_format(abs($incomeVar), 1) }}% vs mês passado
@@ -108,7 +112,8 @@
                                 </svg>
                             </div>
                         </div>
-                        <p id="dashboard-expense" class="text-2xl font-bold text-slate-900 tabular-nums"></p>
+                        <p id="dashboard-expense" class="text-2xl sm:text-3xl font-bold text-red-600 tabular-nums"></p>
+                        <p class="text-xs text-slate-400 mt-1">Despesas à vista e contas fixas do mês (sem faturas de cartão)</p>
                         @if($expenseVar !== null)
                             {{-- Despesa subindo = ruim (vermelho), descendo = bom (verde) --}}
                             <p class="text-xs mt-1 font-medium {{ $expenseVar > 0 ? 'text-red-500' : 'text-green-600' }}">
@@ -127,7 +132,8 @@
                                 </svg>
                             </div>
                         </div>
-                        <p id="dashboard-balance" class="text-2xl font-bold tabular-nums"></p>
+                        <p id="dashboard-balance" class="text-2xl sm:text-3xl font-bold tabular-nums"></p>
+                        <p class="text-xs text-slate-400 mt-1">Receitas menos despesas do mês</p>
                     </div>
 
                     {{-- A pagar --}}
@@ -140,8 +146,24 @@
                                 </svg>
                             </div>
                         </div>
-                        <p id="dashboard-payable-total" class="text-2xl font-bold text-slate-900 tabular-nums"></p>
+                        <p id="dashboard-payable-total" class="text-2xl sm:text-3xl font-bold text-slate-900 tabular-nums"></p>
                         <p id="dashboard-payable-breakdown" class="mt-1 text-xs text-slate-500 tabular-nums"></p>
+                        <p class="text-xs text-slate-400 mt-1">Faturas de cartão e parcelas de empréstimos com vencimento neste mês</p>
+                    </div>
+                </div>
+
+                {{-- Como interpretar os números (colapsável — não ocupa espaço até o usuário pedir) --}}
+                <div x-data="{ metricsHelpOpen: false }" class="text-center px-2">
+                    <button type="button" @click="metricsHelpOpen = !metricsHelpOpen"
+                        class="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2">
+                        <span x-text="metricsHelpOpen ? 'Ocultar explicação' : 'Entenda os números'"></span>
+                    </button>
+                    <div x-show="metricsHelpOpen" x-cloak
+                        class="mt-3 text-left rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600 space-y-1.5">
+                        <p class="text-slate-700 font-medium">Os valores podem ser diferentes — e isso é esperado.</p>
+                        <p><strong class="text-slate-700">Despesas do mês</strong> — pagamentos à vista e contas fixas. Não inclui fatura de cartão.</p>
+                        <p><strong class="text-slate-700">A pagar no mês</strong> — faturas de cartão e parcelas com vencimento neste mês.</p>
+                        <p><strong class="text-slate-700">Onde o dinheiro foi</strong> — gráfico por categoria (compras à vista + parcelas).</p>
                     </div>
                 </div>
 
@@ -190,6 +212,7 @@
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
                         <div class="px-5 py-4 border-b border-slate-200">
                             <h3 class="text-sm font-semibold text-slate-700">A pagar no mês — Cartões</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Valor total de cada fatura com vencimento neste mês</p>
                         </div>
                         <div id="payables-cards-list" class="p-5 space-y-3 text-sm"></div>
                     </div>
@@ -197,6 +220,7 @@
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
                         <div class="px-5 py-4 border-b border-slate-200">
                             <h3 class="text-sm font-semibold text-slate-700">A pagar no mês — Parcelas de compras</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Empréstimos e financiamentos com parcela vencendo neste mês</p>
                         </div>
                         <div id="payables-loans-list" class="p-5 space-y-3 text-sm"></div>
                     </div>
@@ -238,7 +262,8 @@
 
                 {{-- Gastos por categoria --}}
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                    <h3 class="text-sm font-semibold text-slate-700 mb-5">Onde o dinheiro foi</h3>
+                    <h3 class="text-sm font-semibold text-slate-700 mb-1">Onde o dinheiro foi</h3>
+                    <p class="text-xs text-slate-400 mb-5">Despesas do mês por categoria (compras à vista e parcelas de empréstimo)</p>
 
                     @if(count($spendingByCategory) === 0)
                         <p class="text-sm text-slate-400 text-center py-6">
@@ -310,15 +335,20 @@
                     }"
                     class="bg-white rounded-xl border border-slate-200 shadow-sm"
                 >
-                    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl flex items-center justify-between">
-                        <h3 class="text-sm font-semibold text-slate-700">Receita × Despesa — últimos 6 meses</h3>
-                        <div class="flex gap-4">
-                            <span class="flex items-center gap-1 text-xs text-slate-500">
-                                <span class="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> Receita
-                            </span>
-                            <span class="flex items-center gap-1 text-xs text-slate-500">
-                                <span class="inline-block w-3 h-3 rounded-sm bg-red-400"></span> Despesa
-                            </span>
+                    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div>
+                                <h3 class="text-sm font-semibold text-slate-700">Receita × Despesa — últimos 6 meses</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Comparativo mês a mês para acompanhar sua evolução</p>
+                            </div>
+                            <div class="flex gap-4">
+                                <span class="flex items-center gap-1 text-xs text-slate-500">
+                                    <span class="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> Receita
+                                </span>
+                                <span class="flex items-center gap-1 text-xs text-slate-500">
+                                    <span class="inline-block w-3 h-3 rounded-sm bg-red-400"></span> Despesa
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div class="p-5">
@@ -358,7 +388,7 @@
                             Movimentações de {{ $monthLabel }}
                         </p>
                         <p class="text-xs text-slate-400 mt-0.5">
-                            Ver todas as receitas e despesas do mês com filtros
+                            Abre a lista completa de receitas e despesas de {{ $monthLabel }}, já filtrada por este mês
                         </p>
                     </div>
                     <a href="{{ route('transactions.index') }}?month={{ $year }}-{{ str_pad($month, 2, '0', STR_PAD_LEFT) }}"

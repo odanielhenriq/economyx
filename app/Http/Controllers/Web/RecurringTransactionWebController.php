@@ -45,7 +45,7 @@ class RecurringTransactionWebController extends Controller
 
         return redirect()
             ->route('recurring-transactions.index')
-            ->with('success', 'Conta fixa criada com sucesso!');
+            ->with('success', 'Conta fixa cadastrada.');
     }
 
     public function edit(RecurringTransaction $recurringTransaction)
@@ -70,7 +70,7 @@ class RecurringTransactionWebController extends Controller
 
         return redirect()
             ->route('recurring-transactions.index')
-            ->with('success', 'Conta fixa atualizada com sucesso!');
+            ->with('success', 'Conta fixa atualizada.');
     }
 
     public function destroy(RecurringTransaction $recurringTransaction)
@@ -79,7 +79,7 @@ class RecurringTransactionWebController extends Controller
 
         return redirect()
             ->route('recurring-transactions.index')
-            ->with('success', 'Conta fixa removida com sucesso!');
+            ->with('success', 'Conta fixa removida.');
     }
 
     private function getFormData(): array

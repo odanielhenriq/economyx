@@ -31,7 +31,7 @@ class CategoryWebController extends Controller
 
         return redirect()
             ->route('categories.index')
-            ->with('success', 'Categoria criada com sucesso!');
+            ->with('success', 'Categoria cadastrada com sucesso.');
     }
 
     public function edit(Category $category)
@@ -47,7 +47,7 @@ class CategoryWebController extends Controller
 
         return redirect()
             ->route('categories.index')
-            ->with('success', 'Categoria atualizada com sucesso!');
+            ->with('success', 'Categoria atualizada.');
     }
 
     public function destroy(Category $category)
@@ -56,7 +56,7 @@ class CategoryWebController extends Controller
 
         return redirect()
             ->route('categories.index')
-            ->with('success', 'Categoria removida com sucesso!');
+            ->with('success', 'Categoria removida.');
     }
 
 }

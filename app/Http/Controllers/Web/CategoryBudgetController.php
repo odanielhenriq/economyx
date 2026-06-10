@@ -37,7 +37,7 @@ class CategoryBudgetController extends Controller
 
         return redirect()
             ->route('budgets.index')
-            ->with('success', 'Orçamento salvo com sucesso!');
+            ->with('success', 'Orçamento salvo. Você receberá alertas no dashboard.');
     }
 
     public function destroy(CategoryBudget $budget)

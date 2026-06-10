@@ -1,13 +1,12 @@
 <x-app-layout>
 
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h1 class="text-lg font-semibold text-slate-900">Nova transação</h1>
-            <a href="{{ route('transactions.index') }}"
-                class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
-                ← Voltar
-            </a>
-        </div>
+        <x-page-header
+            title="Nova transação"
+            subtitle="Escolha o tipo de lançamento abaixo e preencha os campos. Você pode voltar a qualquer momento sem salvar."
+            back-href="{{ route('transactions.index') }}"
+            back-label="Voltar para transações"
+        />
     </x-slot>
 
     <div class="" id="create-wrapper"
@@ -90,12 +89,13 @@
         </div>
 
         {{-- Instrução inicial --}}
-        <div x-show="!tipo" class="text-center py-16 text-slate-400">
-            <p class="text-sm">Selecione acima o tipo de lançamento para continuar</p>
+        <div x-show="!tipo" class="text-center py-16">
+            <p class="text-sm font-medium text-slate-600">Como você quer registrar este lançamento?</p>
+            <p class="text-xs text-slate-400 mt-2 max-w-sm mx-auto">Escolha uma das opções acima para ver o formulário correspondente.</p>
         </div>
 
         {{-- Formulário --}}
-        <form id="transaction-form" x-show="tipo" x-transition class="space-y-4">
+        <form id="transaction-form" x-show="tipo" x-transition class="space-y-4 pb-6">
             @csrf
 
             {{-- Card 1 — Informações básicas (comuns aos 3 tipos) --}}
@@ -254,6 +254,7 @@
             <div x-show="isParcelado" x-transition
                  class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
                 <h3 class="text-sm font-semibold text-slate-700">Detalhes do parcelamento</h3>
+                <p class="text-xs text-slate-500 -mt-2">O Economyx cria as parcelas nos meses seguintes e elas entram na fatura do cartão.</p>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -273,6 +274,7 @@
                             x-model="parcelas"
                             placeholder="Ex: 6"
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <p class="mt-1.5 text-xs text-slate-400">Número de parcelas no cartão (mínimo 2).</p>
                     </div>
                 </div>
 
@@ -293,15 +295,15 @@
                 <div id="users-grid" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
             </div>
 
-            {{-- Ações — sticky no rodapé em telas longas --}}
-            <div class="sticky bottom-0 z-10 -mx-4 px-4 py-4 lg:-mx-8 lg:px-8 bg-slate-50/95 backdrop-blur border-t border-slate-200 mt-6 flex justify-end gap-3">
+            {{-- Ações — fluxo normal no mobile; sticky só em telas largas --}}
+            <div class="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200 lg:sticky lg:bottom-0 lg:z-10 lg:-mx-8 lg:px-8 lg:py-4 lg:bg-slate-50/95 lg:backdrop-blur">
                 <a href="{{ route('transactions.index') }}"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg border border-slate-200 transition">
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg border border-slate-200 transition">
                     Cancelar
                 </a>
                 <button type="submit" id="submit-btn"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                    Salvar
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                    Salvar lançamento
                 </button>
             </div>
 
@@ -484,7 +486,7 @@
                     showErrors({ geral: [err.message || 'Erro inesperado ao salvar.'] });
                 } finally {
                     submitBtn.disabled    = false;
-                    submitBtn.textContent = 'Salvar';
+                    submitBtn.textContent = 'Salvar lançamento';
                 }
             });
 

@@ -44,13 +44,19 @@ class TransactionRepository implements TransactionRepositoryInterface
     public function getPaginatedTransactions(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
 
-        $query = Transaction::with([
+        $relations = [
             'category',
             'type',
             'paymentMethod',
             'creditCard',
-            'users'
-        ])->orderByDesc('due_date');
+            'users',
+        ];
+
+        if (! empty($filters['month'])) {
+            $relations[] = 'installments';
+        }
+
+        $query = Transaction::with($relations)->orderByDesc('due_date');
 
         $query = $this->applyFilters($query, $filters);
 
@@ -73,13 +79,19 @@ class TransactionRepository implements TransactionRepositoryInterface
             });
         }
 
-        // Filtro por mês no formato "YYYY-MM"
+        // Filtro por mês no formato "YYYY-MM" (due_date da transação ou de uma parcela)
         if (! empty($filters['month'])) {
             [$year, $month] = explode('-', $filters['month']);
 
-            $query
-                ->whereYear('due_date', $year)
-                ->whereMonth('due_date', $month);
+            $query->where(function ($q) use ($year, $month) {
+                $q->where(function ($sub) use ($year, $month) {
+                    $sub->whereYear('due_date', $year)
+                        ->whereMonth('due_date', $month);
+                })->orWhereHas('installments', function ($sub) use ($year, $month) {
+                    $sub->whereYear('due_date', $year)
+                        ->whereMonth('due_date', $month);
+                });
+            });
         }
 
         if (! empty($filters['year'])) {

@@ -42,7 +42,7 @@ class RecurringTemplateWebController extends Controller
 
         return redirect()
             ->route('recurring-templates.index')
-            ->with('success', 'Template recorrente criado com sucesso!');
+            ->with('success', 'Conta fixa cadastrada com sucesso!');
     }
 
     public function edit(RecurringTransaction $recurringTemplate)
@@ -67,7 +67,7 @@ class RecurringTemplateWebController extends Controller
 
         return redirect()
             ->route('recurring-templates.index')
-            ->with('success', 'Template recorrente atualizado com sucesso!');
+            ->with('success', 'Conta fixa atualizada com sucesso!');
     }
 
     public function destroy(RecurringTransaction $recurringTemplate)
@@ -76,7 +76,7 @@ class RecurringTemplateWebController extends Controller
 
         return redirect()
             ->route('recurring-templates.index')
-            ->with('success', 'Template recorrente removido com sucesso!');
+            ->with('success', 'Conta fixa removida com sucesso!');
     }
 
     private function getFormData(): array

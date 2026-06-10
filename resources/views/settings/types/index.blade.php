@@ -1,26 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <h1 class="text-lg font-semibold text-slate-900">Tipos de lançamento</h1>
+        <x-page-header
+            title="Tipos de lançamento"
+            subtitle="Receita e Despesa são padrão do sistema. Tipos personalizados podem ser criados se precisar."
+        />
     </x-slot>
 
     <div class="space-y-4">
-        @include('settings.nav')
+        <x-flash-messages />
 
-        @if (session('success'))
-            <div class="px-4 py-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if ($errors->any())
-            <div class="px-4 py-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl">
-                {{ $errors->first() }}
-            </div>
-        @endif
-
-        <div class="px-4 py-3 text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl">
-            <strong>Receita</strong> e <strong>Despesa</strong> são tipos do sistema usados nos lançamentos. Eles não podem ser alterados ou excluídos.
-        </div>
+        <x-info-tip>
+            <strong>Receita</strong> e <strong>Despesa</strong> vêm pré-configurados e não podem ser alterados. Use-os ao cadastrar transações.
+        </x-info-tip>
 
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">

@@ -52,7 +52,7 @@ class CreditCardWebController extends Controller
 
         return redirect()
             ->route('credit-cards.index')
-            ->with('success', 'Cartão criado com sucesso!');
+            ->with('success', 'Cartão cadastrado com sucesso.');
     }
 
     public function edit(CreditCard $creditCard)
@@ -88,7 +88,7 @@ class CreditCardWebController extends Controller
 
         return redirect()
             ->route('credit-cards.index')
-            ->with('success', 'Cartão atualizado com sucesso!');
+            ->with('success', 'Cartão atualizado.');
     }
 
     public function destroy(CreditCard $creditCard)
@@ -97,7 +97,7 @@ class CreditCardWebController extends Controller
 
         return redirect()
             ->route('credit-cards.index')
-            ->with('success', 'Cartão removido com sucesso!');
+            ->with('success', 'Cartão removido.');
     }
 
     private function getNetworkUsers()

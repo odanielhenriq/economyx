@@ -38,7 +38,7 @@ class PartnerInvitationWebController extends Controller
                 ]);
             }
 
-            return back()->with('invite_url', $url)->with('success', 'Link de convite gerado!');
+            return back()->with('invite_url', $url)->with('success', 'Link gerado! Copie e envie para seu parceiro.');
         } catch (\InvalidArgumentException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => $e->getMessage()], 422);
@@ -61,7 +61,7 @@ class PartnerInvitationWebController extends Controller
             $this->invitations->accept($token, auth()->user());
 
             return redirect()->route('settings.partners.index')
-                ->with('success', 'Parceiro vinculado com sucesso!');
+                ->with('success', 'Parceiro vinculado! Vocês já compartilham a rede financeira.');
         } catch (\InvalidArgumentException $e) {
             return redirect()->route('dashboard')
                 ->withErrors(['partner' => $e->getMessage()]);

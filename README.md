@@ -105,11 +105,20 @@ php artisan test
 
 ## Seeders locais (dados de desenvolvimento)
 
-Para dados de exemplo com usuários reais de dev:
+Com `APP_ENV=local`, `php artisan migrate:fresh --seed` já cria usuários de dev, cartões e vínculo entre parceiros.
+
+| E-mail | Senha |
+|--------|-------|
+| `daniel.henrique00@hotmail.com` | `password` |
+| `joycebvb@gmail.com` | `password` |
+
+Para recarregar só os dados de dev (sem recriar tabelas):
 
 ```bash
 php artisan db:seed --class=Database\\Seeders\\LocalDevSeeder
 ```
+
+Transações reais de dev exigem o arquivo local `RealTransactionsSeeder.php` (não versionado).
 
 ## Licença
 

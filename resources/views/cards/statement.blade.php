@@ -1,6 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <h1 class="text-lg font-semibold text-slate-900">Faturas do cartão</h1>
+        <x-page-header
+            title="Faturas do cartão"
+            subtitle="Veja quanto fechou cada fatura, quando vence e quais compras entraram no período."
+        />
     </x-slot>
 
     <div class="space-y-6">
@@ -19,6 +22,7 @@
             </x-empty-state>
         @else
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <p class="text-xs text-slate-400 mb-4">Selecione o cartão e o mês de vencimento da fatura. A lista atualiza automaticamente.</p>
             <div class="flex flex-col gap-3 md:flex-row md:items-end">
                 <div class="flex-1">
                     <label class="block text-xs font-medium text-slate-500 mb-1">Cartão</label>
@@ -36,15 +40,16 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Mês da fatura</label>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Mês de vencimento</label>
                     <input type="month" id="filter-month"
+                        title="Mês em que a fatura vence"
                         class="px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         value="{{ now()->format('Y-m') }}">
                 </div>
 
                 <button id="btn-load"
                     class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                    Carregar
+                    Ver fatura
                 </button>
             </div>
         </div>
@@ -67,7 +72,7 @@
             {{-- Conteúdo --}}
             <div x-show="!loading" class="space-y-4">
 
-                <div id="card-state" class="text-sm text-slate-400">Escolha um cartão e um mês.</div>
+                <div id="card-state" class="text-sm text-slate-400">Selecione um cartão e um mês para ver a fatura.</div>
 
                 {{-- Cards de resumo --}}
                 <div id="card-summary" class="grid grid-cols-1 gap-4 md:grid-cols-3 text-sm"></div>
@@ -162,8 +167,15 @@
         const bodyEl = document.getElementById('card-body');
         const limitBarEl = document.getElementById('limit-bar');
 
+        function setStatementLoading(value) {
+            const wrapper = document.getElementById('statement-wrapper');
+            if (!wrapper || typeof Alpine === 'undefined') return;
+            const data = Alpine.$data(wrapper);
+            if (data) data.loading = value;
+        }
+
         async function loadStatement(cardId, year, month) {
-            Alpine.$data(document.getElementById('statement-wrapper')).loading = true;
+            setStatementLoading(true);
 
             try {
                 const url = `/api/cards/${cardId}/statement?year=${year}&month=${month}`;
@@ -191,6 +203,7 @@
                         <div class="text-xl font-bold text-red-600 tabular-nums">
                             R$ ${Math.abs(data.summary.expense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
+                        <div class="text-xs text-slate-400 mt-1">Soma de todas as compras no período</div>
                     </div>
                     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
                         <div class="text-xs font-medium text-slate-500 mb-1">Receitas no cartão</div>
@@ -207,7 +220,16 @@
                     </div>
                 `;
 
-                periodEl.textContent = `Período da fatura: ${data.period.start} até ${data.period.end}`;
+                const formatPeriodDate = (iso) => {
+                    if (!iso) return '';
+                    const [y, m, d] = iso.split('-');
+                    return `${d}/${m}/${y}`;
+                };
+                periodEl.innerHTML = `
+                    <span class="font-medium text-slate-600">Período da fatura:</span>
+                    ${formatPeriodDate(data.period.start)} a ${formatPeriodDate(data.period.end)}
+                    <span class="text-slate-400">· compras entre essas datas entram nesta fatura</span>
+                `;
 
                 const statementId = data.meta?.statement_id;
                 const statementStatus = data.meta?.status ?? 'open';
@@ -309,7 +331,7 @@
                 console.error('Erro em loadStatement:', error);
                 stateEl.textContent = 'Erro ao carregar fatura. Tente novamente.';
             } finally {
-                Alpine.$data(document.getElementById('statement-wrapper')).loading = false;
+                setStatementLoading(false);
             }
         }
 

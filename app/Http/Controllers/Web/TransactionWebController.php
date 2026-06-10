@@ -69,7 +69,7 @@ class TransactionWebController extends Controller
 
             return redirect()
                 ->route('transactions.index')
-                ->with('success', 'Transação criada com sucesso!');
+                ->with('success', 'Transação cadastrada com sucesso.');
         } catch (\Exception $e) {
             return back()
                 ->withInput()
@@ -140,7 +140,7 @@ class TransactionWebController extends Controller
 
             return redirect()
                 ->route('transactions.index')
-                ->with('success', 'Transação atualizada com sucesso!');
+                ->with('success', 'Transação atualizada.');
         } catch (\Throwable $th) {
             return back()
                 ->withInput()
@@ -155,7 +155,7 @@ class TransactionWebController extends Controller
 
             return redirect()
                 ->route('transactions.index')
-                ->with('success', 'Transação removida com sucesso!');
+                ->with('success', 'Transação removida.');
         } catch (\Throwable $th) {
             return back()
                 ->withErrors(['error' => 'Erro ao remover transação: ' . $th->getMessage()]);
