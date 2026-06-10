@@ -63,6 +63,7 @@ class MonthlyDashboardController extends Controller
             'cards' => $payload['cards'],
             'lists' => $payload['lists'],
             'alerts' => $payload['alerts'],
+            'future_commitments' => $payload['future_commitments'],
         ]);
     }
 }

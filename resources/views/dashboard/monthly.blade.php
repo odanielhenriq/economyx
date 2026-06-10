@@ -61,6 +61,7 @@
                 </div>
                 <div class="h-28 bg-slate-200 rounded-xl animate-pulse"></div>
                 <div class="h-44 bg-slate-200 rounded-xl animate-pulse"></div>
+                <div class="h-40 bg-slate-200 rounded-xl animate-pulse"></div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div class="h-44 bg-slate-200 rounded-xl animate-pulse"></div>
                     <div class="h-44 bg-slate-200 rounded-xl animate-pulse"></div>
@@ -214,6 +215,16 @@
                         <p class="text-xs text-slate-400 mt-0.5">Alertas gerados a partir dos seus orçamentos, faturas, parcelas e vencimentos.</p>
                     </div>
                     <div id="dashboard-alerts-content"></div>
+                </div>
+
+                {{-- Próximos compromissos --}}
+                <div id="future-commitments-section" class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6">
+                    <div class="mb-4">
+                        <h3 class="text-sm font-semibold text-slate-700">Próximos compromissos</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Veja quanto já está previsto para os próximos meses.</p>
+                    </div>
+                    <div id="future-commitments-content"></div>
+                    <p id="future-commitments-note" class="text-[11px] text-slate-400 mt-4 hidden"></p>
                 </div>
 
                 {{-- Como interpretar os números (colapsável — não ocupa espaço até o usuário pedir) --}}
@@ -414,6 +425,8 @@
         const projectedBreakdownRecurringEl = document.getElementById('projected-breakdown-recurring');
         const projectedBreakdownTotalEl = document.getElementById('projected-breakdown-total');
         const alertsContentEl = document.getElementById('dashboard-alerts-content');
+        const futureCommitmentsContentEl = document.getElementById('future-commitments-content');
+        const futureCommitmentsNoteEl = document.getElementById('future-commitments-note');
         const payablesCardsListEl = document.getElementById('payables-cards-list');
         const payablesLoansListEl = document.getElementById('payables-loans-list');
         const cashflowBodyEl = document.getElementById('cashflow-body');
@@ -508,6 +521,82 @@
                 : '';
 
             alertsContentEl.innerHTML = `<div class="space-y-2">${listHtml}${moreHtml}</div>`;
+        };
+
+        const renderFutureCommitments = (commitments = {}) => {
+            if (!futureCommitmentsContentEl) return;
+
+            const months = commitments.months ?? [];
+            const note = commitments.note ?? '';
+
+            if (futureCommitmentsNoteEl) {
+                if (note) {
+                    futureCommitmentsNoteEl.textContent = note;
+                    futureCommitmentsNoteEl.classList.remove('hidden');
+                } else {
+                    futureCommitmentsNoteEl.textContent = '';
+                    futureCommitmentsNoteEl.classList.add('hidden');
+                }
+            }
+
+            if (!months.length || !commitments.has_commitments) {
+                futureCommitmentsContentEl.innerHTML = `
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-6 text-center">
+                        <p class="text-sm font-semibold text-slate-700">Nenhum compromisso futuro previsto</p>
+                        <p class="text-xs text-slate-500 mt-1">Quando você cadastrar compras parceladas ou contas fixas, elas aparecerão aqui.</p>
+                        <div class="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2">
+                            <a href="{{ route('transactions.create') }}"
+                               class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition">
+                                Adicionar transação
+                            </a>
+                            <a href="{{ route('recurring-templates.create') }}"
+                               class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                                Cadastrar conta fixa
+                            </a>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const cardsHtml = months.map((month) => {
+                const estimatedBadge = month.is_estimated
+                    ? '<span class="inline-flex items-center px-2 py-0.5 text-[10px] rounded-full bg-amber-100 text-amber-700">Inclui valores previstos</span>'
+                    : '';
+
+                return `
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+                            <div>
+                                <p class="text-sm font-semibold text-slate-800">${month.label ?? ''}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">${formatMoney(month.total ?? 0)} comprometidos</p>
+                            </div>
+                            ${estimatedBadge}
+                        </div>
+                        <div class="space-y-1 text-xs text-slate-600 tabular-nums">
+                            <div class="flex justify-between gap-4">
+                                <span>Parcelas</span>
+                                <span class="font-medium text-slate-800">${formatMoney(month.installments_total ?? 0)}</span>
+                            </div>
+                            <div class="flex justify-between gap-4">
+                                <span>Contas fixas previstas</span>
+                                <span class="font-medium text-slate-800">${formatMoney(month.recurring_total ?? 0)}</span>
+                            </div>
+                            <div class="border-t border-slate-200 pt-1 flex justify-between gap-4 font-semibold text-slate-800">
+                                <span>Total comprometido</span>
+                                <span>${formatMoney(month.total ?? 0)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            futureCommitmentsContentEl.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    ${cardsHtml}
+                </div>
+                <p class="text-[11px] text-slate-400 mt-3">Valores já previstos com base nas suas parcelas e contas fixas cadastradas.</p>
+            `;
         };
 
         const formatBreakdownDeduction = (value) => {
@@ -739,6 +828,7 @@
             if (projectedBalanceEl) projectedBalanceEl.textContent = '-';
             if (projectedHintEl) projectedHintEl.textContent = 'Não foi possível calcular a projeção.';
             if (alertsContentEl) alertsContentEl.innerHTML = '<p class="text-xs text-slate-400">Não foi possível carregar os alertas.</p>';
+            if (futureCommitmentsContentEl) futureCommitmentsContentEl.innerHTML = '<p class="text-xs text-slate-400">Não foi possível carregar os próximos compromissos.</p>';
 
             payablesCardsListEl.innerHTML = '<div class="text-xs text-slate-400">Erro ao carregar cartões.</div>';
             payablesLoansListEl.innerHTML = '<div class="text-xs text-slate-400">Erro ao carregar empréstimos.</div>';
@@ -766,6 +856,7 @@
 
                 renderCards(data?.cards ?? {});
                 renderAlerts(data?.alerts ?? {});
+                renderFutureCommitments(data?.future_commitments ?? {});
                 renderPayablesCards(data?.lists?.payables_cards ?? []);
                 renderPayablesLoans(data?.lists?.payables_loans ?? []);
                 renderCashflow(data?.lists?.cashflow_items ?? []);

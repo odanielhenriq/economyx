@@ -254,6 +254,8 @@ class MonthlyDashboardService
 
         $alerts = app(FinancialAlertService::class)->forDashboard($year, $month, $user);
 
+        $futureCommitments = app(FutureCommitmentService::class)->forDashboard($year, $month, $user);
+
         return [
             'cards' => [
                 'income_total_month' => (float) $incomeTotal,
@@ -280,6 +282,7 @@ class MonthlyDashboardService
                 'cashflow_items' => $cashflowItems,
             ],
             'alerts' => $alerts,
+            'future_commitments' => $futureCommitments,
         ];
     }
 
