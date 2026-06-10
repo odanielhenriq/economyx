@@ -54,9 +54,7 @@ class MonthlyDashboardController extends Controller
             'next' => ['year' => $next->year, 'month' => $next->month],
             'chartData' => $chartData,
             'previousMonthData' => $previousMonthData,
-            'budgetAlerts' => $this->getBudgetAlerts($year, $month),
             'spendingByCategory' => $this->getSpendingByCategory($year, $month),
-            'upcomingDues' => $this->getUpcomingDues(),
             'hasTransactions' => Transaction::whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))->exists(),
             'hasCreditCards' => CreditCard::query()
                 ->where(fn ($q) => $q->where('owner_user_id', $user->id)
@@ -64,47 +62,6 @@ class MonthlyDashboardController extends Controller
                 ->exists(),
             'hasBudgets' => CategoryBudget::where('user_id', $user->id)->exists(),
         ]);
-    }
-
-    /**
-     * Cruza orçamentos definidos pelo usuário com as despesas reais do mês.
-     * Retorna apenas as categorias com orçamento que atingiram ≥ 80% do limite.
-     */
-    private function getBudgetAlerts(int $year, int $month): array
-    {
-        $user = Auth::user();
-        $networkIds = $user->networkUsers()->pluck('id')->all();
-
-        $budgets = CategoryBudget::where('user_id', $user->id)
-            ->with('category')
-            ->get();
-
-        if ($budgets->isEmpty()) {
-            return [];
-        }
-
-        $start = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
-        $end   = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
-
-        $alerts = [];
-
-        foreach ($budgets as $budget) {
-            $spent = $this->categorySpentInMonth($budget->category_id, $start, $end, $networkIds);
-            $limit = round((float) $budget->amount, 2);
-            $percent = $limit > 0 ? round(($spent / $limit) * 100, 1) : 0;
-
-            if ($percent >= 80) {
-                $alerts[] = [
-                    'category' => $budget->category->name,
-                    'spent'    => $spent,
-                    'limit'    => $limit,
-                    'percent'  => $percent,
-                    'over'     => $percent >= 100,
-                ];
-            }
-        }
-
-        return $alerts;
     }
 
     /**
@@ -174,32 +131,6 @@ class MonthlyDashboardController extends Controller
     }
 
     /**
-     * Retorna despesas com due_date nos próximos 7 dias.
-     */
-    private function getUpcomingDues(): array
-    {
-        $user       = Auth::user();
-        $networkIds = $user->networkUsers()->pluck('id')->all();
-
-        $hoje   = now()->startOfDay();
-        $limite = now()->addDays(7)->endOfDay();
-
-        return Transaction::with('category')
-            ->whereBetween('due_date', [$hoje, $limite])
-            ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
-            ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
-            ->orderBy('due_date')
-            ->get()
-            ->map(fn ($t) => [
-                'description' => $t->description,
-                'due_date'    => $t->due_date?->format('Y-m-d'),
-                'amount'      => round((float) $t->amount, 2),
-                'days_left'   => (int) $hoje->diffInDays(Carbon::parse($t->due_date), false),
-            ])
-            ->toArray();
-    }
-
-    /**
      * Retorna receita e despesa total dos últimos 6 meses (incluindo o mês atual).
      * Usa somas diretas por tipo (slug 'rc' = receita, 'dc' = despesa).
      */
@@ -220,27 +151,5 @@ class MonthlyDashboardController extends Controller
         }
 
         return $result;
-    }
-
-    private function categorySpentInMonth(int $categoryId, string $start, string $end, array $networkIds): float
-    {
-        $direct = (float) Transaction::query()
-            ->whereBetween('due_date', [$start, $end])
-            ->where('category_id', $categoryId)
-            ->whereNull('installment_total')
-            ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
-            ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
-            ->sum('amount');
-
-        $installments = (float) TransactionInstallment::query()
-            ->whereBetween('due_date', [$start, $end])
-            ->whereHas('transaction', function ($q) use ($categoryId, $networkIds) {
-                $q->where('category_id', $categoryId)
-                    ->whereHas('users', fn ($sub) => $sub->whereIn('users.id', $networkIds))
-                    ->whereHas('type', fn ($sub) => $sub->where('slug', 'dc'));
-            })
-            ->sum('amount');
-
-        return round($direct + $installments, 2);
     }
 }

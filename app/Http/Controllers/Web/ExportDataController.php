@@ -8,11 +8,16 @@ use App\Models\CreditCard;
 use App\Models\RecurringTransaction;
 use App\Models\Transaction;
 use App\Models\TransactionInstallment;
+use App\Services\FinancialAlertService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 
 class ExportDataController extends Controller
 {
+    public function __construct(
+        private FinancialAlertService $financialAlerts
+    ) {}
+
     public function json(): JsonResponse
     {
         $user         = auth()->user();
@@ -32,7 +37,9 @@ class ExportDataController extends Controller
             'todas_transacoes_parceladas' => $this->todasTransacoesParceladas($networkIds),
             'despesas_por_categoria'      => $this->getDespesasPorCategoria($user, $networkIds),
             'resumo_financeiro_6_meses'   => $this->getResumo6Meses($networkIds, $sixMonthsAgo),
-            'alertas'                     => $this->getAlertas($user, $networkIds),
+            'alertas'                     => $this->financialAlerts->toExportLegacy(
+                $this->financialAlerts->collect((int) $now->year, (int) $now->month, $user)
+            ),
         ];
 
         return response()->json($data)
@@ -467,87 +474,5 @@ class ExportDataController extends Controller
         }
 
         return $meses;
-    }
-
-    // -------------------------------------------------------------------------
-    // Alertas
-    // -------------------------------------------------------------------------
-    private function getAlertas($user, array $networkIds): array
-    {
-        $alertas = [];
-        $hoje    = now();
-        $start   = $hoje->copy()->startOfMonth()->toDateString();
-        $end     = $hoje->copy()->endOfMonth()->toDateString();
-
-        // Orçamentos próximos do limite
-        foreach (CategoryBudget::where('user_id', $user->id)->with('category')->get() as $orcamento) {
-            $gasto = (float) Transaction::whereBetween('due_date', [$start, $end])
-                ->where('category_id', $orcamento->category_id)
-                ->whereHas('users', fn($q) => $q->whereIn('users.id', $networkIds))
-                ->whereHas('type', fn($q) => $q->where('slug', 'dc'))
-                ->sum('amount');
-
-            $pct = $orcamento->amount > 0 ? round(($gasto / (float) $orcamento->amount) * 100, 1) : 0;
-
-            if ($pct >= 80) {
-                $alertas[] = [
-                    'tipo'       => 'orcamento_proximo_limite',
-                    'categoria'  => $orcamento->category->name,
-                    'percentual' => $pct,
-                    'mensagem'   => "Você já gastou {$pct}% do orçamento de {$orcamento->category->name}",
-                ];
-            }
-        }
-
-        // Parcelas próximas (30 dias)
-        $parcelas = TransactionInstallment::whereHas('transaction', function ($q) use ($networkIds) {
-                $q->whereHas('users', fn($q2) => $q2->whereIn('users.id', $networkIds));
-            })
-            ->whereBetween('due_date', [$hoje->toDateString(), $hoje->copy()->addDays(30)->toDateString()])
-            ->with('transaction')
-            ->get();
-
-        foreach ($parcelas as $parcela) {
-            $diasRestantes = (int) $hoje->copy()->startOfDay()->diffInDays(
-                Carbon::parse($parcela->due_date)->startOfDay(),
-                false
-            );
-            if ($diasRestantes >= 0) {
-                $alertas[] = [
-                    'tipo'            => 'parcela_proxima',
-                    'descricao'       => $parcela->transaction->description,
-                    'numero'          => (int) $parcela->installment_number,
-                    'data_vencimento' => $parcela->due_date->format('Y-m-d'),
-                    'valor'           => round((float) $parcela->amount, 2),
-                    'dias_restantes'  => $diasRestantes,
-                    'origem'          => [
-                        'tipo'           => 'parcela',
-                        'transaction_id' => $parcela->transaction_id,
-                        'installment_id' => $parcela->id,
-                    ],
-                ];
-            }
-        }
-
-        // Cartões com alto uso
-        foreach (CreditCard::whereHas('users', fn($q) => $q->where('users.id', $user->id))->get() as $card) {
-            $totalGasto = (float) Transaction::where('credit_card_id', $card->id)
-                ->whereBetween('transaction_date', [$start, $end])
-                ->whereHas('users', fn($q) => $q->whereIn('users.id', $networkIds))
-                ->sum('amount');
-
-            $pct = $card->limit > 0 ? round(($totalGasto / (float) $card->limit) * 100, 2) : 0;
-
-            if ($pct >= 75) {
-                $alertas[] = [
-                    'tipo'           => 'cartao_alto_uso',
-                    'cartao'         => $card->name,
-                    'percentual_uso' => $pct,
-                    'mensagem'       => "Seu {$card->name} está em {$pct}% do limite",
-                ];
-            }
-        }
-
-        return $alertas;
     }
 }

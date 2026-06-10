@@ -207,6 +207,15 @@
                     </div>
                 </div>
 
+                {{-- Central de alertas --}}
+                <div id="dashboard-alerts-section" class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6">
+                    <div class="mb-4">
+                        <h3 class="text-sm font-semibold text-slate-700">Precisa da sua atenção</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Alertas gerados a partir dos seus orçamentos, faturas, parcelas e vencimentos.</p>
+                    </div>
+                    <div id="dashboard-alerts-content"></div>
+                </div>
+
                 {{-- Como interpretar os números (colapsável — não ocupa espaço até o usuário pedir) --}}
                 <div x-data="{ metricsHelpOpen: false }" class="text-center px-2">
                     <button type="button" @click="metricsHelpOpen = !metricsHelpOpen"
@@ -404,6 +413,7 @@
         const projectedBreakdownPayableEl = document.getElementById('projected-breakdown-payable');
         const projectedBreakdownRecurringEl = document.getElementById('projected-breakdown-recurring');
         const projectedBreakdownTotalEl = document.getElementById('projected-breakdown-total');
+        const alertsContentEl = document.getElementById('dashboard-alerts-content');
         const payablesCardsListEl = document.getElementById('payables-cards-list');
         const payablesLoansListEl = document.getElementById('payables-loans-list');
         const cashflowBodyEl = document.getElementById('cashflow-body');
@@ -437,6 +447,67 @@
                 `Cartões: ${formatMoney(cardsTotal)} · Empréstimos: ${formatMoney(loansTotal)}`;
 
             renderProjectedBalance(cards.projected_balance ?? {});
+        };
+
+        const alertStyles = {
+            danger: {
+                wrapper: 'bg-red-50 border-red-200',
+                dot: 'bg-red-500',
+                title: 'text-red-900',
+                message: 'text-red-800',
+            },
+            warning: {
+                wrapper: 'bg-amber-50 border-amber-200',
+                dot: 'bg-amber-500',
+                title: 'text-amber-900',
+                message: 'text-amber-800',
+            },
+            info: {
+                wrapper: 'bg-blue-50 border-blue-200',
+                dot: 'bg-blue-500',
+                title: 'text-blue-900',
+                message: 'text-blue-800',
+            },
+        };
+
+        const renderAlerts = (alerts = {}) => {
+            if (!alertsContentEl) return;
+
+            const items = alerts.items ?? [];
+
+            if (!items.length) {
+                alertsContentEl.innerHTML = `
+                    <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-5 text-center">
+                        <p class="text-sm font-semibold text-emerald-800">Tudo certo por enquanto</p>
+                        <p class="text-xs text-emerald-700 mt-1">Não encontramos alertas importantes para este mês.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const listHtml = items.map((alert) => {
+                const styles = alertStyles[alert.severity] ?? alertStyles.info;
+                const action = alert.url
+                    ? `<a href="${alert.url}" class="inline-flex items-center text-xs font-medium text-slate-600 hover:text-slate-900 underline underline-offset-2 shrink-0">${alert.action_label ?? 'Ver detalhes'}</a>`
+                    : '';
+
+                return `
+                    <div class="flex items-start gap-3 p-3 rounded-lg border ${styles.wrapper}">
+                        <span class="mt-1.5 h-2 w-2 rounded-full ${styles.dot} shrink-0"></span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium ${styles.title}">${alert.title ?? 'Alerta'}</p>
+                            <p class="text-xs mt-0.5 ${styles.message}">${alert.message ?? ''}</p>
+                        </div>
+                        ${action}
+                    </div>
+                `;
+            }).join('');
+
+            const moreHtml = alerts.has_more
+                ? `<p class="text-xs text-slate-500 text-center pt-1">+ ${alerts.more_count} ${alerts.more_count === 1 ? 'ponto de atenção' : 'pontos de atenção'}</p>`
+                : '';
+
+            alertsContentEl.innerHTML = `<div class="space-y-2">${listHtml}${moreHtml}</div>`;
         };
 
         const formatBreakdownDeduction = (value) => {
@@ -667,6 +738,7 @@
             payableBreakdownEl.textContent = 'Erro ao carregar dados do dashboard.';
             if (projectedBalanceEl) projectedBalanceEl.textContent = '-';
             if (projectedHintEl) projectedHintEl.textContent = 'Não foi possível calcular a projeção.';
+            if (alertsContentEl) alertsContentEl.innerHTML = '<p class="text-xs text-slate-400">Não foi possível carregar os alertas.</p>';
 
             payablesCardsListEl.innerHTML = '<div class="text-xs text-slate-400">Erro ao carregar cartões.</div>';
             payablesLoansListEl.innerHTML = '<div class="text-xs text-slate-400">Erro ao carregar empréstimos.</div>';
@@ -693,6 +765,7 @@
                 const data = await response.json();
 
                 renderCards(data?.cards ?? {});
+                renderAlerts(data?.alerts ?? {});
                 renderPayablesCards(data?.lists?.payables_cards ?? []);
                 renderPayablesLoans(data?.lists?.payables_loans ?? []);
                 renderCashflow(data?.lists?.cashflow_items ?? []);
