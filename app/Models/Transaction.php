@@ -54,10 +54,18 @@ class Transaction extends Model
         'amount'           => 'decimal:2', // formata como decimal com 2 casas
     ];
 
-    // Relação N:N com usuários (quem está pagando essa transação)
+    // Relação N:N com usuários (participantes da divisão do gasto)
     public function users()
     {
-        return $this->belongsToMany(User::class);
+        return $this->belongsToMany(User::class)
+            ->withPivot([
+                'is_settled',
+                'settled_at',
+                'settled_by_user_id',
+                'settled_to_user_id',
+                'settlement_note',
+            ])
+            ->withTimestamps();
     }
 
     public function category()

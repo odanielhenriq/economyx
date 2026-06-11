@@ -1,5 +1,6 @@
 import './bootstrap';
 import './settings-list';
+import './shared-expenses-page';
 
 import Alpine from 'alpinejs';
 import 'flowbite';

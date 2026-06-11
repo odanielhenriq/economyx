@@ -13,7 +13,7 @@ use App\Http\Controllers\Web\CardStatementWebController;
 use App\Http\Controllers\Web\ExportController;
 use App\Http\Controllers\Web\ExportDataController;
 use App\Http\Controllers\Web\ImportController;
-use App\Http\Controllers\Web\PartnerSettlementWebController;
+use App\Http\Controllers\Web\SharedExpenseWebController;
 use App\Http\Controllers\Web\PartnerInvitationWebController;
 use App\Http\Controllers\Web\TransactionWebController;
 use App\Http\Controllers\Web\TypeWebController;
@@ -89,8 +89,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cards/statement', [CardStatementWebController::class, 'index'])
         ->name('cards.statement.index');
 
-    Route::get('/partner-settlements', [PartnerSettlementWebController::class, 'index'])
-        ->name('partner-settlements.index');
+    Route::get('/shared-expenses', [SharedExpenseWebController::class, 'index'])
+        ->name('shared-expenses.index');
+    Route::patch('/shared-expenses/transactions/{transaction}/participants/{participant}/settle', [SharedExpenseWebController::class, 'settle'])
+        ->name('shared-expenses.settle');
+    Route::delete('/shared-expenses/transactions/{transaction}/participants/{participant}/settle', [SharedExpenseWebController::class, 'unsettle'])
+        ->name('shared-expenses.unsettle');
+    Route::redirect('/partner-settlements', '/shared-expenses', 301)->name('partner-settlements.index');
 
     Route::middleware('dev')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/users', [UserWebController::class, 'index'])->name('users.index');
