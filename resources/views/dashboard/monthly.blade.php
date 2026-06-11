@@ -208,6 +208,11 @@
                     </div>
                 </div>
 
+                {{-- Meta de economia --}}
+                <div id="savings-goal-card" class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6">
+                    <div id="savings-goal-content"></div>
+                </div>
+
                 {{-- Central de alertas --}}
                 <div id="dashboard-alerts-section" class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6">
                     <div class="mb-4">
@@ -239,6 +244,7 @@
                         <p><strong class="text-slate-700">Despesas do mês</strong> — pagamentos à vista e contas fixas. Não inclui fatura de cartão.</p>
                         <p><strong class="text-slate-700">A pagar no mês</strong> — faturas de cartão e parcelas com vencimento neste mês.</p>
                         <p><strong class="text-slate-700">Saldo projetado</strong> — estimativa do que sobra ou falta até o fim do mês, incluindo faturas e contas fixas previstas.</p>
+                        <p><strong class="text-slate-700">Meta de economia</strong> — quanto você quer guardar no mês, comparado ao saldo projetado (não confundir com orçamento por categoria).</p>
                         <p><strong class="text-slate-700">Onde o dinheiro foi</strong> — gráfico por categoria (compras à vista + parcelas).</p>
                     </div>
                 </div>
@@ -408,6 +414,49 @@
         </div>
     </div>
 
+    {{-- Modal meta de economia --}}
+    <div id="savings-goal-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" aria-hidden="true">
+        <div id="savings-goal-modal-backdrop" class="absolute inset-0 bg-slate-900/40"></div>
+        <div class="relative w-full max-w-md bg-white rounded-xl border border-slate-200 shadow-xl p-5">
+            <h3 class="text-sm font-semibold text-slate-800">Meta de economia</h3>
+            <p class="text-xs text-slate-500 mt-1">Sua meta será comparada com o saldo projetado do mês.</p>
+            <form id="savings-goal-form" class="mt-4 space-y-4">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="year" id="savings-goal-year" value="{{ $year }}">
+                <input type="hidden" name="month" id="savings-goal-month" value="{{ $month }}">
+                <div>
+                    <label for="savings-goal-amount" class="block text-xs font-medium text-slate-500 mb-1">
+                        Quanto você quer guardar neste mês?
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
+                        <input type="number" id="savings-goal-amount" name="target_amount" min="0.01" step="0.01" required
+                            class="w-full pl-10 pr-3 py-2 text-sm border border-slate-200 rounded-lg"
+                            placeholder="500,00">
+                    </div>
+                </div>
+                <div>
+                    <label for="savings-goal-note" class="block text-xs font-medium text-slate-500 mb-1">Observação (opcional)</label>
+                    <textarea id="savings-goal-note" name="note" rows="2" maxlength="500"
+                        class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none"
+                        placeholder="Ex.: reserva para viagem"></textarea>
+                </div>
+                <p id="savings-goal-form-error" class="text-xs text-red-600 hidden"></p>
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                    <button type="button" id="savings-goal-cancel"
+                        class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="savings-goal-submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-60">
+                        Salvar meta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
         const dashboardYear = @json($year);
         const dashboardMonth = @json($month);
@@ -430,6 +479,15 @@
         const payablesCardsListEl = document.getElementById('payables-cards-list');
         const payablesLoansListEl = document.getElementById('payables-loans-list');
         const cashflowBodyEl = document.getElementById('cashflow-body');
+        const savingsGoalContentEl = document.getElementById('savings-goal-content');
+        const savingsGoalModalEl = document.getElementById('savings-goal-modal');
+        const savingsGoalFormEl = document.getElementById('savings-goal-form');
+        const savingsGoalAmountEl = document.getElementById('savings-goal-amount');
+        const savingsGoalNoteEl = document.getElementById('savings-goal-note');
+        const savingsGoalErrorEl = document.getElementById('savings-goal-form-error');
+        const savingsGoalSubmitEl = document.getElementById('savings-goal-submit');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+        let currentSavingsGoal = null;
 
         const moneyFormatter = new Intl.NumberFormat('pt-BR', {
             minimumFractionDigits: 2,
@@ -631,6 +689,92 @@
             projectedBreakdownTotalEl.classList.add(isNegative ? 'text-red-600' : 'text-emerald-700');
         };
 
+        const openSavingsGoalModal = () => {
+            if (!savingsGoalModalEl) return;
+
+            savingsGoalAmountEl.value = currentSavingsGoal?.exists
+                ? Number(currentSavingsGoal.target_amount ?? 0).toFixed(2)
+                : '';
+            savingsGoalNoteEl.value = currentSavingsGoal?.note ?? '';
+            savingsGoalErrorEl.classList.add('hidden');
+            savingsGoalErrorEl.textContent = '';
+            savingsGoalModalEl.classList.remove('hidden');
+            savingsGoalModalEl.classList.add('flex');
+            savingsGoalModalEl.setAttribute('aria-hidden', 'false');
+        };
+
+        const closeSavingsGoalModal = () => {
+            if (!savingsGoalModalEl) return;
+
+            savingsGoalModalEl.classList.add('hidden');
+            savingsGoalModalEl.classList.remove('flex');
+            savingsGoalModalEl.setAttribute('aria-hidden', 'true');
+        };
+
+        const renderSavingsGoal = (goal = {}) => {
+            if (!savingsGoalContentEl) return;
+
+            currentSavingsGoal = goal;
+
+            if (!goal.exists) {
+                savingsGoalContentEl.innerHTML = `
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-700">Meta de economia</h3>
+                            <p class="text-xs text-slate-500 mt-1 max-w-xl">
+                                Defina quanto você quer guardar este mês e acompanhe pelo saldo projetado.
+                            </p>
+                        </div>
+                        <button type="button" id="savings-goal-open" class="shrink-0 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition">
+                            Definir meta
+                        </button>
+                    </div>
+                `;
+                document.getElementById('savings-goal-open')?.addEventListener('click', openSavingsGoalModal);
+                return;
+            }
+
+            const onTrack = goal.status === 'on_track';
+            const statusClasses = onTrack
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-amber-50 text-amber-700 border-amber-200';
+            const barColor = onTrack ? 'bg-emerald-500' : 'bg-amber-500';
+            const progress = Math.min(100, Math.max(0, Number(goal.progress_percent ?? 0)));
+
+            savingsGoalContentEl.innerHTML = `
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 class="text-sm font-semibold text-slate-700">Meta de economia</h3>
+                                <span class="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full border ${statusClasses}">
+                                    ${goal.status_label ?? ''}
+                                </span>
+                            </div>
+                            <p class="text-2xl font-bold text-slate-900 tabular-nums">${formatMoney(goal.target_amount ?? 0)}</p>
+                        </div>
+                        <button type="button" id="savings-goal-edit" class="shrink-0 px-3 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition">
+                            Editar meta
+                        </button>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+                            <span>Saldo projetado: ${formatMoney(goal.projected_balance ?? 0)}</span>
+                            <span>${progress.toFixed(0)}%</span>
+                        </div>
+                        <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+                            <div class="h-full rounded-full ${barColor} transition-all" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                    <p class="text-sm ${onTrack ? 'text-emerald-700' : 'text-amber-700'}">${goal.message ?? ''}</p>
+                    ${goal.note ? `<p class="text-xs text-slate-400">Obs.: ${goal.note}</p>` : ''}
+                    <p class="text-[11px] text-slate-400">Meta de economia ≠ orçamento por categoria. Aqui comparamos quanto você quer guardar com o saldo projetado do mês.</p>
+                </div>
+            `;
+
+            document.getElementById('savings-goal-edit')?.addEventListener('click', openSavingsGoalModal);
+        };
+
         const renderPayablesCards = (list = []) => {
             payablesCardsListEl.innerHTML = '';
 
@@ -829,6 +973,7 @@
             if (projectedHintEl) projectedHintEl.textContent = 'Não foi possível calcular a projeção.';
             if (alertsContentEl) alertsContentEl.innerHTML = '<p class="text-xs text-slate-400">Não foi possível carregar os alertas.</p>';
             if (futureCommitmentsContentEl) futureCommitmentsContentEl.innerHTML = '<p class="text-xs text-slate-400">Não foi possível carregar os próximos compromissos.</p>';
+            if (savingsGoalContentEl) savingsGoalContentEl.innerHTML = '<p class="text-xs text-slate-400">Não foi possível carregar a meta de economia.</p>';
 
             payablesCardsListEl.innerHTML = '<div class="text-xs text-slate-400">Erro ao carregar cartões.</div>';
             payablesLoansListEl.innerHTML = '<div class="text-xs text-slate-400">Erro ao carregar empréstimos.</div>';
@@ -855,6 +1000,7 @@
                 const data = await response.json();
 
                 renderCards(data?.cards ?? {});
+                renderSavingsGoal(data?.savings_goal ?? {});
                 renderAlerts(data?.alerts ?? {});
                 renderFutureCommitments(data?.future_commitments ?? {});
                 renderPayablesCards(data?.lists?.payables_cards ?? []);
@@ -867,6 +1013,50 @@
                 Alpine.$data(document.getElementById('dashboard-wrapper')).loading = false;
             }
         };
+
+        document.getElementById('savings-goal-cancel')?.addEventListener('click', closeSavingsGoalModal);
+        document.getElementById('savings-goal-modal-backdrop')?.addEventListener('click', closeSavingsGoalModal);
+
+        savingsGoalFormEl?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (!savingsGoalFormEl || !savingsGoalSubmitEl) return;
+
+            savingsGoalSubmitEl.disabled = true;
+            savingsGoalErrorEl.classList.add('hidden');
+            savingsGoalErrorEl.textContent = '';
+
+            const formData = new FormData(savingsGoalFormEl);
+
+            try {
+                const response = await fetch(@json(route('savings-goals.upsert')), {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const payload = await response.json().catch(() => ({}));
+                    const message = payload.message
+                        ?? Object.values(payload.errors ?? {})?.flat()?.[0]
+                        ?? 'Não foi possível salvar a meta.';
+                    throw new Error(message);
+                }
+
+                closeSavingsGoalModal();
+                await loadDashboard();
+            } catch (error) {
+                savingsGoalErrorEl.textContent = error.message;
+                savingsGoalErrorEl.classList.remove('hidden');
+            } finally {
+                savingsGoalSubmitEl.disabled = false;
+            }
+        });
 
         loadDashboard();
     </script>

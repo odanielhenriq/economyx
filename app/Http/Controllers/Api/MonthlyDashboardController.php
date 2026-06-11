@@ -64,6 +64,7 @@ class MonthlyDashboardController extends Controller
             'lists' => $payload['lists'],
             'alerts' => $payload['alerts'],
             'future_commitments' => $payload['future_commitments'],
+            'savings_goal' => $payload['savings_goal'],
         ]);
     }
 }
