@@ -148,6 +148,10 @@ class TransactionRepository implements TransactionRepositoryInterface
             $transaction = Transaction::withoutEvents(fn () => Transaction::create($data));
         }
 
+        if (empty($data['paid_by_user_id']) && auth()->check()) {
+            $transaction->update(['paid_by_user_id' => auth()->id()]);
+        }
+
         // Relaciona usuários
         $transaction->users()->sync($userIds);
 

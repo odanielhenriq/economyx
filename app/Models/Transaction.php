@@ -45,6 +45,7 @@ class Transaction extends Model
         'installment_number',
         'installment_total',
         'recurring_transaction_id',
+        'paid_by_user_id',
     ];
 
     protected $casts = [
@@ -82,6 +83,11 @@ class Transaction extends Model
     public function recurringTransaction()
     {
         return $this->belongsTo(RecurringTransaction::class);
+    }
+
+    public function paidBy()
+    {
+        return $this->belongsTo(User::class, 'paid_by_user_id');
     }
 
     public function installments()

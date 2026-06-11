@@ -13,6 +13,7 @@ use App\Http\Controllers\Web\CardStatementWebController;
 use App\Http\Controllers\Web\ExportController;
 use App\Http\Controllers\Web\ExportDataController;
 use App\Http\Controllers\Web\ImportController;
+use App\Http\Controllers\Web\PartnerSettlementWebController;
 use App\Http\Controllers\Web\PartnerInvitationWebController;
 use App\Http\Controllers\Web\TransactionWebController;
 use App\Http\Controllers\Web\TypeWebController;
@@ -87,6 +88,9 @@ Route::middleware(['auth'])->group(function () {
     // Tela web do extrato de cartão (usa CardStatementWebController pra montar Blade cards/statement)
     Route::get('/cards/statement', [CardStatementWebController::class, 'index'])
         ->name('cards.statement.index');
+
+    Route::get('/partner-settlements', [PartnerSettlementWebController::class, 'index'])
+        ->name('partner-settlements.index');
 
     Route::middleware('dev')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/users', [UserWebController::class, 'index'])->name('users.index');
