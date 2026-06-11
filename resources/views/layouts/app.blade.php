@@ -101,6 +101,20 @@
                 Contas fixas
             </a>
 
+            {{-- Compras parceladas --}}
+            <a href="{{ route('installment-purchases.index') }}"
+               @click="sidebarOpen = false"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      {{ request()->routeIs('installment-purchases*')
+                         ? 'bg-green-600 text-white'
+                         : 'text-green-100/70 hover:bg-white/5 hover:text-white' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Compras parceladas
+            </a>
+
             {{-- Gastos compartilhados --}}
             <a href="{{ route('shared-expenses.index') }}"
                @click="sidebarOpen = false"

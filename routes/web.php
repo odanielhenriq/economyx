@@ -13,6 +13,7 @@ use App\Http\Controllers\Web\CardStatementWebController;
 use App\Http\Controllers\Web\ExportController;
 use App\Http\Controllers\Web\ExportDataController;
 use App\Http\Controllers\Web\ImportController;
+use App\Http\Controllers\Web\InstallmentPurchaseWebController;
 use App\Http\Controllers\Web\SharedExpenseWebController;
 use App\Http\Controllers\Web\PartnerInvitationWebController;
 use App\Http\Controllers\Web\TransactionWebController;
@@ -96,6 +97,9 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/shared-expenses/transactions/{transaction}/participants/{participant}/settle', [SharedExpenseWebController::class, 'unsettle'])
         ->name('shared-expenses.unsettle');
     Route::redirect('/partner-settlements', '/shared-expenses', 301)->name('partner-settlements.index');
+
+    Route::get('/installment-purchases', [InstallmentPurchaseWebController::class, 'index'])
+        ->name('installment-purchases.index');
 
     Route::middleware('dev')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/users', [UserWebController::class, 'index'])->name('users.index');
