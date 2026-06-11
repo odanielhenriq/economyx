@@ -3,7 +3,38 @@
         <x-page-header
             title="Dashboard"
             subtitle="Resumo do mês selecionado: quanto entrou, quanto saiu, o que vence e onde você gastou."
-        />
+        >
+            <x-slot:actions>
+                <div class="relative" x-data="{ exportOpen: false, year: {{ $year }}, month: {{ $month }} }" @click.outside="exportOpen = false">
+                    <button type="button" @click="exportOpen = !exportOpen"
+                        class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Exportar
+                        <svg class="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div x-show="exportOpen" x-transition style="display:none"
+                        class="absolute right-0 mt-1 w-60 rounded-lg border border-slate-200 bg-white py-1 shadow-lg z-20">
+                        <a href="{{ route('transactions.export') }}"
+                           class="block px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">
+                            Exportar CSV
+                        </a>
+                        <a :href="`{{ route('reports.monthly.pdf') }}?year=${year}&month=${month}`"
+                           class="block px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">
+                            Relatório mensal PDF
+                        </a>
+                        <div class="border-t border-slate-100 mx-2 my-1"></div>
+                        <p class="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Mais opções</p>
+                        <a href="{{ route('export.json') }}" download="economyx-{{ now()->format('Y-m') }}.json"
+                           class="block px-4 py-2.5 text-left hover:bg-slate-50">
+                            <span class="block text-xs font-medium text-slate-500">Exportar JSON</span>
+                            <span class="block text-[11px] text-slate-400 mt-0.5">Avançado — backup ou integração externa</span>
+                        </a>
+                    </div>
+                </div>
+            </x-slot:actions>
+        </x-page-header>
     </x-slot>
 
     <div id="dashboard-wrapper" x-data="{ loading: true }">

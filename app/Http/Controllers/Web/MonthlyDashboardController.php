@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\CategoryBudget;
 use App\Models\CreditCard;
 use App\Models\Transaction;
-use App\Models\TransactionInstallment;
 use App\Services\MonthlyDashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -54,7 +53,7 @@ class MonthlyDashboardController extends Controller
             'next' => ['year' => $next->year, 'month' => $next->month],
             'chartData' => $chartData,
             'previousMonthData' => $previousMonthData,
-            'spendingByCategory' => $this->getSpendingByCategory($year, $month),
+            'spendingByCategory' => $this->dashboardService->spendingByCategory($year, $month, $user),
             'hasTransactions' => Transaction::whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))->exists(),
             'hasCreditCards' => CreditCard::query()
                 ->where(fn ($q) => $q->where('owner_user_id', $user->id)
@@ -62,72 +61,6 @@ class MonthlyDashboardController extends Controller
                 ->exists(),
             'hasBudgets' => CategoryBudget::where('user_id', $user->id)->exists(),
         ]);
-    }
-
-    /**
-     * Retorna os top 6 gastos por categoria no mês, com percentual proporcional ao maior.
-     */
-    private function getSpendingByCategory(int $year, int $month): array
-    {
-        $user       = Auth::user();
-        $networkIds = $user->networkUsers()->pluck('id')->all();
-
-        $start = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
-        $end   = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
-
-        $direct = Transaction::with('category')
-            ->whereBetween('due_date', [$start, $end])
-            ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
-            ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
-            ->whereNotNull('category_id')
-            ->whereNull('installment_total')
-            ->get();
-
-        $installmentRows = TransactionInstallment::with('transaction.category')
-            ->whereBetween('due_date', [$start, $end])
-            ->whereHas('transaction', function ($q) use ($networkIds) {
-                $q->whereHas('users', fn ($sub) => $sub->whereIn('users.id', $networkIds))
-                    ->whereHas('type', fn ($sub) => $sub->where('slug', 'dc'));
-            })
-            ->get();
-
-        $items = collect();
-
-        foreach ($direct as $tx) {
-            $items->push([
-                'category_id' => $tx->category_id,
-                'category' => $tx->category?->name ?? 'Sem categoria',
-                'amount' => (float) $tx->amount,
-            ]);
-        }
-
-        foreach ($installmentRows as $inst) {
-            $tx = $inst->transaction;
-            if (! $tx?->category_id) {
-                continue;
-            }
-            $items->push([
-                'category_id' => $tx->category_id,
-                'category' => $tx->category?->name ?? 'Sem categoria',
-                'amount' => (float) $inst->amount,
-            ]);
-        }
-
-        $spending = $items->groupBy('category_id')
-            ->map(fn ($group) => [
-                'category' => $group->first()['category'],
-                'total' => round((float) $group->sum('amount'), 2),
-            ])
-            ->sortByDesc('total')
-            ->take(6)
-            ->values();
-
-        $max = $spending->max('total') ?: 1;
-
-        return $spending->map(fn ($item) => [
-            ...$item,
-            'percentage' => round(($item['total'] / $max) * 100),
-        ])->toArray();
     }
 
     /**

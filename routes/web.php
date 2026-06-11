@@ -14,6 +14,7 @@ use App\Http\Controllers\Web\ExportController;
 use App\Http\Controllers\Web\ExportDataController;
 use App\Http\Controllers\Web\ImportController;
 use App\Http\Controllers\Web\InstallmentPurchaseWebController;
+use App\Http\Controllers\Web\MonthlyReportWebController;
 use App\Http\Controllers\Web\MonthlySavingsGoalWebController;
 use App\Http\Controllers\Web\SharedExpenseWebController;
 use App\Http\Controllers\Web\PartnerInvitationWebController;
@@ -104,6 +105,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::put('/savings-goals', [MonthlySavingsGoalWebController::class, 'upsert'])
         ->name('savings-goals.upsert');
+
+    Route::get('/reports/monthly/pdf', [MonthlyReportWebController::class, 'pdf'])
+        ->name('reports.monthly.pdf');
 
     Route::middleware('dev')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/users', [UserWebController::class, 'index'])->name('users.index');

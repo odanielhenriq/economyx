@@ -307,6 +307,83 @@ class MonthlyDashboardService
         ];
     }
 
+    /**
+     * @return array<int, array{category: string, total: float, percentage: int}>
+     */
+    public function spendingByCategory(int $year, int $month, User $user, int $limit = 6): array
+    {
+        $items = $this->spendingByCategoryItems($year, $month, $user);
+        $limited = collect($items)->take($limit);
+        $max = (float) ($limited->max('total') ?: 1);
+
+        return $limited
+            ->map(fn (array $item) => [
+                'category' => $item['category'],
+                'total' => $item['total'],
+                'percentage' => (int) round(($item['total'] / $max) * 100),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{category: string, total: float}>
+     */
+    public function spendingByCategoryItems(int $year, int $month, User $user): array
+    {
+        $networkIds = $user->networkUsers()->pluck('id')->all();
+        $start = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+        $end = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+
+        $direct = Transaction::with('category')
+            ->whereBetween('due_date', [$start, $end])
+            ->whereHas('users', fn ($q) => $q->whereIn('users.id', $networkIds))
+            ->whereHas('type', fn ($q) => $q->where('slug', 'dc'))
+            ->whereNotNull('category_id')
+            ->whereNull('installment_total')
+            ->get();
+
+        $installmentRows = TransactionInstallment::with('transaction.category')
+            ->whereBetween('due_date', [$start, $end])
+            ->whereHas('transaction', function ($q) use ($networkIds) {
+                $q->whereHas('users', fn ($sub) => $sub->whereIn('users.id', $networkIds))
+                    ->whereHas('type', fn ($sub) => $sub->where('slug', 'dc'));
+            })
+            ->get();
+
+        $items = collect();
+
+        foreach ($direct as $transaction) {
+            $items->push([
+                'category_id' => $transaction->category_id,
+                'category' => $transaction->category?->name ?? 'Sem categoria',
+                'amount' => (float) $transaction->amount,
+            ]);
+        }
+
+        foreach ($installmentRows as $installment) {
+            $transaction = $installment->transaction;
+            if (! $transaction?->category_id) {
+                continue;
+            }
+
+            $items->push([
+                'category_id' => $transaction->category_id,
+                'category' => $transaction->category?->name ?? 'Sem categoria',
+                'amount' => (float) $installment->amount,
+            ]);
+        }
+
+        return $items->groupBy('category_id')
+            ->map(fn ($group) => [
+                'category' => $group->first()['category'],
+                'total' => round((float) $group->sum('amount'), 2),
+            ])
+            ->sortByDesc('total')
+            ->values()
+            ->all();
+    }
+
     private function statementDueDate(int $year, int $month, ?int $dueDay): Carbon
     {
         $day = $dueDay ?: 1;
