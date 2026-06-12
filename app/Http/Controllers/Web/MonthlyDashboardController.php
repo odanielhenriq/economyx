@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\CategoryBudget;
 use App\Models\CreditCard;
 use App\Models\Transaction;
+use App\Services\InstallmentPurchaseService;
 use App\Services\MonthlyDashboardService;
+use App\Services\SharedExpenseService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +16,9 @@ use Illuminate\Support\Facades\Auth;
 class MonthlyDashboardController extends Controller
 {
     public function __construct(
-        private MonthlyDashboardService $dashboardService
+        private MonthlyDashboardService $dashboardService,
+        private InstallmentPurchaseService $installmentPurchases,
+        private SharedExpenseService $sharedExpenses,
     ) {}
 
     public function index(Request $request)
@@ -44,6 +48,9 @@ class MonthlyDashboardController extends Controller
         $user = Auth::user();
         $networkIds = $user->networkUsers()->pluck('id')->all();
 
+        $installmentData = $this->installmentPurchases->forUser($user, ['status' => 'active']);
+        $sharedData = $this->sharedExpenses->forMonth($year, $month, $user, null, 'all');
+
         // Envia tudo para a view mensal
         return view('dashboard.monthly', [
             'year' => $year,
@@ -60,6 +67,13 @@ class MonthlyDashboardController extends Controller
                     ->orWhereHas('users', fn ($sub) => $sub->where('users.id', $user->id)))
                 ->exists(),
             'hasBudgets' => CategoryBudget::where('user_id', $user->id)->exists(),
+            'followUpInstallments' => $installmentData['summary'] ?? [],
+            'followUpShared' => [
+                'has_shared_expenses' => $sharedData['has_shared_expenses'] ?? false,
+                'has_partners' => $sharedData['has_partners'] ?? false,
+                'pending_settlement' => $sharedData['summary']['pending_settlement'] ?? 0,
+                'total_shared' => $sharedData['summary']['total_shared'] ?? 0,
+            ],
         ]);
     }
 

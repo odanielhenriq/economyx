@@ -1,4 +1,5 @@
 import './bootstrap';
+import './app-shell';
 import './settings-list';
 import './shared-expenses-page';
 
