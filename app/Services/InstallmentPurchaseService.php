@@ -166,15 +166,26 @@ class InstallmentPurchaseService
             return [];
         }
 
-        $totalAmount = round((float) $transaction->total_amount, 2);
-        $regularTotal = round((float) $installments->slice(0, -1)->sum('amount'), 2);
-        $lastAmount = round($totalAmount - $regularTotal, 2);
+        $totalInstallments = (int) $transaction->installment_total;
+        $startsAtOne = (int) $installments->first()->installment_number === 1;
+        $coversFullTotal = $installments->count() === $totalInstallments;
+
+        if ($startsAtOne && $coversFullTotal) {
+            $totalAmount = round((float) $transaction->total_amount, 2);
+            $regularTotal = round((float) $installments->slice(0, -1)->sum('amount'), 2);
+            $lastAmount = round($totalAmount - $regularTotal, 2);
+
+            return $installments
+                ->values()
+                ->map(fn (TransactionInstallment $installment, int $index) => $index === $installments->count() - 1
+                    ? $lastAmount
+                    : round((float) $installment->amount, 2))
+                ->all();
+        }
 
         return $installments
             ->values()
-            ->map(fn (TransactionInstallment $installment, int $index) => $index === $installments->count() - 1
-                ? $lastAmount
-                : round((float) $installment->amount, 2))
+            ->map(fn (TransactionInstallment $installment) => round((float) $installment->amount, 2))
             ->all();
     }
 

@@ -225,6 +225,38 @@ it('calcula valor restante', function () {
     expect($item['remaining_amount'])->toBe(1750.0);
 });
 
+it('calcula valor restante em financiamento cadastrado no meio do prazo', function () {
+    Carbon::setTestNow('2026-05-15');
+    $user = User::factory()->create();
+    $fixtures = installmentPurchaseFixtures();
+
+    $installmentAmount = 457.57;
+    $totalInstallments = 36;
+    $startInstallmentNumber = 23;
+    $remainingRecords = $totalInstallments - $startInstallmentNumber + 1;
+    $dueDates = collect(range(0, $remainingRecords - 1))
+        ->map(fn (int $i) => Carbon::parse('2026-02-10')->addMonthsNoOverflow($i)->format('Y-m-d'))
+        ->all();
+
+    createInstallmentPurchase(
+        $user,
+        $fixtures,
+        'Financiamento moto',
+        $installmentAmount,
+        $totalInstallments,
+        '2024-03-13',
+        $dueDates,
+        null,
+        $startInstallmentNumber
+    );
+
+    $item = app(InstallmentPurchaseService::class)->forUser($user)['items'][0];
+
+    expect($item['current_installment'])->toBe(27);
+    expect($item['remaining_installments'])->toBe(10);
+    expect($item['remaining_amount'])->toBe(4575.7);
+});
+
 it('calcula proxima parcela', function () {
     Carbon::setTestNow('2026-06-15');
     $user = User::factory()->create();
